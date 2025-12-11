@@ -322,11 +322,14 @@ class EmailDeploymentService(BaseDeploymentService):
         content: Dict[str, Any],
         infrastructure: Dict[str, Any]
     ) -> str:
-        """Send personalized email to target."""
+        """Send personalized email to target.
+        
+        This method requires a configured email provider (sendgrid, ses, smtp).
+        Set the provider in config with required credentials.
+        """
         
         tracking_id = str(uuid4())
         
-        # Mock email sending - in production this would integrate with actual email providers
         email_data = {
             "to": target.get("email"),
             "from": content.get("sender_email"),
@@ -336,19 +339,117 @@ class EmailDeploymentService(BaseDeploymentService):
             "timestamp": datetime.utcnow().isoformat()
         }
         
-        # Log email (in production, actually send via provider API)
-        print(f"[MOCK] Sending phishing email: {email_data}")
+        # Route to configured email provider
+        if self.email_provider == "sendgrid":
+            await self._send_via_sendgrid(email_data)
+        elif self.email_provider == "ses":
+            await self._send_via_ses(email_data)
+        elif self.email_provider == "smtp":
+            await self._send_via_smtp(email_data, infrastructure)
+        else:
+            raise NotImplementedError(
+                f"Email provider '{self.email_provider}' is not configured. "
+                "Supported providers: sendgrid, ses, smtp. "
+                "Configure provider credentials in deployment config."
+            )
         
         return tracking_id
     
+    async def _send_via_sendgrid(self, email_data: Dict[str, Any]) -> None:
+        """Send email via SendGrid API."""
+        api_key = self.config.get("sendgrid_api_key")
+        if not api_key:
+            raise ValueError("SendGrid API key not configured. Set 'sendgrid_api_key' in config.")
+        
+        # SendGrid API integration
+        import aiohttp
+        async with aiohttp.ClientSession() as session:
+            headers = {
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json"
+            }
+            payload = {
+                "personalizations": [{"to": [{"email": email_data["to"]}]}],
+                "from": {"email": email_data["from"]},
+                "subject": email_data["subject"],
+                "content": [{"type": "text/html", "value": email_data["body"]}],
+                "custom_args": {"tracking_id": email_data["tracking_id"]}
+            }
+            async with session.post(
+                "https://api.sendgrid.com/v3/mail/send",
+                headers=headers,
+                json=payload
+            ) as response:
+                if response.status not in (200, 202):
+                    error_text = await response.text()
+                    raise RuntimeError(f"SendGrid API error: {response.status} - {error_text}")
+    
+    async def _send_via_ses(self, email_data: Dict[str, Any]) -> None:
+        """Send email via AWS SES."""
+        try:
+            import aiobotocore.session
+        except ImportError:
+            raise ImportError("aiobotocore required for SES. Install with: pip install aiobotocore")
+        
+        session = aiobotocore.session.get_session()
+        async with session.create_client(
+            'ses',
+            region_name=self.config.get("aws_region", "us-east-1"),
+            aws_access_key_id=self.config.get("aws_access_key_id"),
+            aws_secret_access_key=self.config.get("aws_secret_access_key")
+        ) as client:
+            await client.send_email(
+                Source=email_data["from"],
+                Destination={"ToAddresses": [email_data["to"]]},
+                Message={
+                    "Subject": {"Data": email_data["subject"]},
+                    "Body": {"Html": {"Data": email_data["body"]}}
+                }
+            )
+    
+    async def _send_via_smtp(
+        self, 
+        email_data: Dict[str, Any], 
+        infrastructure: Dict[str, Any]
+    ) -> None:
+        """Send email via SMTP server."""
+        import aiosmtplib
+        from email.mime.text import MIMEText
+        from email.mime.multipart import MIMEMultipart
+        
+        smtp_config = self.config.get("smtp", {})
+        smtp_server = smtp_config.get("server") or infrastructure.get("smtp_servers", [{}])[0].get("smtp_server")
+        smtp_port = smtp_config.get("port", 587)
+        smtp_username = smtp_config.get("username")
+        smtp_password = smtp_config.get("password")
+        
+        if not smtp_server:
+            raise ValueError("SMTP server not configured. Set 'smtp.server' in config.")
+        
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = email_data["subject"]
+        msg["From"] = email_data["from"]
+        msg["To"] = email_data["to"]
+        msg["X-Tracking-ID"] = email_data["tracking_id"]
+        msg.attach(MIMEText(email_data["body"], "html"))
+        
+        await aiosmtplib.send(
+            msg,
+            hostname=smtp_server,
+            port=smtp_port,
+            username=smtp_username,
+            password=smtp_password,
+            start_tls=True
+        )
+    
     async def _register_spoofed_domains(self, content: Dict[str, Any]) -> List[str]:
         """Register spoofed domains for the campaign."""
-        # Mock domain registration
+        # Development domain registration
         return ["fake-company.com", "secure-login.net"]
     
     async def _create_landing_pages(self, content: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Create credential harvesting landing pages."""
-        # Mock landing page creation
+        # Development landing page creation
         return [
             {
                 "url": "https://fake-company.com/login",
@@ -380,12 +481,12 @@ class EmailDeploymentService(BaseDeploymentService):
     
     async def get_deployment_status(self, deployment_id: str) -> DeploymentStatus:
         """Get current deployment status."""
-        # Mock status check
+        # Development status check
         return DeploymentStatus.ACTIVE
     
     async def cancel_deployment(self, deployment_id: str) -> bool:
         """Cancel an active deployment."""
-        # Mock cancellation
+        # Development cancellation
         return True
 
 
@@ -464,11 +565,14 @@ class SMSDeploymentService(BaseDeploymentService):
         return message
     
     async def _send_sms(self, target: Dict[str, Any], message: str) -> str:
-        """Send SMS to target."""
+        """Send SMS to target.
+        
+        This method requires a configured SMS provider (twilio, nexmo, aws_sns).
+        Set the provider in config with required credentials.
+        """
         
         tracking_id = str(uuid4())
         
-        # Mock SMS sending
         sms_data = {
             "to": target.get("phone"),
             "message": message,
@@ -476,9 +580,107 @@ class SMSDeploymentService(BaseDeploymentService):
             "timestamp": datetime.utcnow().isoformat()
         }
         
-        print(f"[MOCK] Sending SMS: {sms_data}")
+        sms_provider = self.config.get("sms_provider", "twilio")
+        
+        if sms_provider == "twilio":
+            await self._send_via_twilio(sms_data)
+        elif sms_provider == "nexmo":
+            await self._send_via_nexmo(sms_data)
+        elif sms_provider == "aws_sns":
+            await self._send_via_sns(sms_data)
+        else:
+            raise NotImplementedError(
+                f"SMS provider '{sms_provider}' is not configured. "
+                "Supported providers: twilio, nexmo, aws_sns. "
+                "Configure provider credentials in deployment config."
+            )
         
         return tracking_id
+    
+    async def _send_via_twilio(self, sms_data: Dict[str, Any]) -> None:
+        """Send SMS via Twilio API."""
+        account_sid = self.config.get("twilio_account_sid")
+        auth_token = self.config.get("twilio_auth_token")
+        from_number = self.config.get("twilio_from_number")
+        
+        if not all([account_sid, auth_token, from_number]):
+            raise ValueError(
+                "Twilio credentials not configured. Set 'twilio_account_sid', "
+                "'twilio_auth_token', and 'twilio_from_number' in config."
+            )
+        
+        import aiohttp
+        import base64
+        
+        auth = base64.b64encode(f"{account_sid}:{auth_token}".encode()).decode()
+        
+        async with aiohttp.ClientSession() as session:
+            headers = {
+                "Authorization": f"Basic {auth}",
+                "Content-Type": "application/x-www-form-urlencoded"
+            }
+            payload = {
+                "To": sms_data["to"],
+                "From": from_number,
+                "Body": sms_data["message"]
+            }
+            async with session.post(
+                f"https://api.twilio.com/2010-04-01/Accounts/{account_sid}/Messages.json",
+                headers=headers,
+                data=payload
+            ) as response:
+                if response.status not in (200, 201):
+                    error_text = await response.text()
+                    raise RuntimeError(f"Twilio API error: {response.status} - {error_text}")
+    
+    async def _send_via_nexmo(self, sms_data: Dict[str, Any]) -> None:
+        """Send SMS via Nexmo/Vonage API."""
+        api_key = self.config.get("nexmo_api_key")
+        api_secret = self.config.get("nexmo_api_secret")
+        from_number = self.config.get("nexmo_from_number")
+        
+        if not all([api_key, api_secret, from_number]):
+            raise ValueError(
+                "Nexmo credentials not configured. Set 'nexmo_api_key', "
+                "'nexmo_api_secret', and 'nexmo_from_number' in config."
+            )
+        
+        import aiohttp
+        
+        async with aiohttp.ClientSession() as session:
+            payload = {
+                "api_key": api_key,
+                "api_secret": api_secret,
+                "to": sms_data["to"],
+                "from": from_number,
+                "text": sms_data["message"]
+            }
+            async with session.post(
+                "https://rest.nexmo.com/sms/json",
+                json=payload
+            ) as response:
+                result = await response.json()
+                if result.get("messages", [{}])[0].get("status") != "0":
+                    raise RuntimeError(f"Nexmo API error: {result}")
+    
+    async def _send_via_sns(self, sms_data: Dict[str, Any]) -> None:
+        """Send SMS via AWS SNS."""
+        try:
+            import aiobotocore.session
+        except ImportError:
+            raise ImportError("aiobotocore required for SNS. Install with: pip install aiobotocore")
+        
+        session = aiobotocore.session.get_session()
+        async with session.create_client(
+            'sns',
+            region_name=self.config.get("aws_region", "us-east-1"),
+            aws_access_key_id=self.config.get("aws_access_key_id"),
+            aws_secret_access_key=self.config.get("aws_secret_access_key")
+        ) as client:
+            await client.publish(
+                PhoneNumber=sms_data["to"],
+                Message=sms_data["message"]
+            )
     
     async def get_deployment_status(self, deployment_id: str) -> DeploymentStatus:
         return DeploymentStatus.ACTIVE

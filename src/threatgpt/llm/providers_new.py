@@ -93,6 +93,38 @@ class BaseLLMProvider(ABC):
             await self._client.aclose()
             self._client = None
     
+    def _build_error_response(
+        self,
+        request: LLMRequest,
+        error: str,
+        error_code: str,
+        start_time: float
+    ) -> LLMResponse:
+        """Build a standardized error response.
+        
+        Args:
+            request: The original request
+            error: Error message
+            error_code: Error code
+            start_time: Request start time for calculating response time
+            
+        Returns:
+            LLMResponse with error details
+        """
+        return LLMResponse(
+            request_id=request.request_id,
+            provider=request.provider,
+            model=request.model,
+            content="",
+            content_type=request.content_type,
+            prompt_tokens=0,
+            completion_tokens=0,
+            total_tokens=0,
+            response_time_ms=int((time.time() - start_time) * 1000),
+            error=error,
+            error_code=error_code
+        )
+    
     @abstractmethod
     async def generate(self, request: LLMRequest) -> LLMResponse:
         """Generate content using the provider's API."""
@@ -110,6 +142,7 @@ class BaseLLMProvider(ABC):
     
     async def generate_with_retry(self, request: LLMRequest) -> LLMResponse:
         """Generate content with automatic retries and rate limiting."""
+        start_time = time.time()
         estimated_tokens = self.estimate_tokens(request.user_prompt)
         if request.system_prompt:
             estimated_tokens += self.estimate_tokens(request.system_prompt)
@@ -142,19 +175,12 @@ class BaseLLMProvider(ABC):
                 else:
                     logger.error(f"Request failed after {self.config.max_retries + 1} attempts: {e}")
         
-        # Return error response
-        return LLMResponse(
-            request_id=request.request_id,
-            provider=request.provider,
-            model=request.model,
-            content="",
-            content_type=request.content_type,
-            prompt_tokens=0,
-            completion_tokens=0,
-            total_tokens=0,
-            response_time_ms=0,
+        # Return error response using helper method
+        return self._build_error_response(
+            request=request,
             error=str(last_exception),
-            error_code="generation_failed"
+            error_code="generation_failed",
+            start_time=start_time
         )
 
 
@@ -248,33 +274,19 @@ class OpenAIProvider(BaseLLMProvider):
             except:
                 error_msg += f" - {e.response.text}"
             
-            return LLMResponse(
-                request_id=request.request_id,
-                provider=request.provider,
-                model=request.model,
-                content="",
-                content_type=request.content_type,
-                prompt_tokens=0,
-                completion_tokens=0,
-                total_tokens=0,
-                response_time_ms=int((time.time() - start_time) * 1000),
+            return self._build_error_response(
+                request=request,
                 error=error_msg,
-                error_code=str(e.response.status_code)
+                error_code=str(e.response.status_code),
+                start_time=start_time
             )
         
         except Exception as e:
-            return LLMResponse(
-                request_id=request.request_id,
-                provider=request.provider,
-                model=request.model,
-                content="",
-                content_type=request.content_type,
-                prompt_tokens=0,
-                completion_tokens=0,
-                total_tokens=0,
-                response_time_ms=int((time.time() - start_time) * 1000),
+            return self._build_error_response(
+                request=request,
                 error=str(e),
-                error_code="request_failed"
+                error_code="request_failed",
+                start_time=start_time
             )
 
 
@@ -366,33 +378,19 @@ class AnthropicProvider(BaseLLMProvider):
             except:
                 error_msg += f" - {e.response.text}"
             
-            return LLMResponse(
-                request_id=request.request_id,
-                provider=request.provider,
-                model=request.model,
-                content="",
-                content_type=request.content_type,
-                prompt_tokens=0,
-                completion_tokens=0,
-                total_tokens=0,
-                response_time_ms=int((time.time() - start_time) * 1000),
+            return self._build_error_response(
+                request=request,
                 error=error_msg,
-                error_code=str(e.response.status_code)
+                error_code=str(e.response.status_code),
+                start_time=start_time
             )
         
         except Exception as e:
-            return LLMResponse(
-                request_id=request.request_id,
-                provider=request.provider,
-                model=request.model,
-                content="",
-                content_type=request.content_type,
-                prompt_tokens=0,
-                completion_tokens=0,
-                total_tokens=0,
-                response_time_ms=int((time.time() - start_time) * 1000),
+            return self._build_error_response(
+                request=request,
                 error=str(e),
-                error_code="request_failed"
+                error_code="request_failed",
+                start_time=start_time
             )
 
 
@@ -407,20 +405,15 @@ class OpenRouterProviderAdapter(BaseLLMProvider):
     
     async def generate(self, request: LLMRequest) -> LLMResponse:
         """Generate content using OpenRouter API."""
-        if not self.api_key:
-            return LLMResponse(
-                content="",
-                provider=self.config.provider.value,
-                model=self.model,
-                prompt_tokens=0,
-                completion_tokens=0,
-                total_tokens=0,
-                response_time_ms=0,
-                error="OpenRouter API key not configured",
-                error_code="missing_api_key"
-            )
-        
         start_time = time.time()
+        
+        if not self.api_key:
+            return self._build_error_response(
+                request=request,
+                error="OpenRouter API key not configured",
+                error_code="missing_api_key",
+                start_time=start_time
+            )
         
         headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -466,29 +459,19 @@ class OpenRouterProviderAdapter(BaseLLMProvider):
                 error_data = response.json() if response.headers.get("content-type", "").startswith("application/json") else {}
                 error_msg = error_data.get("error", {}).get("message", f"HTTP {response.status_code}")
                 
-                return LLMResponse(
-                    content="",
-                    provider=self.config.provider.value,
-                    model=self.model,
-                    prompt_tokens=0,
-                    completion_tokens=0,
-                    total_tokens=0,
-                    response_time_ms=int((time.time() - start_time) * 1000),
+                return self._build_error_response(
+                    request=request,
                     error=error_msg,
-                    error_code=f"http_{response.status_code}"
+                    error_code=f"http_{response.status_code}",
+                    start_time=start_time
                 )
                 
         except Exception as e:
-            return LLMResponse(
-                content="",
-                provider=self.config.provider.value,
-                model=self.model,
-                prompt_tokens=0,
-                completion_tokens=0,
-                total_tokens=0,
-                response_time_ms=int((time.time() - start_time) * 1000),
+            return self._build_error_response(
+                request=request,
                 error=str(e),
-                error_code="request_failed"
+                error_code="request_failed",
+                start_time=start_time
             )
     
     def estimate_tokens(self, text: str) -> int:

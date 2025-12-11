@@ -202,7 +202,7 @@ class TemplateCreationWizard:
     
     def _collect_behavioral_patterns(self):
         """Collect behavioral patterns and attack tactics."""
-        console.print("\n[bold cyan]🎭 Step 4: Behavioral Patterns[/bold cyan]")
+        console.print("\n[bold cyan] Step 4: Behavioral Patterns[/bold cyan]")
         
         # MITRE ATT&CK techniques
         console.print("\n[dim]Enter MITRE ATT&CK technique IDs (e.g., T1566.001):[/dim]")
@@ -230,7 +230,7 @@ class TemplateCreationWizard:
     
     def _collect_simulation_parameters(self):
         """Collect simulation execution parameters."""
-        console.print("\n[bold cyan]⚙️ Step 5: Simulation Parameters[/bold cyan]")
+        console.print("\n[bold cyan]️ Step 5: Simulation Parameters[/bold cyan]")
         
         # Difficulty and duration
         difficulty = int(Prompt.ask("Difficulty level (1-10)", default="5"))

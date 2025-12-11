@@ -1,6 +1,4 @@
 # ThreatGPT Threat Scenario Template
-# Auto-fixed on 2025-09-27T03:25:49.069388Z
-# Fixes applied: removed unsupported field: success_metrics, removed unsupported field: compliance_controls, target_profile.seniority: set to valid value, target_profile.industry: set to valid value
 
 metadata:
   name: Adaptive Executive Spear Phishing Campaign

@@ -59,7 +59,7 @@ def list_simulations(limit: int, threat_type: Optional[str], success_only: bool,
         table.add_column("Created", style="dim")
         
         for sim in simulations:
-            status = "[green]✅[/green]" if sim.get("success", False) else "[red]❌[/red]"
+            status = "[green][/green]" if sim.get("success", False) else "[red][/red]"
             duration = f"{sim.get('duration_seconds', 0):.1f}s"
             created = datetime.fromisoformat(sim["created_at"]).strftime("%Y-%m-%d %H:%M")
             
@@ -235,7 +235,7 @@ def archive_old(days: int, compress: bool, dry_run: bool):
         archived_count = logger.archive_old_simulations(days_old=days, compress=compress)
         
         if archived_count > 0:
-            console.print(f"[green]✅ Archived {archived_count} simulations older than {days} days[/green]")
+            console.print(f"[green] Archived {archived_count} simulations older than {days} days[/green]")
             if compress:
                 console.print("[dim]Files were compressed to save space[/dim]")
         else:
@@ -268,10 +268,10 @@ def validate_logs(file_path: Optional[str], directory: Optional[str]):
                 with open(file_path, 'r', encoding='utf-8') as f:
                     content = f.read()
                 SimulationOutputValidator.validate_json_string(content)
-                console.print(f"[green]✅[/green] {file_path.name}")
+                console.print(f"[green][/green] {file_path.name}")
                 valid_count += 1
             except Exception as e:
-                console.print(f"[red]❌[/red] {file_path.name}: {e}")
+                console.print(f"[red][/red] {file_path.name}: {e}")
                 invalid_count += 1
         
         console.print(f"\n[blue]Validation Summary:[/blue]")
@@ -297,12 +297,12 @@ def validate_logs(file_path: Optional[str], directory: Optional[str]):
                 console.print(f"[red]Unsupported file format: {file_path.suffix}[/red]")
                 return
             
-            console.print(f"[green]✅ File is valid[/green]")
+            console.print(f"[green] File is valid[/green]")
             console.print(f"[dim]Simulation ID: {simulation.simulation_id}[/dim]")
             console.print(f"[dim]Scenario: {simulation.scenario.name}[/dim]")
             
         except Exception as e:
-            console.print(f"[red]❌ Validation failed: {e}[/red]")
+            console.print(f"[red] Validation failed: {e}[/red]")
     
     else:
         console.print("[yellow]Please specify either a file path or directory to validate[/yellow]")

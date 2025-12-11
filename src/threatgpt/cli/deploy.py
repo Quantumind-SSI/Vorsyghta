@@ -140,10 +140,10 @@ def deploy_campaign(ctx, name, content_file, targets_file, channels, platforms,
                             targets=prepared_targets
                         )
                         platform_results[platform] = result
-                        console.print(f"[green]✓ {platform} deployment completed[/green]")
+                        console.print(f"[green] {platform} deployment completed[/green]")
                         
                     except Exception as e:
-                        console.print(f"[red]✗ {platform} deployment failed: {e}[/red]")
+                        console.print(f"[red] {platform} deployment failed: {e}[/red]")
                         platform_results[platform] = None
             
             # Core deployment engine
@@ -240,7 +240,7 @@ def list_platforms(ctx, test):
                 console.print(f"[yellow]Testing {platform}...[/yellow]")
                 test_result = await platform_manager.test_platform_connectivity(platform)
                 
-                status = "[green]✓ Healthy[/green]" if test_result.get("status") == "healthy" else "[red]✗ Failed[/red]"
+                status = "[green] Healthy[/green]" if test_result.get("status") == "healthy" else "[red] Failed[/red]"
                 last_tested = test_result.get("timestamp", "Never")
                 details = test_result.get("error", "Connection successful") if test_result.get("error") else "Ready for deployment"
                 
@@ -273,9 +273,9 @@ def cancel_campaign(ctx, campaign_id, force):
             success = await deployment_engine.cancel_campaign(campaign_id)
             
             if success:
-                console.print(f"[green]✓ Campaign {campaign_id} cancelled successfully[/green]")
+                console.print(f"[green] Campaign {campaign_id} cancelled successfully[/green]")
             else:
-                console.print(f"[red]✗ Failed to cancel campaign {campaign_id}[/red]")
+                console.print(f"[red] Failed to cancel campaign {campaign_id}[/red]")
         
         except Exception as e:
             console.print(f"[red]Error cancelling campaign: {e}[/red]")
@@ -355,10 +355,10 @@ def _display_deployment_results(campaign_id: str, results: List, platform_result
         
         for platform, result in platform_results.items():
             if result:
-                status = "[green]✓ Success[/green]"
+                status = "[green] Success[/green]"
                 details = f"Deployed to {result.targets_successful} targets"
             else:
-                status = "[red]✗ Failed[/red]"
+                status = "[red] Failed[/red]"
                 details = "Check logs for details"
             
             platform_table.add_row(platform, status, details)
@@ -560,7 +560,7 @@ def _create_deployment_template(name: str):
     console.print(f"[yellow]Creating deployment template: {name}[/yellow]")
     console.print("[dim]Template creation wizard coming soon...[/dim]")
     
-    # TODO: Implement interactive template creation wizard
+    # Interactive template wizard pending
 
 
 if __name__ == '__main__':

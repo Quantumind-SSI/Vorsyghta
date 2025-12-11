@@ -6,7 +6,6 @@ email communication patterns for enhanced phishing simulations.
 
 import logging
 import asyncio
-import aiohttp
 import tarfile
 import gzip
 import json
@@ -17,6 +16,7 @@ from datetime import datetime
 from dataclasses import dataclass
 from collections import defaultdict, Counter
 
+from ..base_processor import BaseDatasetProcessor
 from ..manager import DatasetInfo, DatasetStatus, DatasetType, EmailPattern
 
 logger = logging.getLogger(__name__)
@@ -35,7 +35,7 @@ class EmailMessage:
     message_id: str
 
 
-class EnronProcessor:
+class EnronProcessor(BaseDatasetProcessor):
     """Processor for Enron email corpus dataset."""
     
     def __init__(self, storage_path: Path):
@@ -44,8 +44,7 @@ class EnronProcessor:
         Args:
             storage_path: Path to store Enron dataset
         """
-        self.storage_path = storage_path
-        self.storage_path.mkdir(parents=True, exist_ok=True)
+        super().__init__(str(storage_path))
         
         # Dataset URLs and info
         self.dataset_url = "https://www.cs.cmu.edu/~./enron/enron_mail_20150507.tar.gz"
@@ -109,7 +108,7 @@ class EnronProcessor:
             # Download if needed
             if force or not self.dataset_file.exists():
                 logger.info("Downloading Enron email corpus...")
-                success = await self._download_dataset()
+                success = await self.download_dataset()
                 if not success:
                     return False
             
@@ -122,7 +121,7 @@ class EnronProcessor:
             
             # Process emails for pattern extraction
             logger.info("Processing Enron emails for pattern extraction...")
-            success = await self._process_emails()
+            success = await self.process_dataset()
             if not success:
                 return False
             
@@ -133,31 +132,15 @@ class EnronProcessor:
             logger.error(f"Error processing Enron dataset: {e}")
             return False
     
-    async def _download_dataset(self) -> bool:
-        """Download the Enron dataset."""
+    async def download_dataset(self) -> bool:
+        """Download the Enron dataset (implements BaseDatasetProcessor abstract method)."""
         try:
-            async with aiohttp.ClientSession() as session:
-                logger.info(f"Downloading from {self.dataset_url}")
-                async with session.get(self.dataset_url) as response:
-                    if response.status == 200:
-                        total_size = int(response.headers.get('content-length', 0))
-                        downloaded = 0
-                        
-                        with open(self.dataset_file, 'wb') as f:
-                            async for chunk in response.content.iter_chunked(8192):
-                                f.write(chunk)
-                                downloaded += len(chunk)
-                                
-                                # Log progress every 10MB
-                                if downloaded % (10 * 1024 * 1024) == 0:
-                                    progress = (downloaded / total_size) * 100 if total_size > 0 else 0
-                                    logger.info(f"Download progress: {progress:.1f}%")
-                        
-                        logger.info("Enron dataset download completed")
-                        return True
-                    else:
-                        logger.error(f"Failed to download: HTTP {response.status}")
-                        return False
+            logger.info(f"Downloading from {self.dataset_url}")
+            return await self.download_file(
+                url=self.dataset_url,
+                destination=self.dataset_file,
+                progress_interval=10  # Log every 10MB
+            )
         except Exception as e:
             logger.error(f"Error downloading Enron dataset: {e}")
             return False
@@ -174,8 +157,8 @@ class EnronProcessor:
             logger.error(f"Error extracting Enron dataset: {e}")
             return False
     
-    async def _process_emails(self) -> bool:
-        """Process emails to extract patterns."""
+    async def process_dataset(self) -> bool:
+        """Process emails to extract patterns (implements BaseDatasetProcessor abstract method)."""
         try:
             if not self.extracted_path.exists():
                 logger.error("Enron dataset not extracted")
@@ -525,3 +508,35 @@ class EnronProcessor:
             average_length=150,
             common_phrases=["Please review", "Let me know", "Thanks for your time"]
         )
+    async def get_stats(self) -> Dict[str, Any]:
+        """Get statistics about the Enron dataset (implements BaseDatasetProcessor abstract method).
+        
+        Returns:
+            Dict containing dataset statistics
+        """
+        stats = {
+            'status': 'not_processed',
+            'dataset_file': str(self.dataset_file),
+            'extracted_path': str(self.extracted_path),
+            'dataset_exists': self.dataset_file.exists(),
+            'extracted_exists': self.extracted_path.exists(),
+        }
+        
+        # Add file size if available
+        if self.dataset_file.exists():
+            stats['dataset_size_mb'] = self.get_file_size_mb(self.dataset_file)
+        
+        # Add processed data stats if available
+        if self._processed_data:
+            stats.update({
+                'status': 'processed',
+                'processed_count': self._processed_data.get('processed_count', 0),
+                'processed_date': self._processed_data.get('processed_date'),
+                'roles_analyzed': list(self._processed_data.get('subjects_by_role', {}).keys()),
+                'patterns_cached': len(self._patterns_cache)
+            })
+        
+        # Include base processor info
+        stats['processor_info'] = self.get_processing_info()
+        
+        return stats

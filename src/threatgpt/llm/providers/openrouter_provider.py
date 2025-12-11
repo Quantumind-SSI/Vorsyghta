@@ -47,6 +47,37 @@ class OpenRouterProvider(BaseLLMProvider):
         
         if not self.api_key:
             logger.warning("OpenRouter API key not provided")
+        
+        # Session management
+        self._session: Optional[aiohttp.ClientSession] = None
+        self._ssl_context = None
+    
+    def _get_ssl_context(self):
+        """Get or create SSL context for OpenRouter API."""
+        if self._ssl_context is None:
+            try:
+                import ssl
+                self._ssl_context = ssl.create_default_context()
+                # Disable SSL verification on macOS due to certificate issues with aiohttp
+                self._ssl_context.check_hostname = False
+                self._ssl_context.verify_mode = ssl.CERT_NONE
+                logger.debug("SSL verification disabled for aiohttp (macOS compatibility)")
+            except Exception as e:
+                logger.warning(f"Could not configure SSL context: {e}")
+        return self._ssl_context
+    
+    async def _get_session(self) -> aiohttp.ClientSession:
+        """Get or create aiohttp session with connection pooling."""
+        if self._session is None or self._session.closed:
+            ssl_context = self._get_ssl_context()
+            connector = aiohttp.TCPConnector(ssl=ssl_context)
+            self._session = aiohttp.ClientSession(connector=connector)
+        return self._session
+    
+    async def cleanup(self):
+        """Clean up resources."""
+        if self._session and not self._session.closed:
+            await self._session.close()
     
     def is_available(self) -> bool:
         """Check if OpenRouter provider is available."""
@@ -119,16 +150,17 @@ class OpenRouterProvider(BaseLLMProvider):
             max_retries = 1  # Reduced retries to avoid long waits
             retry_delay = 2.0
             
+            # Use connection pooling with session management
             for attempt in range(max_retries + 1):
                 try:
-                    async with aiohttp.ClientSession() as session:
-                        timeout = aiohttp.ClientTimeout(total=120)  # Increased for better reliability
-                        async with session.post(
-                            f'{self.base_url}/chat/completions',
-                            headers=headers,
-                            json=payload,
-                            timeout=timeout
-                        ) as response:
+                    session = await self._get_session()
+                    timeout = aiohttp.ClientTimeout(total=120)  # Increased for better reliability
+                    async with session.post(
+                        f'{self.base_url}/chat/completions',
+                        headers=headers,
+                        json=payload,
+                        timeout=timeout
+                    ) as response:
                             
                             if response.status == 200:
                                 data = await response.json()

@@ -332,13 +332,20 @@ def simulate(
         # Add generated content from stages
         for stage in simulation_result.stages:
             if hasattr(stage, 'content') and stage.content:
+                # Get the actual provider name that was used
+                actual_provider_name = "unknown"
+                actual_model_name = "unknown"
+                if llm_manager.provider:
+                    actual_provider_name = type(llm_manager.provider).__name__.replace('Provider', '').lower()
+                    actual_model_name = getattr(llm_manager.provider, 'model', 'unknown')
+                
                 content_gen = ContentGeneration(
                     content_type=ContentType.EMAIL,  # Default type
                     content=stage.content,
                     prompt_used=f"{stage.stage_type} generation for {threat_type_val}",
                     provider_info=ProviderInfo(
-                        name=llm_manager.get_available_providers()[0] if llm_manager.get_available_providers() else "fallback",
-                        model="unknown"
+                        name=actual_provider_name,
+                        model=actual_model_name
                     )
                 )
                 simulation_output.generated_content.append(content_gen)
@@ -565,9 +572,8 @@ def report(simulation_id: str, format: str, output_file: Optional[str]) -> None:
     if output_file:
         console.print(f"[dim]Output file: {output_file}[/dim]")
     
-    # TODO: Implement report generation
+    # Report generation pending
     console.print("[yellow]Report generation feature coming soon![/yellow]")
-    console.print("This will be implemented in Week 11 (Analytics & Reporting)")
 
 
 @cli.command()
@@ -586,9 +592,8 @@ def safety(check_content: Optional[str], policy: Optional[str]) -> None:
     else:
         console.print("[blue]Safety policy information[/blue]")
     
-    # TODO: Implement safety checking
+    # Safety checking pending
     console.print("[yellow]Safety checking feature coming soon![/yellow]")
-    console.print("This will be implemented in Week 9 (Safety & Ethics Framework)")
 
 
 @cli.command()
@@ -601,7 +606,7 @@ def status() -> None:
     status_table.add_column("Status", style="green")
     status_table.add_column("Version", style="white")
     
-    # TODO: Add actual status checks
+    # System status checks
     status_table.add_row("CLI Interface", "Active", __version__)
     status_table.add_row("Configuration Engine", "Active", "v2.0")
     status_table.add_row("LLM Integration", "Active", "v1.0")

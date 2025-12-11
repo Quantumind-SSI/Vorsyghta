@@ -1,6 +1,4 @@
 # ThreatGPT Threat Scenario Template
-# Auto-fixed on 2025-09-27T03:25:49.086024Z
-# Fixes applied: threat_type: supply_chain → advanced_persistent_threat
 
 metadata:
   name: Supply Chain Compromise Attack

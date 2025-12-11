@@ -6,7 +6,6 @@ phishing URL patterns and domain characteristics for enhanced simulations.
 
 import logging
 import asyncio
-import aiohttp
 import json
 import gzip
 import csv
@@ -18,6 +17,7 @@ from collections import Counter, defaultdict
 from urllib.parse import urlparse
 import re
 
+from ..base_processor import BaseDatasetProcessor
 from ..manager import DatasetInfo, DatasetStatus, DatasetType, PhishingPattern
 
 logger = logging.getLogger(__name__)
@@ -37,7 +37,7 @@ class PhishingRecord:
     target_brand: Optional[str]
 
 
-class PhishTankProcessor:
+class PhishTankProcessor(BaseDatasetProcessor):
     """Processor for PhishTank phishing database."""
     
     def __init__(self, storage_path: Path):
@@ -46,8 +46,7 @@ class PhishTankProcessor:
         Args:
             storage_path: Path to store PhishTank dataset
         """
-        self.storage_path = storage_path
-        self.storage_path.mkdir(parents=True, exist_ok=True)
+        super().__init__(str(storage_path))
         
         # Dataset URLs (PhishTank provides JSON dumps)
         self.base_url = "http://data.phishtank.com/data"
@@ -131,7 +130,7 @@ class PhishTankProcessor:
             else:
                 # Download verified phishing data
                 logger.info("Downloading PhishTank verified phishing data...")
-                success = await self._download_dataset()
+                success = await self.download_dataset()
                 if not success:
                     return False
             
@@ -149,36 +148,23 @@ class PhishTankProcessor:
             return False
     
     def _is_data_recent(self) -> bool:
-        """Check if existing data is recent (less than 7 days old)."""
-        if not self.verified_file.exists():
-            return False
-        
-        file_age = datetime.now() - datetime.fromtimestamp(self.verified_file.stat().st_mtime)
-        return file_age < timedelta(days=7)
+        """Check if existing data is recent (less than 7 days old) using base class method."""
+        return self.is_data_recent(self.verified_file, max_age_days=7)
     
-    async def _download_dataset(self) -> bool:
-        """Download the PhishTank dataset."""
-        try:
-            async with aiohttp.ClientSession() as session:
-                # Download verified phishing JSON
-                logger.info(f"Downloading verified phishing data from {self.verified_url}")
-                async with session.get(self.verified_url) as response:
-                    if response.status == 200:
-                        with open(self.verified_file, 'wb') as f:
-                            async for chunk in response.content.iter_chunked(8192):
-                                f.write(chunk)
-                        logger.info("PhishTank verified data download completed")
-                        return True
-                    else:
-                        logger.error(f"Failed to download PhishTank data: HTTP {response.status}")
-                        return False
-                        
-        except Exception as e:
-            logger.error(f"Error downloading PhishTank dataset: {e}")
-            return False
+    async def download_dataset(self) -> bool:
+        """Download the PhishTank dataset using base class method."""
+        return await self.download_file(
+            url=self.verified_url,
+            destination=self.verified_file,
+            progress_interval=5 * 1024 * 1024  # 5MB progress updates
+        )
+    
+    async def process_dataset(self) -> bool:
+        """Process phishing data to extract patterns."""
+        return await self._process_phishing_data()
     
     async def _process_phishing_data(self) -> bool:
-        """Process phishing data to extract patterns."""
+        """Internal method to process phishing data."""
         try:
             if not self.verified_file.exists():
                 logger.error("PhishTank data not downloaded")
@@ -652,4 +638,25 @@ class PhishTankProcessor:
             subdomain_tricks=["www-", "secure-", "verify-", "account-"],
             typosquatting_techniques=["character_substitution", "subdomain_abuse"],
             target_keywords=["secure", "verify", "update", "account", "urgent"]
-        )
+        )    
+    def get_stats(self) -> Dict[str, Any]:
+        """Get statistics about the processed PhishTank dataset.
+        
+        Returns:
+            Dictionary with dataset statistics
+        """
+        if not self._processed_data:
+            return {
+                "status": "not_processed",
+                "total_records": 0
+            }
+        
+        return {
+            "status": "processed",
+            "total_records": self._processed_data.get("total_records", 0),
+            "unique_domains": self._processed_data.get("unique_domains", 0),
+            "unique_tlds": self._processed_data.get("unique_tlds", 0),
+            "top_brands": self._processed_data.get("top_brands", []),
+            "processing_time": self._processed_data.get("processing_time"),
+            **self.get_processing_info()
+        }

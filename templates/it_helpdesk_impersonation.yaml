@@ -1,6 +1,4 @@
 # ThreatGPT Threat Scenario Template
-# Auto-fixed on 2025-09-27T03:25:49.037955Z
-# Fixes applied: target_profile.technical_level: set to valid value
 
 metadata:
   name: IT Help Desk Impersonation Attack

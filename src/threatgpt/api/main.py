@@ -216,7 +216,7 @@ async def run_simulation(
 ):
     """Execute a threat simulation."""
     try:
-        # For now, create a basic scenario - in production this would fetch from storage
+        # Create basic scenario (storage integration pending)
         scenario = ThreatScenario(
             name=f"Scenario_{request.scenario_id}",
             threat_type=ThreatType.CUSTOM,

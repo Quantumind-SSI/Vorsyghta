@@ -16,6 +16,7 @@ from threatgpt.core.models import (
     SimulationStage,
     SimulationStatus
 )
+from threatgpt.llm.enhanced_prompts import generate_threat_prompt, ContentType
 
 logger = logging.getLogger(__name__)
 
@@ -174,15 +175,72 @@ class ThreatSimulator:
             # Create detailed prompt for actual scenario sample generation
             prompt = self._create_scenario_generation_prompt(scenario, stage_type, description)
             
+            # Determine appropriate max_tokens based on content type
+            # This prevents truncated content and ensures completeness
+            max_tokens_by_type = {
+                "email_phishing": 2000,      # Full email with headers and signature
+                "sms_phishing": 500,         # Short text messages
+                "voice_script": 2000,        # Complete phone conversation script
+                "document_lure": 3000,       # Full document content
+                "web_page": 2000,            # HTML page content
+                "social_media_post": 500,    # Brief social posts
+                "chat_message": 500,         # Chat/instant messages
+                "pretext_scenario": 1500,    # Scenario descriptions
+            }
+            
+            # Infer content type from scenario metadata or threat type
+            content_type = scenario.metadata.get("content_type", "")
+            if not content_type:
+                # Infer from threat_type
+                threat_str = scenario.threat_type.value if hasattr(scenario.threat_type, 'value') else str(scenario.threat_type)
+                if "phishing" in threat_str.lower():
+                    content_type = "email_phishing"
+                elif "sms" in threat_str.lower():
+                    content_type = "sms_phishing"
+                elif "social" in threat_str.lower():
+                    content_type = "social_media_post"
+                elif "vishing" in threat_str.lower() or "voice" in threat_str.lower():
+                    content_type = "voice_script"
+            
+            # Get appropriate max_tokens (default 1000 if not specified)
+            max_tokens = max_tokens_by_type.get(content_type, 1000)
+            
+            logger.debug(f"Using max_tokens={max_tokens} for content_type={content_type}")
+            
             # Generate content using LLM manager
             response = await self.llm_provider.generate_content(
                 prompt=prompt,
                 scenario_type=f"threat_simulation_{stage_type}",
-                max_tokens=800,
+                max_tokens=max_tokens,
                 temperature=0.7
             )
             
             if response and response.content:
+                # Check for truncation (finish_reason = 'length')
+                finish_reason = getattr(response, 'finish_reason', None)
+                if finish_reason == 'length':
+                    logger.warning(f"Content truncated for {stage_type} (hit max_tokens={max_tokens})")
+                    logger.info(f"Retrying with 50% more tokens ({int(max_tokens * 1.5)})")
+                    
+                    # Retry with increased max_tokens
+                    retry_response = await self.llm_provider.generate_content(
+                        prompt=prompt,
+                        scenario_type=f"threat_simulation_{stage_type}",
+                        max_tokens=int(max_tokens * 1.5),
+                        temperature=0.7
+                    )
+                    
+                    if retry_response and retry_response.content:
+                        retry_finish = getattr(retry_response, 'finish_reason', None)
+                        if retry_finish == 'length':
+                            logger.warning("Content still truncated after retry, but using it")
+                        else:
+                            logger.info("Retry successful - content complete")
+                        return retry_response.content
+                    else:
+                        logger.warning("Retry failed, using original truncated content")
+                        return response.content
+                
                 logger.debug(f"Generated {len(response.content)} characters for stage {stage_type}")
                 return response.content
             else:
@@ -194,7 +252,64 @@ class ThreatSimulator:
             return self._generate_fallback_content(scenario, stage_type, description)
     
     def _create_scenario_generation_prompt(self, scenario: ThreatScenario, stage_type: str, description: str) -> str:
-        """Create stage-specific prompts for generating actual threat scenario samples with template awareness."""
+        """Create stage-specific prompts for generating actual threat scenario samples.
+        
+        This method now uses the enhanced prompt system to generate high-quality,
+        context-aware prompts with chain-of-thought reasoning and industry best practices.
+        """
+        try:
+            # Map threat type to content type for enhanced prompts
+            threat_type = scenario.threat_type.value if hasattr(scenario.threat_type, 'value') else str(scenario.threat_type)
+            content_type = self._map_to_enhanced_content_type(threat_type, stage_type)
+            
+            # Extract target role and difficulty from scenario
+            target_role = scenario.target_profile.get("role", "Employee") if hasattr(scenario, 'target_profile') else "Employee"
+            difficulty = getattr(scenario, 'difficulty_level', 7)
+            
+            # Generate enhanced prompt using the new system
+            enhanced_prompt = generate_threat_prompt(
+                target_role=target_role,
+                threat_type=threat_type.lower(),
+                content_type=content_type,
+                difficulty_level=difficulty,
+                scenario=scenario
+            )
+            
+            # Add stage-specific context to the enhanced prompt
+            stage_context = f"""
+
+Stage Context: {stage_type} - {description}
+Scenario Name: {scenario.name}
+Scenario Description: {scenario.description}
+"""
+            
+            return enhanced_prompt + stage_context
+            
+        except Exception as e:
+            logger.warning(f"Enhanced prompt generation failed: {e}, falling back to basic prompts")
+            # Fallback to basic prompts if enhanced system fails
+            return self._create_fallback_prompt(scenario, stage_type, description)
+    
+    def _map_to_enhanced_content_type(self, threat_type: str, stage_type: str) -> str:
+        """Map threat type and stage to ContentType for enhanced prompts."""
+        threat_lower = threat_type.lower()
+        
+        if "sms" in threat_lower or "smishing" in threat_lower:
+            return "sms"
+        elif "phone" in threat_lower or "vishing" in threat_lower or "voice" in stage_type.lower():
+            return "phone_script"
+        elif "social" in threat_lower and "media" in threat_lower:
+            return "social_post"
+        elif "document" in threat_lower or "malware" in threat_lower:
+            return "document"
+        elif "web" in threat_lower or "website" in threat_lower:
+            return "web_page"
+        else:
+            # Default to email for phishing, BEC, and general scenarios
+            return "email"
+    
+    def _create_fallback_prompt(self, scenario: ThreatScenario, stage_type: str, description: str) -> str:
+        """Fallback to basic prompts if enhanced system is unavailable."""
         threat_type = scenario.threat_type.value if hasattr(scenario.threat_type, 'value') else str(scenario.threat_type)
         
         # Enhanced target profile analysis

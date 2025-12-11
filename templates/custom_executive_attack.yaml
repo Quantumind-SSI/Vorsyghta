@@ -1,6 +1,4 @@
 # ThreatGPT Threat Scenario Template
-# Auto-fixed on 2025-09-27T03:25:48.953679Z
-# Fixes applied: target_profile.seniority: set to valid value, target_profile.industry: set to valid value
 
 metadata:
   name: Custom Executive Attack

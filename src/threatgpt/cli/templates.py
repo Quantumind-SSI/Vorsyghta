@@ -33,13 +33,13 @@ def list_all(validate: bool, format: str):
     templates_dir = Path(__file__).parent.parent.parent.parent / "templates"
     
     if not templates_dir.exists():
-        console.print("[red]❌ No templates directory found.[/red]")
+        console.print("[red] No templates directory found.[/red]")
         return
     
     yaml_files = list(templates_dir.glob("*.yaml")) + list(templates_dir.glob("*.yml"))
     
     if not yaml_files:
-        console.print("[yellow]⚠️  No template files found.[/yellow]")
+        console.print("[yellow]️  No template files found.[/yellow]")
         return
     
     loader = YAMLConfigLoader()
@@ -54,14 +54,14 @@ def list_all(validate: bool, format: str):
 
 def _display_simple_list(yaml_files):
     """Display simple list of template files."""
-    console.print(f"[bold cyan]📋 Available Templates ({len(yaml_files)} found):[/bold cyan]")
+    console.print(f"[bold cyan] Available Templates ({len(yaml_files)} found):[/bold cyan]")
     for template_file in sorted(yaml_files):
         console.print(f"  • {template_file.name}")
 
 
 def _display_tree_format(yaml_files, loader=None):
     """Display templates in tree format with categories."""
-    tree = Tree("📁 [bold cyan]Threat Scenario Templates[/bold cyan]")
+    tree = Tree(" [bold cyan]Threat Scenario Templates[/bold cyan]")
     
     # Categorize templates
     categories = {
@@ -87,25 +87,25 @@ def _display_tree_format(yaml_files, loader=None):
     
     for category, files in categories.items():
         if files:
-            category_branch = tree.add(f"📂 [bold]{category}[/bold]")
+            category_branch = tree.add(f" [bold]{category}[/bold]")
             for template_file in files:
                 status = ""
                 if loader:
                     try:
                         scenario = loader.load_and_validate_scenario(template_file)
                         threat_type_val = scenario.threat_type.value if hasattr(scenario.threat_type, 'value') else str(scenario.threat_type)
-                        status = f" [green]✅ Valid[/green] - {threat_type_val.replace('_', ' ').title()}"
+                        status = f" [green] Valid[/green] - {threat_type_val.replace('_', ' ').title()}"
                     except (ConfigurationError, SchemaValidationError):
-                        status = " [red]❌ Invalid[/red]"
+                        status = " [red] Invalid[/red]"
                 
-                category_branch.add(f"📄 {template_file.stem}{status}")
+                category_branch.add(f" {template_file.stem}{status}")
     
     console.print(tree)
 
 
 def _display_table_format(yaml_files, loader=None):
     """Display templates in table format with details."""
-    table = Table(title="🎯 Threat Scenario Templates", show_header=True, header_style="bold magenta")
+    table = Table(title=" Threat Scenario Templates", show_header=True, header_style="bold magenta")
     
     table.add_column("Template", style="cyan", no_wrap=True)
     table.add_column("Threat Type", style="yellow")
@@ -128,9 +128,9 @@ def _display_table_format(yaml_files, loader=None):
                 difficulty_val = scenario.difficulty_level.value if hasattr(scenario.difficulty_level, 'value') else scenario.difficulty_level
                 difficulty = f"{difficulty_val}/10"
                 duration = f"{scenario.estimated_duration}m"
-                status = "[green]✅ Valid[/green]"
+                status = "[green] Valid[/green]"
             except (ConfigurationError, SchemaValidationError) as e:
-                status = "[red]❌ Invalid[/red]"
+                status = "[red] Invalid[/red]"
                 if hasattr(e, 'errors') and e.errors:
                     # Show first error briefly
                     first_error = e.errors[0]
@@ -158,7 +158,7 @@ def show(template_name: str, validate: bool, show_yaml: bool):
             break
     
     if not template_file:
-        console.print(f"[red]❌ Template '{template_name}' not found.[/red]")
+        console.print(f"[red] Template '{template_name}' not found.[/red]")
         return
     
     loader = YAMLConfigLoader()
@@ -170,7 +170,7 @@ def show(template_name: str, validate: bool, show_yaml: bool):
         
         if validate:
             scenario = loader.validate_threat_scenario(config)
-            console.print(f"[green]✅ Template validation successful![/green]\n")
+            console.print(f"[green] Template validation successful![/green]\n")
         
         # Display template information
         _display_template_details(config, scenario, template_file)
@@ -180,9 +180,9 @@ def show(template_name: str, validate: bool, show_yaml: bool):
             _display_yaml_content(template_file)
             
     except ConfigurationError as e:
-        console.print(f"[red]❌ Configuration Error:[/red] {e}")
+        console.print(f"[red] Configuration Error:[/red] {e}")
     except SchemaValidationError as e:
-        console.print(f"[red]❌ Validation Error:[/red] {e}")
+        console.print(f"[red] Validation Error:[/red] {e}")
         if e.errors:
             console.print("\n[bold red]Validation Errors:[/bold red]")
             for error in e.errors[:5]:  # Show first 5 errors
@@ -196,9 +196,9 @@ def _display_template_details(config: Dict[str, Any], scenario=None, template_fi
     metadata = config.get('metadata', {})
     
     # Header panel
-    header_text = f"🎯 [bold cyan]{metadata.get('name', 'Unknown Template')}[/bold cyan]\n"
-    header_text += f"📝 {metadata.get('description', 'No description available')}\n"
-    header_text += f"📄 File: {template_file.name if template_file else 'Unknown'}"
+    header_text = f" [bold cyan]{metadata.get('name', 'Unknown Template')}[/bold cyan]\n"
+    header_text += f" {metadata.get('description', 'No description available')}\n"
+    header_text += f" File: {template_file.name if template_file else 'Unknown'}"
     
     console.print(Panel(header_text, title="Template Overview", border_style="cyan"))
     
@@ -219,12 +219,12 @@ def _display_template_details(config: Dict[str, Any], scenario=None, template_fi
     # Target profile
     target_profile = config.get('target_profile', {})
     if target_profile:
-        target_text = f"👤 [bold]Role:[/bold] {target_profile.get('role', 'N/A')}\n"
-        target_text += f"🏢 [bold]Department:[/bold] {target_profile.get('department', 'N/A')}\n"
-        target_text += f"📊 [bold]Seniority:[/bold] {target_profile.get('seniority', 'N/A').replace('_', ' ').title()}\n"
-        target_text += f"🔧 [bold]Technical Level:[/bold] {target_profile.get('technical_level', 'N/A').title()}\n"
-        target_text += f"🏭 [bold]Industry:[/bold] {target_profile.get('industry', 'N/A').replace('_', ' ').title()}\n"
-        target_text += f"🛡️ [bold]Security Awareness:[/bold] {target_profile.get('security_awareness_level', 'N/A')}/10"
+        target_text = f" [bold]Role:[/bold] {target_profile.get('role', 'N/A')}\n"
+        target_text += f" [bold]Department:[/bold] {target_profile.get('department', 'N/A')}\n"
+        target_text += f" [bold]Seniority:[/bold] {target_profile.get('seniority', 'N/A').replace('_', ' ').title()}\n"
+        target_text += f" [bold]Technical Level:[/bold] {target_profile.get('technical_level', 'N/A').title()}\n"
+        target_text += f" [bold]Industry:[/bold] {target_profile.get('industry', 'N/A').replace('_', ' ').title()}\n"
+        target_text += f"️ [bold]Security Awareness:[/bold] {target_profile.get('security_awareness_level', 'N/A')}/10"
         
         console.print(Panel(target_text, title="Target Profile", border_style="green"))
     
@@ -233,7 +233,7 @@ def _display_template_details(config: Dict[str, Any], scenario=None, template_fi
     mitre_techniques = behavioral_pattern.get('mitre_attack_techniques', [])
     if mitre_techniques:
         techniques_text = ", ".join(mitre_techniques)
-        console.print(Panel(f"🎯 {techniques_text}", title="MITRE ATT&CK Techniques", border_style="red"))
+        console.print(Panel(f" {techniques_text}", title="MITRE ATT&CK Techniques", border_style="red"))
     
     # Tags
     tags = metadata.get('tags', [])
@@ -249,10 +249,10 @@ def _display_yaml_content(template_file: Path):
             content = f.read()
         
         syntax = Syntax(content, "yaml", theme="monokai", line_numbers=True, word_wrap=True)
-        console.print(Panel(syntax, title=f"📄 Raw YAML Content - {template_file.name}", border_style="dim"))
+        console.print(Panel(syntax, title=f" Raw YAML Content - {template_file.name}", border_style="dim"))
         
     except Exception as e:
-        console.print(f"[red]❌ Error reading file:[/red] {e}")
+        console.print(f"[red] Error reading file:[/red] {e}")
 
 
 @templates.command()
@@ -262,7 +262,7 @@ def validate_all(output_dir):
     templates_dir = Path(__file__).parent.parent.parent.parent / "templates"
     
     if not templates_dir.exists():
-        console.print("[red]❌ No templates directory found.[/red]")
+        console.print("[red] No templates directory found.[/red]")
         return
     
     loader = YAMLConfigLoader()
@@ -273,7 +273,7 @@ def validate_all(output_dir):
     valid = results['valid_files']
     invalid = results['invalid_files']
     
-    console.print(f"\n[bold cyan]📊 Validation Summary[/bold cyan]")
+    console.print(f"\n[bold cyan] Validation Summary[/bold cyan]")
     console.print(f"Total Templates: {total}")
     console.print(f"Valid: [green]{valid}[/green]")
     console.print(f"Invalid: [red]{invalid}[/red]")
@@ -288,10 +288,10 @@ def validate_all(output_dir):
         
         for file_path, file_result in results['files'].items():
             if file_result['status'] == 'valid':
-                status = "[green]✅ Valid[/green]"
+                status = "[green] Valid[/green]"
                 details = f"{file_result.get('threat_type', 'N/A')} (Difficulty: {file_result.get('difficulty', 'N/A')})"
             else:
-                status = "[red]❌ Invalid[/red]"
+                status = "[red] Invalid[/red]"
                 details = file_result.get('error', 'Unknown error')[:60] + "..." if len(file_result.get('error', '')) > 60 else file_result.get('error', 'Unknown error')
             
             table.add_row(file_path, status, details)
@@ -308,7 +308,7 @@ def validate_all(output_dir):
         with open(report_file, 'w') as f:
             json.dump(results, f, indent=2, default=str)
         
-        console.print(f"\n[green]📄 Detailed report saved to: {report_file}[/green]")
+        console.print(f"\n[green] Detailed report saved to: {report_file}[/green]")
 
 
 @templates.command()
@@ -328,7 +328,7 @@ def copy(source_template: str, new_name: str, edit: bool):
             break
     
     if not source_file:
-        console.print(f"[red]❌ Source template '{source_template}' not found.[/red]")
+        console.print(f"[red] Source template '{source_template}' not found.[/red]")
         return
     
     # Create new template
@@ -357,19 +357,19 @@ def copy(source_template: str, new_name: str, edit: bool):
         with open(new_file, 'w', encoding='utf-8') as f:
             yaml.dump(config, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
         
-        console.print(f"[green]✅ Template copied successfully to: {new_file.name}[/green]")
+        console.print(f"[green] Template copied successfully to: {new_file.name}[/green]")
         
         if edit:
             click.launch(str(new_file))
             
     except Exception as e:
-        console.print(f"[red]❌ Error copying template:[/red] {e}")
+        console.print(f"[red] Error copying template:[/red] {e}")
 
 
 @templates.command()
 def create():
     """Create a new threat scenario template using the interactive wizard."""
-    console.print("[bold blue]🧙‍♂️ Starting Template Creation Wizard...[/bold blue]")
+    console.print("[bold blue]‍️ Starting Template Creation Wizard...[/bold blue]")
     
     templates_dir = Path(__file__).parent.parent.parent.parent / "templates"
     wizard = TemplateCreationWizard(templates_dir)
@@ -377,23 +377,23 @@ def create():
     try:
         result = wizard.create_template_interactive()
         if result:
-            console.print(f"\n[bold green]🎉 Template successfully created: {result.name}[/bold green]")
+            console.print(f"\n[bold green] Template successfully created: {result.name}[/bold green]")
             
             # Ask if user wants to validate the new template
             if click.confirm("Validate the new template now?"):
                 loader = YAMLConfigLoader()
                 try:
                     scenario = loader.load_and_validate_scenario(result)
-                    console.print("[green]✅ Template validation successful![/green]")
+                    console.print("[green] Template validation successful![/green]")
                 except Exception as e:
-                    console.print(f"[yellow]⚠️ Template validation failed: {e}[/yellow]")
+                    console.print(f"[yellow]️ Template validation failed: {e}[/yellow]")
         else:
             console.print("[yellow]Template creation cancelled or failed.[/yellow]")
             
     except KeyboardInterrupt:
         console.print("\n[yellow]Template creation cancelled by user.[/yellow]")
     except Exception as e:
-        console.print(f"\n[red]❌ Error during template creation: {e}[/red]")
+        console.print(f"\n[red] Error during template creation: {e}[/red]")
 
 
 @templates.command()
@@ -401,7 +401,7 @@ def create():
 @click.option('--backup', '-b', is_flag=True, help='Create backup files before fixing')
 def validate_pro(auto_fix: bool, backup: bool):
     """Professional validation with detailed diagnostics and auto-fix capabilities."""
-    console.print("[bold blue]🔍 Running Professional Template Validation...[/bold blue]")
+    console.print("[bold blue] Running Professional Template Validation...[/bold blue]")
     
     templates_dir = Path(__file__).parent.parent.parent.parent / "templates"
     manager = TemplateManager(templates_dir)
@@ -411,7 +411,7 @@ def validate_pro(auto_fix: bool, backup: bool):
     
     # Display professional summary
     stats = results["statistics"]
-    console.print(f"\n[bold cyan]📊 Validation Report[/bold cyan]")
+    console.print(f"\n[bold cyan] Validation Report[/bold cyan]")
     console.print(f"Total Templates: {stats['total']}")
     console.print(f"Valid: [green]{stats['valid_count']}[/green] ({stats['valid_count']/stats['total']*100:.1f}%)" if stats['total'] > 0 else "Valid: 0")
     console.print(f"Invalid: [red]{stats['invalid_count']}[/red] ({stats['invalid_count']/stats['total']*100:.1f}%)" if stats['total'] > 0 else "Invalid: 0")
@@ -428,7 +428,7 @@ def validate_pro(auto_fix: bool, backup: bool):
     for valid in results["valid"]:
         table.add_row(
             valid["file"],
-            "[green]✅ Valid[/green]",
+            "[green] Valid[/green]",
             valid["threat_type"].replace('_', ' ').title(),
             str(valid["difficulty"]),
             "[green]None[/green]"
@@ -439,7 +439,7 @@ def validate_pro(auto_fix: bool, backup: bool):
         error_short = invalid["error"][:50] + "..." if len(invalid["error"]) > 50 else invalid["error"]
         table.add_row(
             invalid["file"],
-            "[red]❌ Invalid[/red]",
+            "[red] Invalid[/red]",
             "Unknown",
             "N/A",
             error_short
@@ -449,7 +449,7 @@ def validate_pro(auto_fix: bool, backup: bool):
     
     # Auto-fix invalid templates if requested
     if auto_fix and results["invalid"]:
-        console.print(f"\n[bold yellow]🔧 Attempting to auto-fix {len(results['invalid'])} invalid templates...[/bold yellow]")
+        console.print(f"\n[bold yellow] Attempting to auto-fix {len(results['invalid'])} invalid templates...[/bold yellow]")
         
         fixed_count = 0
         for invalid in results["invalid"]:
@@ -458,7 +458,7 @@ def validate_pro(auto_fix: bool, backup: bool):
                 if manager.fix_template_issues(template_file):
                     fixed_count += 1
         
-        console.print(f"\n[bold green]✅ Successfully fixed {fixed_count} templates![/bold green]")
+        console.print(f"\n[bold green] Successfully fixed {fixed_count} templates![/bold green]")
         
         if fixed_count > 0:
             console.print("[dim]Re-run validation to see updated results.[/dim]")
@@ -469,14 +469,14 @@ def validate_pro(auto_fix: bool, backup: bool):
 @click.argument('new_name')
 def clone(source_template: str, new_name: str):
     """Create a new template by cloning and customizing an existing one."""
-    console.print(f"[bold blue]📋 Cloning template '{source_template}' as '{new_name}'...[/bold blue]")
+    console.print(f"[bold blue] Cloning template '{source_template}' as '{new_name}'...[/bold blue]")
     
     templates_dir = Path(__file__).parent.parent.parent.parent / "templates"
     manager = TemplateManager(templates_dir)
     
     try:
         new_template_path = manager.create_from_template(source_template, new_name)
-        console.print(f"[green]✅ Template cloned successfully: {new_template_path.name}[/green]")
+        console.print(f"[green] Template cloned successfully: {new_template_path.name}[/green]")
         
         # Display new template info
         if click.confirm("View the cloned template?"):
@@ -486,15 +486,15 @@ def clone(source_template: str, new_name: str):
             _display_template_details(config, None, new_template_path)
             
     except FileNotFoundError as e:
-        console.print(f"[red]❌ {e}[/red]")
+        console.print(f"[red] {e}[/red]")
     except Exception as e:
-        console.print(f"[red]❌ Error cloning template: {e}[/red]")
+        console.print(f"[red] Error cloning template: {e}[/red]")
 
 
 @templates.command()
 def stats():
     """Display comprehensive statistics about the template ecosystem."""
-    console.print("[bold blue]📈 Template Ecosystem Statistics[/bold blue]")
+    console.print("[bold blue] Template Ecosystem Statistics[/bold blue]")
     
     templates_dir = Path(__file__).parent.parent.parent.parent / "templates"
     manager = TemplateManager(templates_dir)
@@ -508,7 +508,7 @@ def stats():
     
     # Overall statistics
     stats = results["statistics"]
-    console.print(f"\n[bold cyan]📊 Overall Statistics[/bold cyan]")
+    console.print(f"\n[bold cyan] Overall Statistics[/bold cyan]")
     console.print(f"Total Templates: {stats['total']}")
     console.print(f"Valid Templates: [green]{stats['valid_count']}[/green]")
     console.print(f"Invalid Templates: [red]{stats['invalid_count']}[/red]")
@@ -563,12 +563,12 @@ def stats():
 @templates.command()
 def health():
     """Check the overall health of the template ecosystem."""
-    console.print("[bold blue]🏥 Template Ecosystem Health Check[/bold blue]")
+    console.print("[bold blue] Template Ecosystem Health Check[/bold blue]")
     
     templates_dir = Path(__file__).parent.parent.parent.parent / "templates"
     
     if not templates_dir.exists():
-        console.print("[red]❌ Templates directory not found![/red]")
+        console.print("[red] Templates directory not found![/red]")
         return
     
     manager = TemplateManager(templates_dir)
@@ -602,16 +602,16 @@ def health():
     
     # Health status
     if total_score >= 90:
-        health_status = "[bold green]Excellent[/bold green] 🎉"
+        health_status = "[bold green]Excellent[/bold green] "
         health_color = "green"
     elif total_score >= 75:
-        health_status = "[bold yellow]Good[/bold yellow] 👍"
+        health_status = "[bold yellow]Good[/bold yellow] "
         health_color = "yellow"
     elif total_score >= 60:
-        health_status = "[bold orange]Fair[/bold orange] ⚠️"
+        health_status = "[bold orange]Fair[/bold orange] ️"
         health_color = "orange"
     else:
-        health_status = "[bold red]Poor[/bold red] 🚨"
+        health_status = "[bold red]Poor[/bold red] "
         health_color = "red"
     
     # Display health report
@@ -623,7 +623,7 @@ def health():
         f"• Template Diversity: {diversity_score:.1f}/30\n"
         f"• Template Count: {count_score:.1f}/20\n"
         f"• Error-free Score: {error_score:.1f}/10",
-        title="🏥 Ecosystem Health Report",
+        title=" Ecosystem Health Report",
         border_style=health_color
     )
     
@@ -647,9 +647,9 @@ def health():
     if recommendations:
         rec_panel = Panel(
             "\n".join(recommendations),
-            title="🎯 Recommendations",
+            title=" Recommendations",
             border_style="blue"
         )
         console.print(f"\n{rec_panel}")
     else:
-        console.print("\n[green]✅ No major issues found. Template ecosystem is healthy![/green]")
+        console.print("\n[green] No major issues found. Template ecosystem is healthy![/green]")

@@ -4,25 +4,25 @@ This directory contains example threat scenario configurations demonstrating the
 
 ## Template Categories
 
-### 📧 Email-Based Threats
+### Email-Based Threats
 - **executive_phishing.yaml** - Sophisticated spear-phishing targeting C-level executives
 - **credential_harvesting.yaml** - Fake login page for credential collection
 - **finance_bec.yaml** - Business Email Compromise targeting finance teams
 
-### 📱 Mobile & SMS Threats
+### Mobile & SMS Threats
 - **executive_smishing.yaml** - SMS phishing targeting mobile executives
 - **covid_scam.yaml** - Health-themed mobile scam campaign
 
-### 🎯 Social Engineering
+### Social Engineering
 - **it_helpdesk_impersonation.yaml** - Help desk impersonation for access
 - **vendor_impersonation.yaml** - Third-party vendor impersonation
 - **new_employee_pretext.yaml** - New employee onboarding pretext
 
-### 🔒 Advanced Persistent Threats
+### Advanced Persistent Threats
 - **supply_chain_compromise.yaml** - Software supply chain attack simulation
 - **watering_hole_attack.yaml** - Industry website compromise
 
-### 👥 Insider Threats
+### Insider Threats
 - **disgruntled_employee.yaml** - Malicious insider scenario
 - **privilege_escalation.yaml** - Internal privilege escalation
 
@@ -42,7 +42,7 @@ Each template showcases different aspects of the YAML schema:
 - **Simulation Parameters**: Adaptive execution controls
 - **Compliance Controls**: Audit logging and content filtering
 
-## 🚀 Creating Your Own Templates
+## Creating Your Own Templates
 
 ### Quick Start
 1. **Copy Sample Template**: `cp templates/sample_phishing_template.yaml templates/my_template.yaml`
@@ -51,10 +51,10 @@ Each template showcases different aspects of the YAML schema:
 4. **Test**: `threatgpt simulate -s templates/my_template.yaml`
 
 ### Documentation
-- **📋 TEMPLATE_CREATION_GUIDE.md** - Complete template creation guide with examples
-- **📝 TEMPLATE_QUICK_REFERENCE.md** - Quick reference card for fast template creation
-- **📖 TEMPLATE_MANUAL.md** - Comprehensive 950+ line technical manual
-- **🎯 sample_phishing_template.yaml** - Ready-to-copy sample template
+- **TEMPLATE_CREATION_GUIDE.md** - Complete template creation guide with examples
+- **TEMPLATE_QUICK_REFERENCE.md** - Quick reference card for fast template creation
+- **TEMPLATE_MANUAL.md** - Comprehensive 950+ line technical manual
+- **sample_phishing_template.yaml** - Ready-to-copy sample template
 
 ## Best Practices
 

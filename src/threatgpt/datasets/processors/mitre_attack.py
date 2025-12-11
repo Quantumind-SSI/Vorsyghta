@@ -6,7 +6,6 @@ tactics, techniques, and procedures (TTPs) for enhanced threat modeling.
 
 import logging
 import asyncio
-import aiohttp
 import json
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Set
@@ -14,6 +13,7 @@ from datetime import datetime
 from dataclasses import dataclass
 from collections import Counter, defaultdict
 
+from ..base_processor import BaseDatasetProcessor
 from ..manager import DatasetInfo, DatasetStatus, DatasetType, TTPPattern
 
 logger = logging.getLogger(__name__)
@@ -33,7 +33,7 @@ class ATTACKTechnique:
     mitigations: List[str]
 
 
-class MITREAttackProcessor:
+class MITREAttackProcessor(BaseDatasetProcessor):
     """Processor for MITRE ATT&CK framework data."""
     
     def __init__(self, storage_path: Path):
@@ -42,8 +42,7 @@ class MITREAttackProcessor:
         Args:
             storage_path: Path to store MITRE ATT&CK dataset
         """
-        self.storage_path = storage_path
-        self.storage_path.mkdir(parents=True, exist_ok=True)
+        super().__init__(str(storage_path))
         
         # MITRE ATT&CK STIX data URLs
         self.enterprise_url = "https://raw.githubusercontent.com/mitre/cti/master/enterprise-attack/enterprise-attack.json"
@@ -131,13 +130,13 @@ class MITREAttackProcessor:
             # Download MITRE ATT&CK data
             if force or not self._all_files_exist():
                 logger.info("Downloading MITRE ATT&CK framework data...")
-                success = await self._download_attack_data()
+                success = await self.download_dataset()
                 if not success:
                     return False
             
             # Process ATT&CK data for TTP extraction
             logger.info("Processing MITRE ATT&CK data for TTP extraction...")
-            success = await self._process_attack_data()
+            success = await self.process_dataset()
             if not success:
                 return False
             
@@ -152,8 +151,8 @@ class MITREAttackProcessor:
         """Check if all required files exist."""
         return all(f.exists() for f in [self.enterprise_file, self.mobile_file, self.ics_file])
     
-    async def _download_attack_data(self) -> bool:
-        """Download MITRE ATT&CK data files."""
+    async def download_dataset(self) -> bool:
+        """Download MITRE ATT&CK data files (implements BaseDatasetProcessor abstract method)."""
         downloads = [
             (self.enterprise_url, self.enterprise_file),
             (self.mobile_url, self.mobile_file),
@@ -161,18 +160,13 @@ class MITREAttackProcessor:
         ]
         
         try:
-            async with aiohttp.ClientSession() as session:
-                for url, file_path in downloads:
-                    logger.info(f"Downloading {url}")
-                    async with session.get(url) as response:
-                        if response.status == 200:
-                            with open(file_path, 'wb') as f:
-                                async for chunk in response.content.iter_chunked(8192):
-                                    f.write(chunk)
-                            logger.info(f"Downloaded {file_path.name}")
-                        else:
-                            logger.error(f"Failed to download {url}: HTTP {response.status}")
-                            return False
+            for url, file_path in downloads:
+                logger.info(f"Downloading {url}")
+                success = await self.download_file(url, file_path, progress_interval=1)
+                if not success:
+                    logger.error(f"Failed to download {url}")
+                    return False
+                logger.info(f"Downloaded {file_path.name}")
             
             logger.info("MITRE ATT&CK data download completed")
             return True
@@ -181,8 +175,8 @@ class MITREAttackProcessor:
             logger.error(f"Error downloading MITRE ATT&CK data: {e}")
             return False
     
-    async def _process_attack_data(self) -> bool:
-        """Process MITRE ATT&CK data to extract TTPs."""
+    async def process_dataset(self) -> bool:
+        """Process MITRE ATT&CK data to extract TTPs (implements BaseDatasetProcessor abstract method)."""
         try:
             all_techniques = []
             
@@ -576,3 +570,44 @@ class MITREAttackProcessor:
                 "System hardening"
             ]
         )
+    async def get_stats(self) -> Dict[str, Any]:
+        """Get statistics about the MITRE ATT&CK dataset (implements BaseDatasetProcessor abstract method).
+        
+        Returns:
+            Dict containing dataset statistics
+        """
+        stats = {
+            'status': 'not_processed',
+            'enterprise_file': str(self.enterprise_file),
+            'mobile_file': str(self.mobile_file),
+            'ics_file': str(self.ics_file),
+            'enterprise_exists': self.enterprise_file.exists(),
+            'mobile_exists': self.mobile_file.exists(),
+            'ics_exists': self.ics_file.exists(),
+        }
+        
+        # Add file sizes if available
+        total_size_mb = 0
+        for file_path in [self.enterprise_file, self.mobile_file, self.ics_file]:
+            if file_path.exists():
+                size_mb = self.get_file_size_mb(file_path)
+                stats[f'{file_path.stem}_size_mb'] = size_mb
+                total_size_mb += size_mb
+        
+        stats['total_size_mb'] = total_size_mb
+        
+        # Add processed data stats if available
+        if self._processed_data:
+            stats.update({
+                'status': 'processed',
+                'total_techniques': self._processed_data.get('total_techniques', 0),
+                'processed_date': self._processed_data.get('processed_date'),
+                'matrices': self._processed_data.get('matrices', []),
+                'version': self._processed_data.get('version'),
+                'patterns_cached': len(self._patterns_cache)
+            })
+        
+        # Include base processor info
+        stats['processor_info'] = self.get_processing_info()
+        
+        return stats

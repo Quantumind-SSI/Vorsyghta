@@ -34,7 +34,19 @@ class BaseIntelligenceService(ABC):
     def __init__(self, rate_limit_requests_per_minute: int = 60):
         self.rate_limit = rate_limit_requests_per_minute
         self.request_timestamps: List[datetime] = []
+        self._session: Optional[aiohttp.ClientSession] = None
         
+    async def _get_session(self) -> aiohttp.ClientSession:
+        """Get or create aiohttp session with connection pooling."""
+        if self._session is None or self._session.closed:
+            self._session = aiohttp.ClientSession()
+        return self._session
+    
+    async def cleanup(self):
+        """Clean up resources."""
+        if self._session and not self._session.closed:
+            await self._session.close()
+    
     async def _rate_limit_check(self) -> None:
         """Check and enforce rate limiting."""
         now = datetime.utcnow()
@@ -146,22 +158,23 @@ class CompanyProfileService(BaseIntelligenceService):
     async def _scrape_company_website(self, domain: str) -> Dict[str, Any]:
         """Scrape company website for basic information."""
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"https://{domain}", timeout=10) as response:
-                    if response.status == 200:
-                        html = await response.text()
-                        soup = BeautifulSoup(html, 'html.parser')
-                        
-                        # Extract basic information
-                        title = soup.find('title')
-                        description = soup.find('meta', attrs={'name': 'description'})
-                        
-                        return {
-                            "company_name": title.get_text() if title else domain,
-                            "description": description.get('content') if description else None,
-                            "industry": self._extract_industry_from_content(html),
-                            "company_size": self._extract_company_size(html)
-                        }
+            session = await self._get_session()
+            timeout = aiohttp.ClientTimeout(total=10)
+            async with session.get(f"https://{domain}", timeout=timeout) as response:
+                if response.status == 200:
+                    html = await response.text()
+                    soup = BeautifulSoup(html, 'html.parser')
+                    
+                    # Extract basic information
+                    title = soup.find('title')
+                    description = soup.find('meta', attrs={'name': 'description'})
+                    
+                    return {
+                        "company_name": title.get_text() if title else domain,
+                        "description": description.get('content') if description else None,
+                        "industry": self._extract_industry_from_content(html),
+                        "company_size": self._extract_company_size(html)
+                    }
         except Exception as e:
             return {"error": str(e), "domain": domain}
     
@@ -276,22 +289,22 @@ class SocialMediaMonitor(BaseIntelligenceService):
     async def _gather_github_intelligence(self, target: str) -> Optional[SocialMediaIntelligence]:
         """Gather GitHub intelligence."""
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"https://api.github.com/users/{target}") as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        return SocialMediaIntelligence(
-                            platform="github",
-                            username=target,
-                            profile_url=data.get("html_url"),
-                            display_name=data.get("name"),
-                            bio=data.get("bio"),
-                            follower_count=data.get("followers"),
-                            following_count=data.get("following"),
-                            post_count=data.get("public_repos"),
-                            confidence_level=ConfidenceLevel.HIGH,
-                            data_source=IntelligenceSource.GITHUB
-                        )
+            session = await self._get_session()
+            async with session.get(f"https://api.github.com/users/{target}") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    return SocialMediaIntelligence(
+                        platform="github",
+                        username=target,
+                        profile_url=data.get("html_url"),
+                        display_name=data.get("name"),
+                        bio=data.get("bio"),
+                        follower_count=data.get("followers"),
+                        following_count=data.get("following"),
+                        post_count=data.get("public_repos"),
+                        confidence_level=ConfidenceLevel.HIGH,
+                        data_source=IntelligenceSource.GITHUB
+                    )
         except Exception:
             return None
     

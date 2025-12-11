@@ -56,7 +56,7 @@ def test_providers(openai_key: Optional[str], anthropic_key: Optional[str], open
             )
             provider_manager.add_provider(config, set_as_default=True)
             providers_configured += 1
-            console.print("✅ OpenAI provider configured")
+            console.print(" OpenAI provider configured")
         
         if anthropic_key:
             config = LLMProviderConfig(
@@ -66,7 +66,7 @@ def test_providers(openai_key: Optional[str], anthropic_key: Optional[str], open
             )
             provider_manager.add_provider(config, set_as_default=providers_configured == 0)
             providers_configured += 1
-            console.print("✅ Anthropic provider configured")
+            console.print(" Anthropic provider configured")
         
         if openrouter_key:
             config = LLMProviderConfig(
@@ -76,14 +76,14 @@ def test_providers(openai_key: Optional[str], anthropic_key: Optional[str], open
             )
             provider_manager.add_provider(config, set_as_default=providers_configured == 0)
             providers_configured += 1
-            console.print("✅ OpenRouter provider configured")
+            console.print(" OpenRouter provider configured")
         
         if providers_configured == 0:
-            console.print("❌ No providers configured. Set OPENAI_API_KEY, ANTHROPIC_API_KEY, or OPENROUTER_API_KEY environment variables.")
+            console.print(" No providers configured. Set OPENAI_API_KEY, ANTHROPIC_API_KEY, or OPENROUTER_API_KEY environment variables.")
             return
         
         # Test providers
-        console.print("\n🧪 Testing LLM Providers...")
+        console.print("\n Testing LLM Providers...")
         
         generation_service = ContentGenerationService(provider_manager)
         
@@ -106,7 +106,7 @@ def test_providers(openai_key: Optional[str], anthropic_key: Optional[str], open
                 table.add_column("Models", style="blue")
                 
                 for provider_name, result in results.items():
-                    status = "✅ Success" if result["status"] == "success" else f"❌ {result['status'].title()}"
+                    status = " Success" if result["status"] == "success" else f" {result['status'].title()}"
                     response_time = f"{result.get('response_time_ms', 0)}ms" if result["status"] == "success" else "N/A"
                     models = ", ".join(result.get("supported_models", [])) if result["status"] == "success" else "N/A"
                     
@@ -119,7 +119,7 @@ def test_providers(openai_key: Optional[str], anthropic_key: Optional[str], open
                 for provider_name, result in results.items():
                     if result["status"] != "success":
                         error_msg = result.get("message", "Unknown error")
-                        console.print(f"\n❌ {provider_name} error: {error_msg}")
+                        console.print(f"\n {provider_name} error: {error_msg}")
                 
             finally:
                 await generation_service.close()
@@ -156,14 +156,14 @@ def generate(
     
     async def _generate():
         # Load scenario
-        console.print(f"📁 Loading scenario from {scenario_file}")
+        console.print(f" Loading scenario from {scenario_file}")
         
         loader = YAMLConfigLoader()
         try:
             scenario_data = loader.load_scenario(scenario_file)
-            console.print("✅ Scenario loaded successfully")
+            console.print(" Scenario loaded successfully")
         except Exception as e:
-            console.print(f"❌ Failed to load scenario: {e}")
+            console.print(f" Failed to load scenario: {e}")
             return
         
         # Configure providers
@@ -189,7 +189,7 @@ def generate(
             providers_configured += 1
         
         if providers_configured == 0:
-            console.print("❌ No providers configured. Set OPENAI_API_KEY, ANTHROPIC_API_KEY, or OPENROUTER_API_KEY environment variables.")
+            console.print(" No providers configured. Set OPENAI_API_KEY, ANTHROPIC_API_KEY, or OPENROUTER_API_KEY environment variables.")
             return
         
         # Create generation service
@@ -200,7 +200,7 @@ def generate(
         provider_enum = LLMProvider(provider) if provider else None
         model_enum = LLMModel(model) if model else None
         
-        console.print(f"\n🤖 Generating {variants} variant(s) of {content_type} content...")
+        console.print(f"\n Generating {variants} variant(s) of {content_type} content...")
         
         try:
             with Progress(
@@ -228,7 +228,7 @@ def generate(
                 
                 if result.safety_passed:
                     # Show successful generation
-                    panel_title = f"✅ {variant_label} (Quality: {result.quality_score:.2f})"
+                    panel_title = f" {variant_label} (Quality: {result.quality_score:.2f})"
                     
                     content_syntax = Syntax(
                         result.content, 
@@ -263,8 +263,8 @@ def generate(
                 else:
                     # Show failed generation
                     console.print(Panel(
-                        f"❌ Generation failed: {'; '.join(result.safety_issues)}",
-                        title=f"❌ {variant_label} - Failed",
+                        f" Generation failed: {'; '.join(result.safety_issues)}",
+                        title=f" {variant_label} - Failed",
                         border_style="red"
                     ))
             
@@ -299,11 +299,11 @@ def generate(
                     save_data["variants"].append(variant_data)
                 
                 output.write_text(json.dumps(save_data, indent=2))
-                console.print(f"\n💾 Results saved to {output}")
+                console.print(f"\n Results saved to {output}")
             
             # Show statistics
             stats = generation_service.get_generation_statistics()
-            console.print(f"\n📊 Session Statistics:")
+            console.print(f"\n Session Statistics:")
             console.print(f"  • Success Rate: {stats['success_rate']:.1%}")
             console.print(f"  • Total Tokens: {stats['total_tokens_used']}")
             console.print(f"  • Total Cost: ${stats['total_cost_estimate']:.4f}")
@@ -357,7 +357,7 @@ def show_template(content_type: str):
     template = engine.get_template(ContentType(content_type))
     
     if not template:
-        console.print(f"❌ No template found for content type: {content_type}")
+        console.print(f" No template found for content type: {content_type}")
         return
     
     console.print(Panel(
@@ -382,10 +382,10 @@ def show_template(content_type: str):
     ))
     
     if template.variables:
-        console.print(f"\n📝 Variables: {', '.join(template.variables)}")
+        console.print(f"\n Variables: {', '.join(template.variables)}")
     
     if template.constraints:
-        console.print(f"\n⚠️  Constraints:")
+        console.print(f"\n️  Constraints:")
         for constraint in template.constraints:
             console.print(f"  • {constraint}")
 

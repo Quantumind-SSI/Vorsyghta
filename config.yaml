@@ -2,7 +2,7 @@
 
 # LLM Provider Configuration
 llm:
-  # Default provider selection (openai, anthropic, openrouter)
+  # Default provider selection (openai, anthropic, openrouter, ollama, huggingface, llamacpp)
   default_provider: "openrouter"
   
   # Primary provider - OpenAI
@@ -28,11 +28,11 @@ llm:
   # Recommended provider - OpenRouter (access to multiple models)
   openrouter:
     api_key: ""  # Set via environment variable OPENROUTER_API_KEY
-    model: "anthropic/claude-3-haiku"  # Default model
+    model: "openai/gpt-5.1-chat"  # Default model
     base_url: "https://openrouter.ai/api/v1"
     app_name: "ThreatGPT"
     site_url: "https://github.com/threatgpt/threatgpt"
-    max_tokens: 1000
+    max_tokens: 3000
     temperature: 0.7
     timeout_seconds: 60
     retry_attempts: 3
@@ -68,6 +68,76 @@ llm:
       - "starling-lm"      # Starling - Good for chat
       - "vicuna"           # Vicuna - ChatGPT alternative
       - "orca-mini"        # Orca Mini - Compact and fast
+  # Local Model Providers (for privacy, cost control, and offline usage)
+  
+  # Ollama - Server-based local models (recommended for most users)
+  ollama:
+    enabled: true  # Set to true to enable
+    base_url: "http://localhost:11434"
+    model: "llama3.2:1b"  # Default model to load
+    timeout_seconds: 120
+    max_tokens: 1000
+    temperature: 0.7
+    
+    # Popular models for cybersecurity training
+    recommended_models:
+      - "llama3.2:3b"      # Fast, good for basic scenarios
+      - "llama3.2:1b"      # Very fast, minimal resources
+      - "mistral:7b"       # Balanced performance
+      - "codellama:7b"     # Code-aware for technical scenarios
+      - "phi3:3.8b"        # Efficient instruction following
+      - "qwen2:7b"         # Good reasoning capabilities
+  
+  # Hugging Face Transformers - Direct model loading with GPU support
+  huggingface:
+    enabled: false  # Set to true to enable
+    model_name_or_path: "microsoft/DialoGPT-medium"
+    model_type: "causal"  # "causal" or "seq2seq"
+    cache_dir: "./models/huggingface"
+    device_map: "auto"  # "auto", "cpu", or specific GPU
+    torch_dtype: "auto"  # "auto", "float16", "float32"
+    load_in_8bit: false  # Enable 8-bit quantization
+    load_in_4bit: false  # Enable 4-bit quantization (requires bitsandbytes)
+    use_cache: true
+    trust_remote_code: false
+    
+    # Generation settings
+    max_tokens: 1000
+    temperature: 0.7
+    top_p: 0.9
+    top_k: 50
+    repetition_penalty: 1.1
+    
+    # Recommended models by use case
+    recommended_models:
+      small_fast: ["microsoft/DialoGPT-small", "distilgpt2", "gpt2"]
+      medium_balanced: ["microsoft/DialoGPT-medium", "gpt2-medium"]
+      code_specialized: ["Salesforce/codegen-350M-multi", "microsoft/CodeGPT-small-py"]
+  
+  # llama.cpp - High-performance CPU inference with GGUF support
+  llamacpp:
+    enabled: false  # Set to true to enable
+    model_path: ""  # Path to GGUF/GGML model file (required)
+    n_ctx: 2048     # Context length
+    n_threads: null # CPU threads (auto-detect if null)
+    n_batch: 512    # Batch size for processing
+    n_gpu_layers: 0 # Number of layers to run on GPU (0 = CPU only)
+    
+    # Memory and performance
+    use_mmap: true   # Memory-map model file
+    use_mlock: false # Lock model in memory
+    low_vram: false  # Reduce VRAM usage
+    f16_kv: true     # Use half precision for key-value cache
+    
+    # Generation settings
+    max_tokens: 1000
+    temperature: 0.7
+    seed: -1  # Random seed (-1 for random)
+    
+    # Example model downloads (set model_path after downloading)
+    recommended_downloads:
+      small_fast: "https://huggingface.co/TheBloke/Llama-2-7B-Chat-GGUF/resolve/main/llama-2-7b-chat.q4_0.gguf"
+      medium_balanced: "https://huggingface.co/TheBloke/CodeLlama-13B-Instruct-GGUF/resolve/main/codellama-13b-instruct.q4_0.gguf"
 
 # Core Simulation Settings
 simulation:

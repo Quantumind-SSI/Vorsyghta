@@ -61,7 +61,7 @@ def gather(target: str, types: tuple, output: Optional[Path], format: str, force
     """Gather intelligence for a target (email, domain, or name)."""
     
     async def _gather_intelligence():
-        console.print(f"[blue]🔍 Gathering intelligence for:[/blue] {target}")
+        console.print(f"[blue]Gathering intelligence for:[/blue] {target}")
         console.print(f"[dim]Intelligence types: {', '.join(types)}[/dim]")
         
         # Initialize intelligence services
@@ -96,11 +96,11 @@ def gather(target: str, types: tuple, output: Optional[Path], format: str, force
                 # Save to file if requested
                 if output:
                     _save_intelligence_results(result, output, format)
-                    console.print(f"\n[green]💾 Results saved to: {output}[/green]")
+                    console.print(f"\n[green]Results saved to: {output}[/green]")
                 
             except Exception as e:
                 progress.complete_task(task)
-                console.print(f"[red]❌ Intelligence gathering failed: {str(e)}[/red]")
+                console.print(f"[red]Intelligence gathering failed: {str(e)}[/red]")
     
     asyncio.run(_gather_intelligence())
 
@@ -125,15 +125,15 @@ def enhance(scenario_file: Path, target: str, output: Optional[Path], preview: b
     async def _enhance_scenario():
         from ..config.yaml_loader import YAMLConfigLoader
         
-        console.print(f"[blue]🎯 Enhancing scenario:[/blue] {scenario_file.name}")
-        console.print(f"[blue]📍 Target:[/blue] {target}")
+        console.print(f"[blue]Enhancing scenario:[/blue] {scenario_file.name}")
+        console.print(f"[blue]Target:[/blue] {target}")
         
         # Load scenario
         loader = YAMLConfigLoader()
         try:
             scenario = loader.load_and_validate_scenario(scenario_file)
         except Exception as e:
-            console.print(f"[red]❌ Failed to load scenario: {e}[/red]")
+            console.print(f"[red]Failed to load scenario: {e}[/red]")
             return
         
         # Initialize intelligence services
@@ -172,11 +172,11 @@ def enhance(scenario_file: Path, target: str, output: Optional[Path], preview: b
                     with open(output_path, 'w', encoding='utf-8') as f:
                         yaml.dump(enhanced_data, f, default_flow_style=False, sort_keys=False)
                     
-                    console.print(f"\n[green]✅ Enhanced scenario saved to: {output_path}[/green]")
+                    console.print(f"\n[green]Enhanced scenario saved to: {output_path}[/green]")
                 
             except Exception as e:
                 progress.complete_task(intel_task)
-                console.print(f"[red]❌ Scenario enhancement failed: {str(e)}[/red]")
+                console.print(f"[red]Scenario enhancement failed: {str(e)}[/red]")
     
     asyncio.run(_enhance_scenario())
 
@@ -197,7 +197,7 @@ def enhance(scenario_file: Path, target: str, output: Optional[Path], preview: b
 def sources(source: Optional[str], confidence: Optional[str]):
     """List available intelligence sources and their capabilities."""
     
-    console.print("[bold cyan]📊 ThreatGPT Intelligence Sources[/bold cyan]\n")
+    console.print("[bold cyan]ThreatGPT Intelligence Sources[/bold cyan]\n")
     
     sources_info = {
         IntelligenceSource.LINKEDIN: {
@@ -274,7 +274,7 @@ def sources(source: Optional[str], confidence: Optional[str]):
     console.print(table)
     
     # Show setup instructions
-    console.print("\n[bold yellow]🔧 Setup Instructions:[/bold yellow]")
+    console.print("\n[bold yellow]Setup Instructions:[/bold yellow]")
     console.print("To enable API-based sources, configure API keys in your environment:")
     console.print("  • LinkedIn: LINKEDIN_API_KEY")
     console.print("  • Twitter: TWITTER_API_KEY") 
@@ -291,11 +291,11 @@ def cache(clear_cache: bool):
     """Manage intelligence cache."""
     
     if clear_cache:
-        console.print("[yellow]🗑️  Clearing intelligence cache...[/yellow]")
+        console.print("[yellow]Clearing intelligence cache...[/yellow]")
         # Would clear cache here
-        console.print("[green]✅ Cache cleared successfully[/green]")
+        console.print("[green]Cache cleared successfully[/green]")
     else:
-        console.print("[blue]📊 Intelligence Cache Status[/blue]")
+        console.print("[blue]Intelligence Cache Status[/blue]")
         
         # Mock cache status
         cache_table = Table(show_header=True)
@@ -319,7 +319,7 @@ def cache(clear_cache: bool):
 
 def _display_intelligence_table(result):
     """Display intelligence results in table format."""
-    console.print(f"\n[bold green]📊 Intelligence Report for: {result.target_identifier}[/bold green]")
+    console.print(f"\n[bold green]Intelligence Report for: {result.target_identifier}[/bold green]")
     
     # Summary table
     summary_table = Table(title="Intelligence Summary", show_header=False)
@@ -336,7 +336,7 @@ def _display_intelligence_table(result):
     
     # Individual profiles
     if result.individual_profiles:
-        console.print("\n[bold cyan]👤 Individual Profiles[/bold cyan]")
+        console.print("\n[bold cyan]Individual Profiles[/bold cyan]")
         for profile in result.individual_profiles:
             profile_text = f"Name: {profile.full_name}\n"
             if profile.job_title:
@@ -350,7 +350,7 @@ def _display_intelligence_table(result):
     
     # Company intelligence
     if result.company_intelligence:
-        console.print("\n[bold cyan]🏢 Company Intelligence[/bold cyan]")
+        console.print("\n[bold cyan]Company Intelligence[/bold cyan]")
         company = result.company_intelligence
         company_text = f"Name: {company.company_name}\n"
         company_text += f"Industry: {company.industry}\n"
@@ -363,30 +363,30 @@ def _display_intelligence_table(result):
     
     # Key findings
     if result.key_findings:
-        console.print("\n[bold yellow]🔍 Key Findings[/bold yellow]")
+        console.print("\n[bold yellow]Key Findings[/bold yellow]")
         for finding in result.key_findings:
             console.print(f"  • {finding}")
     
     # Scenario suggestions
     if result.scenario_enhancement_suggestions:
-        console.print("\n[bold magenta]💡 Scenario Enhancement Suggestions[/bold magenta]")
+        console.print("\n[bold magenta]Scenario Enhancement Suggestions[/bold magenta]")
         for suggestion in result.scenario_enhancement_suggestions:
             console.print(f"  • {suggestion}")
 
 
 def _display_intelligence_report(result):
     """Display intelligence results in detailed report format."""
-    console.print(f"\n[bold green]📄 Detailed Intelligence Report[/bold green]")
+    console.print(f"\n[bold green]Detailed Intelligence Report[/bold green]")
     console.print(f"[bold]Target:[/bold] {result.target_identifier}")
     console.print(f"[bold]Generated:[/bold] {result.query_timestamp.strftime('%Y-%m-%d %H:%M:%S UTC')}")
     console.print(f"[bold]Confidence:[/bold] {result.overall_confidence.value.title()}")
     
     # Create report tree
-    tree = Tree("🎯 Intelligence Analysis")
+    tree = Tree("Intelligence Analysis")
     
     # Individual profiles branch
     if result.individual_profiles:
-        profiles_branch = tree.add("👤 Individual Profiles")
+        profiles_branch = tree.add("Individual Profiles")
         for profile in result.individual_profiles:
             profile_branch = profiles_branch.add(f"Profile: {profile.full_name}")
             if profile.job_title:
@@ -400,7 +400,7 @@ def _display_intelligence_report(result):
     
     # Company intelligence branch  
     if result.company_intelligence:
-        company_branch = tree.add("🏢 Company Intelligence")
+        company_branch = tree.add("Company Intelligence")
         company = result.company_intelligence
         company_branch.add(f"Name: {company.company_name}")
         company_branch.add(f"Industry: {company.industry}")
@@ -411,7 +411,7 @@ def _display_intelligence_report(result):
     
     # Social media branch
     if result.social_media_intelligence:
-        social_branch = tree.add("📱 Social Media")
+        social_branch = tree.add("Social Media")
         for social in result.social_media_intelligence:
             platform_branch = social_branch.add(f"{social.platform.title()}: @{social.username}")
             if social.follower_count:
@@ -449,7 +449,7 @@ def _save_intelligence_results(result, output_path: Path, format: str):
 
 def _display_scenario_enhancements(original, enhanced, intelligence):
     """Display scenario enhancements based on intelligence."""
-    console.print("\n[bold green]🎯 Scenario Enhancement Analysis[/bold green]")
+    console.print("\n[bold green]Scenario Enhancement Analysis[/bold green]")
     
     # Show intelligence confidence
     console.print(f"[cyan]Intelligence Confidence:[/cyan] {intelligence.overall_confidence.value.title()}")
@@ -494,7 +494,7 @@ def _display_scenario_enhancements(original, enhanced, intelligence):
     
     # Show personalization suggestions
     if intelligence.scenario_enhancement_suggestions:
-        console.print("\n[bold yellow]💡 Enhancement Suggestions[/bold yellow]")
+        console.print("\n[bold yellow]Enhancement Suggestions[/bold yellow]")
         for suggestion in intelligence.scenario_enhancement_suggestions:
             console.print(f"  • {suggestion}")
 

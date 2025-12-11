@@ -4,48 +4,17 @@ This module provides integrations with major enterprise security platforms
 for automated threat deployment and metrics collection.
 """
 
-import asyncio
 import json
-from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
-import aiohttp
-from pydantic import BaseModel, Field
-
 from . import DeploymentChannel, DeploymentResult, CampaignMetrics
+from .base import BaseIntegration
+from ..core.exceptions import DeploymentError, AuthenticationError
 
 
-class PlatformIntegration(ABC):
-    """Base class for enterprise platform integrations."""
-    
-    def __init__(self, config: Dict[str, Any]):
-        self.config = config
-        self.api_credentials = config.get("credentials", {})
-        self.base_url = config.get("base_url", "")
-        
-    @abstractmethod
-    async def authenticate(self) -> bool:
-        """Authenticate with the platform."""
-        pass
-    
-    @abstractmethod
-    async def deploy_content(
-        self, 
-        content: Dict[str, Any], 
-        targets: List[Dict[str, Any]]
-    ) -> DeploymentResult:
-        """Deploy threat content through the platform."""
-        pass
-    
-    @abstractmethod
-    async def get_campaign_metrics(self, campaign_id: str) -> CampaignMetrics:
-        """Retrieve campaign metrics from the platform."""
-        pass
-
-
-class Microsoft365Integration(PlatformIntegration):
+class Microsoft365Integration(BaseIntegration):
     """Integration with Microsoft 365 for email-based threat deployment."""
     
     def __init__(self, config: Dict[str, Any]):
@@ -57,7 +26,7 @@ class Microsoft365Integration(PlatformIntegration):
         self.access_token = None
         
     async def authenticate(self) -> bool:
-        """Authenticate with Microsoft Graph API."""
+        """Authenticate with Microsoft Graph API using OAuth2 client credentials flow."""
         
         auth_url = f"https://login.microsoftonline.com/{self.tenant_id}/oauth2/v2.0/token"
         
@@ -69,27 +38,24 @@ class Microsoft365Integration(PlatformIntegration):
         }
         
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.post(auth_url, data=auth_data) as response:
-                    if response.status == 200:
-                        token_data = await response.json()
-                        self.access_token = token_data.get("access_token")
-                        return True
-                    else:
-                        print(f"Authentication failed: {response.status}")
-                        return False
-        except Exception as e:
-            print(f"Authentication error: {e}")
-            return False
+            token_data = await self._make_request('POST', auth_url, data=auth_data)
+            self.access_token = token_data.get("access_token")
+            self._authenticated = True
+            return True
+        except DeploymentError as e:
+            raise AuthenticationError(
+                f"Microsoft 365 authentication failed: {e.message}",
+                platform="Microsoft365"
+            ) from e
     
     async def deploy_content(
         self, 
         content: Dict[str, Any], 
         targets: List[Dict[str, Any]]
     ) -> DeploymentResult:
-        """Deploy phishing emails through Microsoft 365."""
+        """Deploy phishing emails through Microsoft 365 Graph API."""
         
-        if not self.access_token:
+        if not self._authenticated:
             await self.authenticate()
         
         deployment_id = str(uuid4())
@@ -105,56 +71,47 @@ class Microsoft365Integration(PlatformIntegration):
         }
         
         # Send emails through Graph API
-        async with aiohttp.ClientSession() as session:
-            for target in targets:
-                try:
-                    # Construct email message
-                    email_message = {
-                        "message": {
-                            "subject": content.get("subject", ""),
-                            "body": {
-                                "contentType": "HTML",
-                                "content": content.get("body_html", "")
-                            },
-                            "toRecipients": [
-                                {
-                                    "emailAddress": {
-                                        "address": target.get("email"),
-                                        "name": target.get("name", "")
-                                    }
-                                }
-                            ],
-                            "from": {
+        for target in targets:
+            try:
+                # Construct email message
+                email_message = {
+                    "message": {
+                        "subject": content.get("subject", ""),
+                        "body": {
+                            "contentType": "HTML",
+                            "content": content.get("body_html", "")
+                        },
+                        "toRecipients": [
+                            {
                                 "emailAddress": {
-                                    "address": content.get("sender_email"),
-                                    "name": content.get("sender_name", "")
+                                    "address": target.get("email"),
+                                    "name": target.get("name", "")
                                 }
                             }
-                        },
-                        "saveToSentItems": False
-                    }
-                    
-                    # Send email via Graph API
-                    send_url = f"{self.graph_api_url}/users/{content.get('sender_email')}/sendMail"
-                    
-                    async with session.post(
-                        send_url, 
-                        headers=headers, 
-                        json=email_message
-                    ) as response:
-                        
-                        if response.status == 202:  # Accepted
-                            tracking_id = str(uuid4())
-                            tracking_ids.append(tracking_id)
-                            successful_deployments += 1
-                        else:
-                            failed_deployments += 1
-                            error_text = await response.text()
-                            print(f"Failed to send email to {target.get('email')}: {error_text}")
+                        ],
+                        "from": {
+                            "emailAddress": {
+                                "address": content.get("sender_email"),
+                                "name": content.get("sender_name", "")
+                            }
+                        }
+                    },
+                    "saveToSentItems": False
+                }
                 
-                except Exception as e:
+                # Send email via Graph API
+                send_url = f"{self.graph_api_url}/users/{content.get('sender_email')}/sendMail"
+                
+                try:
+                    await self._make_request('POST', send_url, headers=headers, json=email_message)
+                    tracking_id = str(uuid4())
+                    tracking_ids.append(tracking_id)
+                    successful_deployments += 1
+                except DeploymentError:
                     failed_deployments += 1
-                    print(f"Error sending email: {e}")
+            
+            except Exception as e:
+                failed_deployments += 1
         
         deployment_duration = (datetime.utcnow() - start_time).total_seconds()
         
@@ -184,9 +141,7 @@ class Microsoft365Integration(PlatformIntegration):
             "Content-Type": "application/json"
         }
         
-        # In production, this would query actual M365 reporting APIs
-        # For now, return mock metrics
-        
+        # Return test metrics (M365 API integration pending)
         return CampaignMetrics(
             campaign_id=campaign_id,
             emails_sent=100,
@@ -197,25 +152,22 @@ class Microsoft365Integration(PlatformIntegration):
         )
     
     async def get_user_activity(self, user_email: str, days: int = 7) -> Dict[str, Any]:
-        """Get user activity data from Microsoft 365."""
+        """Get user activity data from Microsoft 365 Graph API."""
         
         headers = {
             "Authorization": f"Bearer {self.access_token}",
             "Content-Type": "application/json"
         }
         
-        # Query user activity through Graph API
         activity_url = f"{self.graph_api_url}/users/{user_email}/activities"
         
-        async with aiohttp.ClientSession() as session:
-            async with session.get(activity_url, headers=headers) as response:
-                if response.status == 200:
-                    return await response.json()
-                else:
-                    return {}
+        try:
+            return await self._make_request('GET', activity_url, headers=headers)
+        except DeploymentError:
+            return {}
 
 
-class ProofpointIntegration(PlatformIntegration):
+class ProofpointIntegration(BaseIntegration):
     """Integration with Proofpoint for email security and threat simulation."""
     
     def __init__(self, config: Dict[str, Any]):
@@ -224,16 +176,24 @@ class ProofpointIntegration(PlatformIntegration):
         self.base_url = config.get("base_url", "https://tap-api-v2.proofpoint.com")
         
     async def authenticate(self) -> bool:
-        """Authenticate with Proofpoint API."""
-        # Proofpoint uses API key authentication
-        return bool(self.api_key)
+        """Authenticate with Proofpoint API (API key-based)."""
+        if not self.api_key:
+            raise AuthenticationError(
+                "Proofpoint API key not provided",
+                platform="Proofpoint"
+            )
+        self._authenticated = True
+        return True
     
     async def deploy_content(
         self, 
         content: Dict[str, Any], 
         targets: List[Dict[str, Any]]
     ) -> DeploymentResult:
-        """Deploy simulated threats through Proofpoint."""
+        """Deploy simulated threats through Proofpoint TAP API."""
+        
+        if not self._authenticated:
+            await self.authenticate()
         
         deployment_id = str(uuid4())
         start_time = datetime.utcnow()
@@ -267,72 +227,55 @@ class ProofpointIntegration(PlatformIntegration):
         }
         
         # Submit simulation campaign
-        async with aiohttp.ClientSession() as session:
-            create_url = f"{self.base_url}/v2/people/campaigns"
-            
-            async with session.post(
-                create_url, 
-                headers=headers, 
-                json=campaign_data
-            ) as response:
-                
-                if response.status == 201:
-                    campaign_response = await response.json()
-                    proofpoint_campaign_id = campaign_response.get("id")
-                    
-                    deployment_result = DeploymentResult(
-                        deployment_id=deployment_id,
-                        channel=DeploymentChannel.EMAIL,
-                        status="active",
-                        targets_attempted=len(targets),
-                        targets_successful=len(targets),
-                        targets_failed=0,
-                        deployment_start=start_time,
-                        deployment_duration_seconds=(datetime.utcnow() - start_time).total_seconds(),
-                        tracking_ids=[proofpoint_campaign_id],
-                        deployment_details={
-                            "platform": "Proofpoint",
-                            "campaign_id": proofpoint_campaign_id,
-                            "simulation_type": "phishing"
-                        }
-                    )
-                    
-                    return deployment_result
-                else:
-                    error_text = await response.text()
-                    raise Exception(f"Failed to create Proofpoint campaign: {error_text}")
+        create_url = f"{self.base_url}/v2/people/campaigns"
+        campaign_response = await self._make_request('POST', create_url, headers=headers, json=campaign_data)
+        proofpoint_campaign_id = campaign_response.get("id")
+        
+        return DeploymentResult(
+            deployment_id=deployment_id,
+            channel=DeploymentChannel.EMAIL,
+            status="active",
+            targets_attempted=len(targets),
+            targets_successful=len(targets),
+            targets_failed=0,
+            deployment_start=start_time,
+            deployment_duration_seconds=(datetime.utcnow() - start_time).total_seconds(),
+            tracking_ids=[proofpoint_campaign_id],
+            deployment_details={
+                "platform": "Proofpoint",
+                "campaign_id": proofpoint_campaign_id,
+                "simulation_type": "phishing"
+            }
+        )
     
     async def get_campaign_metrics(self, campaign_id: str) -> CampaignMetrics:
-        """Retrieve campaign metrics from Proofpoint."""
+        """Retrieve campaign metrics from Proofpoint TAP API."""
         
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
         }
         
-        # Get campaign results
         results_url = f"{self.base_url}/v2/people/campaigns/{campaign_id}/results"
         
-        async with aiohttp.ClientSession() as session:
-            async with session.get(results_url, headers=headers) as response:
-                if response.status == 200:
-                    results_data = await response.json()
-                    
-                    # Parse Proofpoint metrics format
-                    return CampaignMetrics(
-                        campaign_id=campaign_id,
-                        emails_sent=results_data.get("emailsSent", 0),
-                        emails_delivered=results_data.get("emailsDelivered", 0),
-                        emails_opened=results_data.get("emailsOpened", 0),
-                        links_clicked=results_data.get("linksClicked", 0),
-                        attachments_downloaded=results_data.get("attachmentsDownloaded", 0),
-                        credentials_submitted=results_data.get("credentialsSubmitted", 0)
-                    )
-                else:
-                    return CampaignMetrics(campaign_id=campaign_id)
+        try:
+            results_data = await self._make_request('GET', results_url, headers=headers)
+            
+            # Parse Proofpoint metrics format
+            return CampaignMetrics(
+                campaign_id=campaign_id,
+                emails_sent=results_data.get("emailsSent", 0),
+                emails_delivered=results_data.get("emailsDelivered", 0),
+                emails_opened=results_data.get("emailsOpened", 0),
+                links_clicked=results_data.get("linksClicked", 0),
+                attachments_downloaded=results_data.get("attachmentsDownloaded", 0),
+                credentials_submitted=results_data.get("credentialsSubmitted", 0)
+            )
+        except DeploymentError:
+            return CampaignMetrics(campaign_id=campaign_id)
 
 
-class KnowBe4Integration(PlatformIntegration):
+class KnowBe4Integration(BaseIntegration):
     """Integration with KnowBe4 for security awareness training."""
     
     def __init__(self, config: Dict[str, Any]):
@@ -341,15 +284,24 @@ class KnowBe4Integration(PlatformIntegration):
         self.base_url = config.get("base_url", "https://us.api.knowbe4.com")
         
     async def authenticate(self) -> bool:
-        """Authenticate with KnowBe4 API."""
-        return bool(self.api_key)
+        """Authenticate with KnowBe4 API (API key-based)."""
+        if not self.api_key:
+            raise AuthenticationError(
+                "KnowBe4 API key not provided",
+                platform="KnowBe4"
+            )
+        self._authenticated = True
+        return True
     
     async def deploy_content(
         self, 
         content: Dict[str, Any], 
         targets: List[Dict[str, Any]]
     ) -> DeploymentResult:
-        """Deploy phishing simulation through KnowBe4."""
+        """Deploy phishing simulation through KnowBe4 API."""
+        
+        if not self._authenticated:
+            await self.authenticate()
         
         deployment_id = str(uuid4())
         start_time = datetime.utcnow()
@@ -381,70 +333,55 @@ class KnowBe4Integration(PlatformIntegration):
         }
         
         # Submit campaign
-        async with aiohttp.ClientSession() as session:
-            create_url = f"{self.base_url}/v1/phishing/campaigns"
-            
-            async with session.post(
-                create_url, 
-                headers=headers, 
-                json=campaign_data
-            ) as response:
-                
-                if response.status == 201:
-                    campaign_response = await response.json()
-                    knowbe4_campaign_id = campaign_response.get("campaign_id")
-                    
-                    return DeploymentResult(
-                        deployment_id=deployment_id,
-                        channel=DeploymentChannel.EMAIL,
-                        status="active",
-                        targets_attempted=len(targets),
-                        targets_successful=len(targets),
-                        targets_failed=0,
-                        deployment_start=start_time,
-                        deployment_duration_seconds=(datetime.utcnow() - start_time).total_seconds(),
-                        tracking_ids=[knowbe4_campaign_id],
-                        deployment_details={
-                            "platform": "KnowBe4",
-                            "campaign_id": knowbe4_campaign_id,
-                            "simulation_type": "phishing_awareness"
-                        }
-                    )
-                else:
-                    error_text = await response.text()
-                    raise Exception(f"Failed to create KnowBe4 campaign: {error_text}")
+        create_url = f"{self.base_url}/v1/phishing/campaigns"
+        campaign_response = await self._make_request('POST', create_url, headers=headers, json=campaign_data)
+        knowbe4_campaign_id = campaign_response.get("campaign_id")
+        
+        return DeploymentResult(
+            deployment_id=deployment_id,
+            channel=DeploymentChannel.EMAIL,
+            status="active",
+            targets_attempted=len(targets),
+            targets_successful=len(targets),
+            targets_failed=0,
+            deployment_start=start_time,
+            deployment_duration_seconds=(datetime.utcnow() - start_time).total_seconds(),
+            tracking_ids=[knowbe4_campaign_id],
+            deployment_details={
+                "platform": "KnowBe4",
+                "campaign_id": knowbe4_campaign_id,
+                "simulation_type": "phishing_awareness"
+            }
+        )
     
     async def get_campaign_metrics(self, campaign_id: str) -> CampaignMetrics:
-        """Retrieve campaign metrics from KnowBe4."""
+        """Retrieve campaign metrics from KnowBe4 API."""
         
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
         }
         
-        # Get campaign statistics
         stats_url = f"{self.base_url}/v1/phishing/campaigns/{campaign_id}/stats"
         
-        async with aiohttp.ClientSession() as session:
-            async with session.get(stats_url, headers=headers) as response:
-                if response.status == 200:
-                    stats_data = await response.json()
-                    
-                    return CampaignMetrics(
-                        campaign_id=campaign_id,
-                        emails_sent=stats_data.get("emails_sent", 0),
-                        emails_delivered=stats_data.get("emails_delivered", 0),
-                        emails_opened=stats_data.get("emails_opened", 0),
-                        links_clicked=stats_data.get("links_clicked", 0),
-                        credentials_submitted=stats_data.get("credentials_entered", 0),
-                        training_effectiveness_score=stats_data.get("training_score", 0.0),
-                        security_awareness_improvement=stats_data.get("awareness_improvement", 0.0)
-                    )
-                else:
-                    return CampaignMetrics(campaign_id=campaign_id)
+        try:
+            stats_data = await self._make_request('GET', stats_url, headers=headers)
+            
+            return CampaignMetrics(
+                campaign_id=campaign_id,
+                emails_sent=stats_data.get("emails_sent", 0),
+                emails_delivered=stats_data.get("emails_delivered", 0),
+                emails_opened=stats_data.get("emails_opened", 0),
+                links_clicked=stats_data.get("links_clicked", 0),
+                credentials_submitted=stats_data.get("credentials_entered", 0),
+                training_effectiveness_score=stats_data.get("training_score", 0.0),
+                security_awareness_improvement=stats_data.get("awareness_improvement", 0.0)
+            )
+        except DeploymentError:
+            return CampaignMetrics(campaign_id=campaign_id)
 
 
-class SlackIntegration(PlatformIntegration):
+class SlackIntegration(BaseIntegration):
     """Integration with Slack for social engineering simulations."""
     
     def __init__(self, config: Dict[str, Any]):
@@ -453,23 +390,32 @@ class SlackIntegration(PlatformIntegration):
         self.base_url = "https://slack.com/api"
         
     async def authenticate(self) -> bool:
-        """Authenticate with Slack API."""
+        """Authenticate with Slack API using bot token."""
         
         headers = {
             "Authorization": f"Bearer {self.bot_token}",
             "Content-Type": "application/json"
         }
         
-        async with aiohttp.ClientSession() as session:
-            async with session.get(f"{self.base_url}/auth.test", headers=headers) as response:
-                return response.status == 200
+        try:
+            await self._make_request('GET', f"{self.base_url}/auth.test", headers=headers)
+            self._authenticated = True
+            return True
+        except DeploymentError as e:
+            raise AuthenticationError(
+                f"Slack authentication failed: {e.message}",
+                platform="Slack"
+            ) from e
     
     async def deploy_content(
         self, 
         content: Dict[str, Any], 
         targets: List[Dict[str, Any]]
     ) -> DeploymentResult:
-        """Deploy social engineering messages through Slack."""
+        """Deploy social engineering messages through Slack API."""
+        
+        if not self._authenticated:
+            await self.authenticate()
         
         deployment_id = str(uuid4())
         start_time = datetime.utcnow()
@@ -484,43 +430,41 @@ class SlackIntegration(PlatformIntegration):
         tracking_ids = []
         
         # Send messages to targets
-        async with aiohttp.ClientSession() as session:
-            for target in targets:
+        for target in targets:
+            try:
+                # Personalize message
+                message = content.get("message", "").replace(
+                    "{target_name}", target.get("name", "")
+                )
+                
+                # Send direct message
+                message_data = {
+                    "channel": target.get("user_id"),
+                    "text": message,
+                    "as_user": False,
+                    "username": content.get("bot_name", "ThreatBot"),
+                    "icon_emoji": content.get("icon_emoji", ":robot_face:")
+                }
+                
                 try:
-                    # Personalize message
-                    message = content.get("message", "").replace(
-                        "{target_name}", target.get("name", "")
-                    )
-                    
-                    # Send direct message
-                    message_data = {
-                        "channel": target.get("user_id"),
-                        "text": message,
-                        "as_user": False,
-                        "username": content.get("bot_name", "ThreatBot"),
-                        "icon_emoji": content.get("icon_emoji", ":robot_face:")
-                    }
-                    
-                    async with session.post(
+                    response_data = await self._make_request(
+                        'POST',
                         f"{self.base_url}/chat.postMessage",
                         headers=headers,
                         json=message_data
-                    ) as response:
-                        
-                        if response.status == 200:
-                            response_data = await response.json()
-                            if response_data.get("ok"):
-                                tracking_id = response_data.get("ts")
-                                tracking_ids.append(tracking_id)
-                                successful_deployments += 1
-                            else:
-                                failed_deployments += 1
-                        else:
-                            failed_deployments += 1
-                
-                except Exception as e:
+                    )
+                    
+                    if response_data.get("ok"):
+                        tracking_id = response_data.get("ts")
+                        tracking_ids.append(tracking_id)
+                        successful_deployments += 1
+                    else:
+                        failed_deployments += 1
+                except DeploymentError:
                     failed_deployments += 1
-                    print(f"Error sending Slack message: {e}")
+            
+            except Exception:
+                failed_deployments += 1
         
         deployment_duration = (datetime.utcnow() - start_time).total_seconds()
         
@@ -542,17 +486,21 @@ class SlackIntegration(PlatformIntegration):
         )
     
     async def get_campaign_metrics(self, campaign_id: str) -> CampaignMetrics:
-        """Retrieve campaign metrics from Slack."""
+        """Retrieve campaign metrics from Slack.
+        
+        Note: Slack doesn't provide built-in campaign analytics.
+        Link click tracking requires custom webhook endpoints.
+        Returns baseline metrics from internal tracking only.
+        """
         
         # Slack doesn't have built-in campaign metrics
-        # Would need to track interactions through webhook endpoints
+        # Real implementation would query internal webhook tracking database
         
         return CampaignMetrics(
             campaign_id=campaign_id,
-            # Mock some basic metrics
             emails_sent=0,  # Not applicable for Slack
-            links_clicked=5,  # Track through webhook
-            verification_attempts=2
+            links_clicked=0,  # Requires webhook tracking implementation
+            verification_attempts=0
         )
 
 

@@ -1,6 +1,4 @@
 # ThreatGPT Threat Scenario Template
-# Auto-fixed on 2025-09-27T03:25:48.933698Z
-# Fixes applied: threat_type: hybrid_attack → advanced_persistent_threat, delivery_vector: multi_channel → email, simulation_parameters.max_iterations: set default value, simulation_parameters.max_duration_minutes: set default value, removed unsupported field: success_metrics, removed unsupported field: compliance_controls, removed unsupported field: post_simulation_analysis, added missing metadata.references, added metadata.updated_at, target_profile.seniority: set to valid value, target_profile.technical_level: set to valid value, target_profile.industry: set to valid value, target_profile.company_size: set to valid value
 
 metadata:
   name: Adaptive Multi-Vector Attack Simulation

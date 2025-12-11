@@ -61,7 +61,7 @@ def list(ctx: click.Context, config_path: str):
         status = asyncio.run(list_datasets())
         
         # Create table
-        table = Table(title="📊 Available Cybersecurity Datasets")
+        table = Table(title=" Available Cybersecurity Datasets")
         table.add_column("Dataset", style="cyan", no_wrap=True)
         table.add_column("Type", style="magenta")
         table.add_column("Status", style="green")
@@ -85,7 +85,7 @@ def list(ctx: click.Context, config_path: str):
         console.print(table)
         
     except Exception as e:
-        console.print(f"[red]❌ Error listing datasets: {str(e)}[/red]")
+        console.print(f"[red] Error listing datasets: {str(e)}[/red]")
 
 
 @datasets.command()
@@ -145,12 +145,12 @@ def download(ctx: click.Context, dataset_type: str, force: bool):
         success = asyncio.run(download_dataset())
         
         if success:
-            console.print(f"[green]✅ Successfully downloaded and processed {dataset_type} dataset[/green]")
+            console.print(f"[green] Successfully downloaded and processed {dataset_type} dataset[/green]")
         else:
-            console.print(f"[red]❌ Failed to download {dataset_type} dataset[/red]")
+            console.print(f"[red] Failed to download {dataset_type} dataset[/red]")
             
     except Exception as e:
-        console.print(f"[red]❌ Error downloading dataset: {str(e)}[/red]")
+        console.print(f"[red] Error downloading dataset: {str(e)}[/red]")
 
 
 @datasets.command()
@@ -196,7 +196,7 @@ def status(ctx: click.Context, format: str):
             console.print(json.dumps(health, indent=2, default=str))
         else:
             # Table format
-            table = Table(title="🔍 Dataset Health Status")
+            table = Table(title=" Dataset Health Status")
             table.add_column("Metric", style="cyan")
             table.add_column("Value", style="green")
             
@@ -210,13 +210,13 @@ def status(ctx: click.Context, format: str):
             
             # Show individual dataset details
             if health.get('dataset_details'):
-                console.print("\n[bold blue]📋 Individual Dataset Status:[/bold blue]")
+                console.print("\n[bold blue] Individual Dataset Status:[/bold blue]")
                 for name, details in health['dataset_details'].items():
                     status_color = "green" if details.get('status') == 'ready' else "yellow"
                     console.print(f"  • [{status_color}]{name}[/{status_color}]: {details.get('status', 'unknown')}")
         
     except Exception as e:
-        console.print(f"[red]❌ Error getting dataset status: {str(e)}[/red]")
+        console.print(f"[red] Error getting dataset status: {str(e)}[/red]")
 
 
 @datasets.command()
@@ -273,7 +273,7 @@ def patterns(ctx: click.Context, pattern_type: str, role: str, industry: str, fo
         else:
             # Table format based on pattern type
             if pattern_type == "email":
-                table = Table(title=f"📧 Email Patterns ({role} in {industry})")
+                table = Table(title=f" Email Patterns ({role} in {industry})")
                 table.add_column("Category", style="cyan")
                 table.add_column("Examples", style="green")
                 
@@ -285,7 +285,7 @@ def patterns(ctx: click.Context, pattern_type: str, role: str, industry: str, fo
                 table.add_row("Avg Length", f"{patterns.average_length} chars")
                 
             elif pattern_type == "phishing":
-                table = Table(title=f"🎣 Phishing Patterns ({industry})")
+                table = Table(title=f" Phishing Patterns ({industry})")
                 table.add_column("Category", style="cyan")
                 table.add_column("Examples", style="red")
                 
@@ -297,7 +297,7 @@ def patterns(ctx: click.Context, pattern_type: str, role: str, industry: str, fo
             console.print(table)
         
     except Exception as e:
-        console.print(f"[red]❌ Error extracting patterns: {str(e)}[/red]")
+        console.print(f"[red] Error extracting patterns: {str(e)}[/red]")
 
 
 @datasets.command()
@@ -312,7 +312,7 @@ def clear_cache(ctx: click.Context):
         manager = DatasetManager(config)
         manager.clear_cache()
         
-        console.print("[green]✅ Dataset cache cleared successfully[/green]")
+        console.print("[green] Dataset cache cleared successfully[/green]")
         
     except Exception as e:
-        console.print(f"[red]❌ Error clearing cache: {str(e)}[/red]")
+        console.print(f"[red] Error clearing cache: {str(e)}[/red]")

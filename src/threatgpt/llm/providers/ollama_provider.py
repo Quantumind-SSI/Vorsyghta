@@ -1,294 +1,365 @@
-"""Ollama local LLM provider implementation for ThreatGPT.
+"""Ollama provider implementation for ThreatGPT.
 
-This module provides integration with Ollama for running local LLMs,
-enabling offline usage without requiring API keys or internet connectivity.
+Ollama is a popular tool for running large language models locally.
+This provider integrates with Ollama's REST API for seamless local model usage.
 """
 
 import asyncio
 import logging
+import aiohttp
+import json
+from typing import Dict, Any, Optional, List
 from datetime import datetime
-from typing import Any, Dict, Optional
+from pathlib import Path
 
-import httpx
-
-from ..base import BaseLLMProvider
-from ..models import LLMResponse
+from .local_base import LocalLLMProvider, LocalModelInfo, SystemResourceManager
+from ..base import LLMResponse
 
 logger = logging.getLogger(__name__)
 
 
-class OllamaProvider(BaseLLMProvider):
-    """Ollama local LLM provider implementation.
-    
-    Connects to a local Ollama instance for running LLMs offline.
-    Default endpoint: http://localhost:11434
-    """
+class OllamaProvider(LocalLLMProvider):
+    """Ollama local LLM provider implementation."""
     
     def __init__(self, config: Dict[str, Any]):
         """Initialize Ollama provider.
         
         Args:
             config: Configuration dictionary with Ollama settings
-                - base_url: Ollama server URL (default: http://localhost:11434)
-                - model: Model name (e.g., 'llama2', 'mistral', 'codellama')
-                - timeout: Request timeout in seconds (default: 120)
         """
         super().__init__(config)
         self.base_url = config.get('base_url', 'http://localhost:11434')
-        self.model = config.get('model', 'llama2')
-        self.timeout = config.get('timeout', 120)
-        self.api_endpoint = f"{self.base_url}/api"
+        self.model_name = config.get('model', 'llama2')
+        self.keep_alive = config.get('keep_alive', '5m')  # Keep model in memory
+        self.timeout = config.get('timeout', 300)  # 5 minutes for generation
         
-        logger.info(f"Initialized Ollama provider with model: {self.model}")
+        # Ollama-specific settings
+        self.stream = config.get('stream', False)
+        self.options = config.get('options', {})
+        
+        # Session for HTTP requests
+        self._session: Optional[aiohttp.ClientSession] = None
     
-    def is_available(self) -> bool:
-        """Check if Ollama server is available.
-        
-        Returns:
-            bool: True if Ollama server is reachable
-        """
+    async def _get_session(self) -> aiohttp.ClientSession:
+        """Get or create HTTP session."""
+        if self._session is None or self._session.closed:
+            timeout = aiohttp.ClientTimeout(total=self.timeout)
+            self._session = aiohttp.ClientSession(timeout=timeout)
+        return self._session
+    
+    async def _load_model(self) -> None:
+        """Load the model via Ollama API."""
         try:
-            import httpx
-            with httpx.Client(timeout=5.0) as client:
-                response = client.get(f"{self.base_url}/api/tags")
-                return response.status_code == 200
+            # Check if Ollama is running
+            await self._check_ollama_health()
+            
+            # Pull model if not available
+            await self._ensure_model_available()
+            
+            # Load model into memory
+            await self._load_model_into_memory()
+            
+            self._is_loaded = True
+            self._load_time = datetime.utcnow()
+            logger.info(f"Ollama model {self.model_name} loaded successfully")
+            
         except Exception as e:
-            logger.warning(f"Ollama server not available: {e}")
-            return False
+            logger.error(f"Failed to load Ollama model {self.model_name}: {e}")
+            raise
     
-    async def generate_content(
+    async def _unload_model(self) -> None:
+        """Unload the model from Ollama memory."""
+        try:
+            session = await self._get_session()
+            
+            # Set keep_alive to 0 to unload immediately
+            url = f"{self.base_url}/api/generate"
+            payload = {
+                "model": self.model_name,
+                "prompt": "",
+                "keep_alive": 0
+            }
+            
+            async with session.post(url, json=payload) as response:
+                if response.status == 200:
+                    logger.info(f"Ollama model {self.model_name} unloaded")
+                else:
+                    logger.warning(f"Failed to unload model: HTTP {response.status}")
+            
+            self._is_loaded = False
+            
+        except Exception as e:
+            logger.error(f"Error unloading Ollama model: {e}")
+    
+    async def _generate_with_model(
         self, 
         prompt: str, 
         max_tokens: int = 1000,
         temperature: float = 0.7,
         **kwargs
-    ) -> LLMResponse:
-        """Generate content using Ollama API.
+    ) -> str:
+        """Generate text using Ollama API."""
+        session = await self._get_session()
         
-        Args:
-            prompt: The prompt to send to Ollama
-            max_tokens: Maximum tokens to generate (not directly supported, uses num_predict)
-            temperature: Sampling temperature (0.0 to 1.0)
-            **kwargs: Additional Ollama parameters
-            
-        Returns:
-            LLMResponse with generated content
-            
-        Raises:
-            Exception: If Ollama server is not available or request fails
-        """
-        if not self.is_available():
-            raise ConnectionError(
-                f"Ollama server not available at {self.base_url}. "
-                "Please ensure Ollama is running: 'ollama serve'"
-            )
+        # Prepare Ollama options
+        ollama_options = {
+            "temperature": temperature,
+            "num_predict": max_tokens,
+            **self.options,
+            **kwargs
+        }
+        
+        # Prepare request payload
+        payload = {
+            "model": self.model_name,
+            "prompt": prompt,
+            "stream": False,  # Use non-streaming for simplicity
+            "options": ollama_options,
+            "keep_alive": self.keep_alive
+        }
+        
+        url = f"{self.base_url}/api/generate"
         
         try:
-            start_time = datetime.utcnow()
-            
-            # Prepare request payload for Ollama
-            payload = {
-                "model": self.model,
-                "prompt": prompt,
-                "stream": False,  # Get complete response
-                "options": {
-                    "temperature": temperature,
-                    "num_predict": max_tokens,  # Ollama's equivalent to max_tokens
-                }
-            }
-            
-            # Add any additional options from kwargs
-            if 'top_p' in kwargs:
-                payload['options']['top_p'] = kwargs['top_p']
-            if 'top_k' in kwargs:
-                payload['options']['top_k'] = kwargs['top_k']
-            if 'repeat_penalty' in kwargs:
-                payload['options']['repeat_penalty'] = kwargs['repeat_penalty']
-            
-            # Make request to Ollama
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
-                response = await client.post(
-                    f"{self.api_endpoint}/generate",
-                    json=payload
-                )
-                response.raise_for_status()
+            async with session.post(url, json=payload) as response:
+                if response.status != 200:
+                    error_text = await response.text()
+                    raise Exception(f"Ollama API error {response.status}: {error_text}")
                 
-                result = response.json()
+                result = await response.json()
                 
-                # Extract response data
-                content = result.get('response', '')
+                if "error" in result:
+                    raise Exception(f"Ollama generation error: {result['error']}")
                 
-                # Calculate response time
-                end_time = datetime.utcnow()
-                response_time = (end_time - start_time).total_seconds() * 1000
+                return result.get("response", "").strip()
                 
-                # Ollama provides token counts in the response
-                eval_count = result.get('eval_count', 0)  # Generated tokens
-                prompt_eval_count = result.get('prompt_eval_count', 0)  # Prompt tokens
-                
-                logger.info(
-                    f"Ollama generated {eval_count} tokens in {response_time:.2f}ms"
-                )
-                
-                return LLMResponse(
-                    content=content,
-                    provider="ollama",
-                    model=self.model,
-                    tokens_used=eval_count,
-                    timestamp=end_time,
-                    metadata={
-                        "temperature": temperature,
-                        "max_tokens": max_tokens,
-                        "prompt_length": len(prompt),
-                        "prompt_tokens": prompt_eval_count,
-                        "completion_tokens": eval_count,
-                        "total_tokens": prompt_eval_count + eval_count,
-                        "response_time_ms": response_time,
-                        "eval_duration": result.get('eval_duration', 0),
-                        "total_duration": result.get('total_duration', 0),
-                    }
-                )
-                
-        except httpx.HTTPStatusError as e:
-            error_msg = f"Ollama HTTP error: {e.response.status_code}"
-            logger.error(f"{error_msg} - {e.response.text}")
-            raise Exception(error_msg)
-        except httpx.TimeoutException:
-            error_msg = f"Ollama request timed out after {self.timeout}s"
-            logger.error(error_msg)
-            raise TimeoutError(error_msg)
+        except asyncio.TimeoutError:
+            raise Exception(f"Ollama generation timed out after {self.timeout} seconds")
         except Exception as e:
-            logger.error(f"Ollama content generation failed: {e}")
+            logger.error(f"Ollama generation failed: {e}")
             raise
     
-    async def validate_connection(self) -> bool:
-        """Validate connection to Ollama server.
-        
-        Returns:
-            bool: True if connection is successful
-        """
+    async def _check_ollama_health(self) -> bool:
+        """Check if Ollama server is running and accessible."""
         try:
-            async with httpx.AsyncClient(timeout=5.0) as client:
-                # Check if server is running
-                response = await client.get(f"{self.api_endpoint}/tags")
-                if response.status_code != 200:
-                    return False
-                
-                # Check if the specified model is available
-                models_data = response.json()
-                available_models = [m['name'] for m in models_data.get('models', [])]
-                
-                if self.model not in available_models:
-                    logger.warning(
-                        f"Model '{self.model}' not found. Available: {available_models}"
-                    )
-                    logger.info(f"To pull the model, run: ollama pull {self.model}")
-                    return False
-                
-                return True
-                
-        except Exception as e:
-            logger.error(f"Ollama connection validation failed: {e}")
-            return False
-    
-    def get_model_info(self) -> Dict[str, Any]:
-        """Get information about the current Ollama model.
-        
-        Returns:
-            Dict with model information
-        """
-        return {
-            "provider": "ollama",
-            "model": self.model,
-            "base_url": self.base_url,
-            "endpoint": self.api_endpoint,
-            "configured": True,
-            "requires_api_key": False,
-            "offline_capable": True
-        }
-    
-    async def list_available_models(self) -> list:
-        """List all models available in local Ollama instance.
-        
-        Returns:
-            List of available model names
-        """
-        try:
-            async with httpx.AsyncClient(timeout=5.0) as client:
-                response = await client.get(f"{self.api_endpoint}/tags")
-                if response.status_code == 200:
-                    models_data = response.json()
-                    models = models_data.get('models', [])
-                    return [
-                        {
-                            'name': m['name'],
-                            'size': m.get('size', 0),
-                            'modified': m.get('modified_at', '')
-                        }
-                        for m in models
-                    ]
-        except Exception as e:
-            logger.error(f"Failed to list Ollama models: {e}")
-        return []
-    
-    async def pull_model(self, model_name: str) -> bool:
-        """Pull/download a model from Ollama registry.
-        
-        Args:
-            model_name: Name of the model to pull (e.g., 'llama2', 'mistral')
+            session = await self._get_session()
+            url = f"{self.base_url}/api/version"
             
-        Returns:
-            bool: True if model was pulled successfully
-        """
-        try:
-            logger.info(f"Pulling Ollama model: {model_name}")
-            
-            async with httpx.AsyncClient(timeout=600.0) as client:  # 10 min timeout
-                response = await client.post(
-                    f"{self.api_endpoint}/pull",
-                    json={"name": model_name},
-                    timeout=600.0
-                )
-                
-                if response.status_code == 200:
-                    logger.info(f"Successfully pulled model: {model_name}")
+            async with session.get(url) as response:
+                if response.status == 200:
+                    version_info = await response.json()
+                    logger.info(f"Ollama server running, version: {version_info.get('version', 'unknown')}")
                     return True
                 else:
-                    logger.error(f"Failed to pull model: {response.text}")
-                    return False
+                    raise Exception(f"Ollama health check failed: HTTP {response.status}")
                     
         except Exception as e:
-            logger.error(f"Error pulling model {model_name}: {e}")
+            logger.error(f"Ollama server not accessible: {e}")
+            raise Exception(f"Ollama server not running at {self.base_url}. Please start Ollama first.")
+    
+    async def _ensure_model_available(self) -> None:
+        """Ensure the specified model is available, pull if necessary."""
+        try:
+            # Check if model is already available
+            models = await self._list_models()
+            model_names = [model['name'] for model in models.get('models', [])]
+            
+            if self.model_name in model_names:
+                logger.info(f"Model {self.model_name} already available")
+                return
+            
+            # Pull the model
+            logger.info(f"Pulling model {self.model_name} from Ollama registry...")
+            await self._pull_model()
+            
+        except Exception as e:
+            logger.error(f"Failed to ensure model availability: {e}")
+            raise
+    
+    async def _list_models(self) -> Dict[str, Any]:
+        """List available models in Ollama."""
+        session = await self._get_session()
+        url = f"{self.base_url}/api/tags"
+        
+        async with session.get(url) as response:
+            if response.status == 200:
+                return await response.json()
+            else:
+                error_text = await response.text()
+                raise Exception(f"Failed to list Ollama models: {error_text}")
+    
+    async def _pull_model(self) -> None:
+        """Pull a model from Ollama registry."""
+        url = f"{self.base_url}/api/pull"
+        payload = {"name": self.model_name}
+        
+        try:
+            # Note: Using existing session but model pulling requires extended timeout
+            # For production use, consider implementing a separate session with extended timeout
+            session = await self._get_session()
+            async with session.post(url, json=payload) as response:
+                if response.status != 200:
+                    error_text = await response.text()
+                    raise Exception(f"Model pull failed: {error_text}")
+                
+                # Stream the pull progress
+                async for line in response.content:
+                    if line:
+                        try:
+                            progress = json.loads(line.decode())
+                            if progress.get('status'):
+                                logger.info(f"Pull progress: {progress['status']}")
+                        except json.JSONDecodeError:
+                            pass
+                
+                logger.info(f"Model {self.model_name} pulled successfully")
+                    
+        except asyncio.TimeoutError:
+            raise Exception(f"Model pull timed out. Large models may take significant time to download.")
+    
+    async def _load_model_into_memory(self) -> None:
+        """Load model into Ollama's memory for faster inference."""
+        try:
+            # Send a small prompt to load the model
+            session = await self._get_session()
+            url = f"{self.base_url}/api/generate"
+            payload = {
+                "model": self.model_name,
+                "prompt": "Hello",
+                "stream": False,
+                "keep_alive": self.keep_alive,
+                "options": {"num_predict": 1}
+            }
+            
+            async with session.post(url, json=payload) as response:
+                if response.status == 200:
+                    logger.info(f"Model {self.model_name} loaded into memory")
+                else:
+                    error_text = await response.text()
+                    logger.warning(f"Failed to preload model: {error_text}")
+                    
+        except Exception as e:
+            logger.warning(f"Failed to preload model into memory: {e}")
+    
+    async def health_check(self) -> Dict[str, Any]:
+        """Enhanced health check for Ollama provider."""
+        health_info = await super().health_check()
+        
+        try:
+            # Check Ollama server
+            await self._check_ollama_health()
+            health_info['ollama_server'] = 'running'
+            
+            # Get available models
+            models = await self._list_models()
+            health_info['available_models'] = [model['name'] for model in models.get('models', [])]
+            health_info['target_model_available'] = self.model_name in health_info['available_models']
+            
+            # Get model info if available
+            for model in models.get('models', []):
+                if model['name'] == self.model_name:
+                    health_info['model_info'] = {
+                        'size': model.get('size', 0),
+                        'modified_at': model.get('modified_at'),
+                        'digest': model.get('digest')
+                    }
+                    break
+            
+        except Exception as e:
+            health_info['ollama_server'] = 'error'
+            health_info['ollama_error'] = str(e)
+        
+        return health_info
+    
+    async def list_available_models(self) -> List[Dict[str, Any]]:
+        """List all models available in Ollama."""
+        try:
+            models_response = await self._list_models()
+            return models_response.get('models', [])
+        except Exception as e:
+            logger.error(f"Failed to list Ollama models: {e}")
+            return []
+    
+    async def install_model(self, model_name: str) -> bool:
+        """Install a new model via Ollama."""
+        try:
+            old_model_name = self.model_name
+            self.model_name = model_name
+            await self._pull_model()
+            logger.info(f"Successfully installed model: {model_name}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to install model {model_name}: {e}")
+            self.model_name = old_model_name  # Restore original model name
             return False
     
-    def get_system_prompt(self, scenario_type: str = "general") -> str:
-        """Get system prompt for different scenario types.
-        
-        Args:
-            scenario_type: Type of threat scenario
+    async def switch_model(self, model_name: str) -> bool:
+        """Switch to a different model."""
+        try:
+            # Check if model is available
+            models = await self._list_models()
+            available_models = [model['name'] for model in models.get('models', [])]
             
-        Returns:
-            System prompt string
-        """
-        prompts = {
-            "phishing": (
-                "You are a cybersecurity training assistant creating educational "
-                "phishing simulation content. Generate realistic but clearly marked "
-                "training materials for security awareness."
-            ),
-            "malware": (
-                "You are a cybersecurity educator creating malware awareness training. "
-                "Generate educational content about malware threats and indicators "
-                "for security training purposes."
-            ),
-            "social_engineering": (
-                "You are creating social engineering awareness training content. "
-                "Generate realistic training scenarios to educate users about "
-                "social engineering tactics."
-            ),
-            "general": (
-                "You are a cybersecurity training assistant. Generate educational "
-                "security content for training and awareness purposes."
-            )
-        }
-        return prompts.get(scenario_type, prompts["general"])
+            if model_name not in available_models:
+                logger.error(f"Model {model_name} not available. Available models: {available_models}")
+                return False
+            
+            # Unload current model if loaded
+            if self._is_loaded:
+                await self._unload_model()
+            
+            # Switch model name
+            old_model_name = self.model_name
+            self.model_name = model_name
+            
+            # Load new model
+            try:
+                await self._load_model()
+                logger.info(f"Successfully switched to model: {model_name}")
+                return True
+            except Exception as e:
+                # Restore old model name on failure
+                self.model_name = old_model_name
+                logger.error(f"Failed to switch to model {model_name}: {e}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Error switching models: {e}")
+            return False
+    
+    async def __aenter__(self):
+        """Async context manager entry."""
+        return self
+    
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Async context manager exit."""
+        if self._session and not self._session.closed:
+            await self._session.close()
+        
+        if self._is_loaded:
+            await self._unload_model()
+
+
+# Recommended Ollama models for different use cases
+RECOMMENDED_OLLAMA_MODELS = {
+    "fast_small": {
+        "models": ["llama2:7b", "phi3:mini", "qwen2:1.5b"],
+        "description": "Fast, lightweight models for quick responses",
+        "use_case": "Development, testing, simple scenarios"
+    },
+    "balanced": {
+        "models": ["llama2:13b", "mistral:7b", "phi3:medium"],
+        "description": "Balanced performance and quality",
+        "use_case": "Production use, complex scenarios"
+    },
+    "high_quality": {
+        "models": ["llama2:70b", "mixtral:8x7b", "qwen2:72b"],
+        "description": "High quality output, requires more resources",
+        "use_case": "Critical scenarios, detailed analysis"
+    },
+    "code_specialized": {
+        "models": ["codellama:7b", "codellama:13b", "starcoder2:7b"],
+        "description": "Specialized for code generation and analysis",
+        "use_case": "Technical scenarios, code analysis"
+    }
+}

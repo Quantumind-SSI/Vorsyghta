@@ -8,31 +8,31 @@ This folder contains AI-generated cybersecurity training content organized by ca
 
 ## Folder Structure
 
-### 📞 phone_scripts/
+### phone_scripts/
 Social engineering phone call scripts for training purposes.
 - IT help desk impersonation calls
 - Executive impersonation scenarios
 - Technical support scams
 
-### 📧 email_templates/
+### email_templates/
 Phishing and spear-phishing email examples.
 - Executive spear-phishing campaigns
 - Business email compromise (BEC) templates
 - Credential harvesting emails
 
-### 🎯 scenarios/
+### scenarios/
 Complete threat scenarios and attack walkthroughs.
 - Multi-stage attack scenarios
 - Reconnaissance and planning phases
 - Post-exploitation activities
 
-### 📚 training_materials/
+### training_materials/
 Security awareness training content.
 - Warning signs and red flags
 - Defensive procedures
 - Incident response guides
 
-### 📊 reports/
+### reports/
 Analysis reports and summaries.
 - Threat landscape analysis
 - Training effectiveness reports

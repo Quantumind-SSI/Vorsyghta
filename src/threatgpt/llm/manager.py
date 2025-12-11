@@ -4,6 +4,7 @@ This module provides a production-ready LLM manager that handles
 content generation for threat scenarios with multiple provider support.
 """
 
+import os
 import logging
 import asyncio
 from typing import Optional, Dict, Any, List
@@ -14,6 +15,25 @@ from .providers.openai_provider import OpenAIProvider
 from .providers.anthropic_provider import AnthropicProvider
 from .providers.openrouter_provider import OpenRouterProvider
 from .providers.ollama_provider import OllamaProvider
+
+# Local model providers (with optional imports)
+try:
+    from .providers.ollama_provider import OllamaProvider
+    OLLAMA_AVAILABLE = True
+except ImportError:
+    OLLAMA_AVAILABLE = False
+
+try:
+    from .providers.huggingface_provider import HuggingFaceProvider
+    HUGGINGFACE_AVAILABLE = True
+except ImportError:
+    HUGGINGFACE_AVAILABLE = False
+
+try:
+    from .providers.llamacpp_provider import LlamaCppProvider
+    LLAMACPP_AVAILABLE = True
+except ImportError:
+    LLAMACPP_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -31,8 +51,25 @@ class LLMManager:
         self.config = config or {}
         self.provider = provider
         self._providers: Dict[str, BaseLLMProvider] = {}
+        self._session: Optional[Any] = None  # For HTTP session management
         self._initialize_providers()
         
+    async def _get_session(self):
+        """Get or create aiohttp session with connection pooling."""
+        if self._session is None or (hasattr(self._session, 'closed') and self._session.closed):
+            try:
+                import aiohttp
+                self._session = aiohttp.ClientSession()
+            except ImportError:
+                logger.warning("aiohttp not available for session management")
+                self._session = None
+        return self._session
+    
+    async def cleanup(self):
+        """Clean up resources."""
+        if self._session and hasattr(self._session, 'close') and not self._session.closed:
+            await self._session.close()
+    
     def _initialize_providers(self) -> None:
         """Initialize available LLM providers."""
         try:
@@ -54,32 +91,106 @@ class LLMManager:
                 self._providers['openrouter'] = OpenRouterProvider(openrouter_config)
                 logger.info("OpenRouter provider initialized")
             
-            # Initialize Ollama if enabled (no API key required!)
-            ollama_config = self.config.get('ollama', {})
-            if ollama_config.get('enabled', True):  # Enabled by default
-                try:
-                    ollama_provider = OllamaProvider(ollama_config)
-                    if ollama_provider.is_available():
-                        self._providers['ollama'] = ollama_provider
-                        logger.info("Ollama provider initialized and available")
-                    else:
-                        logger.info("Ollama configured but server not available (install with: brew install ollama or see https://ollama.ai)")
-                except Exception as e:
-                    logger.debug(f"Ollama initialization skipped: {e}")
+            # Initialize local model providers
+            self._initialize_local_providers()
             
             # Set default provider if not specified
             if not self.provider and self._providers:
-                # Prefer Ollama for local/offline usage if available
-                if 'ollama' in self._providers:
-                    provider_name = 'ollama'
-                    logger.info("Using Ollama as default provider (local/offline)")
+                # Check environment variable for preferred provider
+                default_provider = os.getenv('DEFAULT_LLM_PROVIDER', '').lower()
+                
+                # First, try to use the explicitly configured default provider from env var
+                if default_provider and default_provider in self._providers:
+                    self.provider = self._providers[default_provider]
+                    logger.info(f"Using default provider from environment: {default_provider}")
+                # Second, prefer OpenRouter if available (recommended provider with most model options)
+                elif 'openrouter' in self._providers:
+                    self.provider = self._providers['openrouter']
+                    logger.info("Using default provider: openrouter (recommended)")
+                # Third, prefer local providers for better privacy/control
                 else:
-                    provider_name = list(self._providers.keys())[0]
-                self.provider = self._providers[provider_name]
-                logger.info(f"Using default provider: {provider_name}")
+                    local_providers = ['ollama', 'huggingface', 'llamacpp']
+                    for provider_name in local_providers:
+                        if provider_name in self._providers:
+                            self.provider = self._providers[provider_name]
+                            logger.info(f"Using default local provider: {provider_name}")
+                            break
+                    else:
+                        # Fall back to any available cloud provider
+                        provider_name = list(self._providers.keys())[0]
+                        self.provider = self._providers[provider_name]
+                        logger.info(f"Using default provider: {provider_name}")
                 
         except Exception as e:
             logger.warning(f"Failed to initialize some LLM providers: {e}")
+    
+    def _initialize_local_providers(self) -> None:
+        """Initialize local model providers if available and configured."""
+        try:
+            # Initialize Ollama if available and configured
+            if OLLAMA_AVAILABLE:
+                ollama_config = self.config.get('ollama', {})
+                if ollama_config or self._auto_detect_ollama():
+                    try:
+                        self._providers['ollama'] = OllamaProvider(ollama_config)
+                        logger.info("Ollama provider initialized")
+                    except Exception as e:
+                        logger.warning(f"Failed to initialize Ollama provider: {e}")
+            
+            # Initialize Hugging Face if available and configured
+            if HUGGINGFACE_AVAILABLE:
+                hf_config = self.config.get('huggingface', {})
+                if hf_config:
+                    try:
+                        self._providers['huggingface'] = HuggingFaceProvider(hf_config)
+                        logger.info("Hugging Face provider initialized")
+                    except Exception as e:
+                        logger.warning(f"Failed to initialize Hugging Face provider: {e}")
+            
+            # Initialize llama.cpp if available and configured
+            if LLAMACPP_AVAILABLE:
+                llamacpp_config = self.config.get('llamacpp', {})
+                if llamacpp_config and llamacpp_config.get('model_path'):
+                    try:
+                        self._providers['llamacpp'] = LlamaCppProvider(llamacpp_config)
+                        logger.info("llama.cpp provider initialized")
+                    except Exception as e:
+                        logger.warning(f"Failed to initialize llama.cpp provider: {e}")
+                        
+        except Exception as e:
+            logger.warning(f"Failed to initialize local providers: {e}")
+    
+    def _auto_detect_ollama(self) -> bool:
+        """Auto-detect if Ollama is available on the system."""
+        try:
+            import aiohttp
+            import asyncio
+            
+            async def check_ollama():
+                try:
+                    session = await self._get_session()
+                    if session is None:
+                        return False
+                    timeout = aiohttp.ClientTimeout(total=2)
+                    async with session.get('http://localhost:11434/api/tags', timeout=timeout) as response:
+                        return response.status == 200
+                except:
+                    return False
+            
+            # Run the check
+            try:
+                loop = asyncio.get_event_loop()
+                return loop.run_until_complete(check_ollama())
+            except:
+                # Create new event loop if none exists
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                result = loop.run_until_complete(check_ollama())
+                loop.close()
+                return result
+                
+        except Exception:
+            return False
     
     async def generate_content(
         self,
@@ -281,7 +392,7 @@ User Request:
             return {"status": "error", "message": "No provider available"}
         
         provider_class_name = type(provider).__name__
-        logger.info(f"🧪 Testing connection to {provider_class_name}...")
+        logger.info(f" Testing connection to {provider_class_name}...")
         
         try:
             test_response = await provider.generate_content(
@@ -317,3 +428,181 @@ User Request:
                 "error": str(e),
                 "timestamp": datetime.utcnow().isoformat()
             }
+    
+    # Local Model Management Methods
+    
+    async def list_local_models(self, provider_name: Optional[str] = None) -> Dict[str, Any]:
+        """List available local models across all or specific local providers."""
+        results = {}
+        
+        # If provider specified, only check that one
+        if provider_name:
+            if provider_name in self._providers:
+                provider = self._providers[provider_name]
+                if hasattr(provider, 'list_models'):
+                    try:
+                        results[provider_name] = await provider.list_models()
+                    except Exception as e:
+                        results[provider_name] = {"error": str(e)}
+                else:
+                    results[provider_name] = {"error": "Provider does not support model listing"}
+            else:
+                results[provider_name] = {"error": "Provider not found"}
+        else:
+            # Check all local providers
+            local_providers = ['ollama', 'huggingface', 'llamacpp']
+            for provider_name in local_providers:
+                if provider_name in self._providers:
+                    provider = self._providers[provider_name]
+                    if hasattr(provider, 'list_models'):
+                        try:
+                            results[provider_name] = await provider.list_models()
+                        except Exception as e:
+                            results[provider_name] = {"error": str(e)}
+        
+        return results
+    
+    async def load_local_model(self, provider_name: str, model_name: Optional[str] = None) -> Dict[str, Any]:
+        """Load a model in a local provider."""
+        if provider_name not in self._providers:
+            return {"error": f"Provider {provider_name} not found"}
+        
+        provider = self._providers[provider_name]
+        if not hasattr(provider, 'load_model'):
+            return {"error": f"Provider {provider_name} does not support model loading"}
+        
+        try:
+            if model_name:
+                # Load specific model
+                result = await provider.load_model(model_name)
+            else:
+                # Load default model
+                result = await provider.load_model()
+            
+            logger.info(f"Successfully loaded model in {provider_name}")
+            return {"status": "success", "provider": provider_name, "model": model_name}
+            
+        except Exception as e:
+            logger.error(f"Failed to load model in {provider_name}: {e}")
+            return {"error": str(e), "provider": provider_name}
+    
+    async def unload_local_model(self, provider_name: str) -> Dict[str, Any]:
+        """Unload model from a local provider to free memory."""
+        if provider_name not in self._providers:
+            return {"error": f"Provider {provider_name} not found"}
+        
+        provider = self._providers[provider_name]
+        if not hasattr(provider, 'unload_model'):
+            return {"error": f"Provider {provider_name} does not support model unloading"}
+        
+        try:
+            await provider.unload_model()
+            logger.info(f"Successfully unloaded model from {provider_name}")
+            return {"status": "success", "provider": provider_name}
+            
+        except Exception as e:
+            logger.error(f"Failed to unload model from {provider_name}: {e}")
+            return {"error": str(e), "provider": provider_name}
+    
+    async def switch_local_model(self, provider_name: str, model_name: str) -> Dict[str, Any]:
+        """Switch to a different model in a local provider."""
+        if provider_name not in self._providers:
+            return {"error": f"Provider {provider_name} not found"}
+        
+        provider = self._providers[provider_name]
+        if hasattr(provider, 'switch_model'):
+            try:
+                result = await provider.switch_model(model_name)
+                logger.info(f"Successfully switched to model {model_name} in {provider_name}")
+                return {"status": "success", "provider": provider_name, "model": model_name}
+            except Exception as e:
+                logger.error(f"Failed to switch model in {provider_name}: {e}")
+                return {"error": str(e), "provider": provider_name}
+        else:
+            # Fallback: unload then load
+            try:
+                await provider.unload_model()
+                await provider.load_model(model_name)
+                return {"status": "success", "provider": provider_name, "model": model_name}
+            except Exception as e:
+                return {"error": str(e), "provider": provider_name}
+    
+    async def get_local_model_health(self, provider_name: Optional[str] = None) -> Dict[str, Any]:
+        """Get health status of local model providers."""
+        results = {}
+        
+        local_providers = [provider_name] if provider_name else ['ollama', 'huggingface', 'llamacpp']
+        
+        for provider_name in local_providers:
+            if provider_name in self._providers:
+                provider = self._providers[provider_name]
+                if hasattr(provider, 'health_check'):
+                    try:
+                        results[provider_name] = await provider.health_check()
+                    except Exception as e:
+                        results[provider_name] = {"error": str(e)}
+                else:
+                    results[provider_name] = {"status": "available", "health_check": "not_supported"}
+            else:
+                results[provider_name] = {"error": "Provider not initialized"}
+        
+        return results
+    
+    def get_local_provider_capabilities(self) -> Dict[str, Dict[str, Any]]:
+        """Get capabilities of each local provider."""
+        capabilities = {}
+        
+        if 'ollama' in self._providers:
+            capabilities['ollama'] = {
+                "description": "Server-based local models with automatic management",
+                "features": ["model_pulling", "server_management", "model_switching", "health_monitoring"],
+                "advantages": ["Easy setup", "Wide model support", "Automatic downloads"],
+                "best_for": "Users wanting simple local model deployment"
+            }
+        
+        if 'huggingface' in self._providers:
+            capabilities['huggingface'] = {
+                "description": "Direct model loading with GPU acceleration and quantization",
+                "features": ["gpu_acceleration", "quantization", "custom_models", "fine_tuning"],
+                "advantages": ["High performance", "GPU support", "Quantization options"],
+                "best_for": "Advanced users with GPU hardware"
+            }
+        
+        if 'llamacpp' in self._providers:
+            capabilities['llamacpp'] = {
+                "description": "High-performance CPU inference with GGUF/GGML support",
+                "features": ["cpu_optimization", "quantization", "grammar_constraints", "streaming"],
+                "advantages": ["CPU optimized", "Memory efficient", "No GPU required"],
+                "best_for": "CPU-only systems and memory-constrained environments"
+            }
+        
+        return capabilities
+    
+    def get_recommended_models(self, use_case: str = "general") -> Dict[str, List[str]]:
+        """Get recommended models for different use cases across all providers."""
+        recommendations = {}
+        
+        use_case_mapping = {
+            "cybersecurity": "cybersecurity_training",
+            "training": "cybersecurity_training", 
+            "technical": "technical_content",
+            "code": "technical_content",
+            "general": "small_fast",
+            "fast": "small_fast",
+            "quality": "large_quality"
+        }
+        
+        mapped_use_case = use_case_mapping.get(use_case, use_case)
+        
+        for provider_name, provider in self._providers.items():
+            if hasattr(provider, 'get_recommended_models'):
+                try:
+                    provider_recommendations = provider.get_recommended_models()
+                    if mapped_use_case in provider_recommendations:
+                        recommendations[provider_name] = provider_recommendations[mapped_use_case]
+                    elif 'small_fast' in provider_recommendations:
+                        recommendations[provider_name] = provider_recommendations['small_fast']
+                except Exception as e:
+                    logger.warning(f"Could not get recommendations from {provider_name}: {e}")
+        
+        return recommendations

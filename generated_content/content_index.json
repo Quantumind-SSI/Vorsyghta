@@ -1,12 +1,12 @@
 {
-  "extraction_timestamp": "2025-09-28T11:59:00.831681",
+  "extraction_timestamp": "2025-11-22T19:55:29.052166",
   "statistics": {
-    "total_files": 21,
-    "content_items": 21,
-    "scenarios": 3,
-    "phone_scripts": 0,
-    "email_templates": 2,
-    "training_materials": 16,
+    "total_files": 4,
+    "content_items": 4,
+    "scenarios": 0,
+    "phone_scripts": 1,
+    "email_templates": 3,
+    "training_materials": 0,
     "reports": 0
   },
   "folders": {

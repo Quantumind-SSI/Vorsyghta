@@ -1,7 +1,6 @@
 """Validated simulation output models for ThreatGPT.
 
-This module defines the expected structure and validation for simulation results
-that will be saved to log files, ensuring consistency and completeness.
+Defines structure and validation for simulation results saved to log files.
 """
 
 from datetime import datetime
