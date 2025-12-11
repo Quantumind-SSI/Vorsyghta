@@ -306,6 +306,24 @@ config/production.yaml
 # Allow only enterprise-standard documentation
 !README.md
 !SECURITY.md
+# Keep architecture and deployment docs for team
+!TECHNICAL_ARCHITECTURE.md
+!PRODUCTION_PLAN.md
+!ARCHITECTURE_OVERVIEW.md
+!API_USAGE.md
+!CONTENT_STORAGE_GUIDE.md
+!DATASET_INTEGRATION.md
+# Essential template documentation for users
+!TEMPLATE_CREATION_GUIDE.md
+!TEMPLATE_MANUAL.md
+!TEMPLATE_QUICK_REFERENCE.md
+!TEMPLATE_VALIDATION_GUIDE.md
+# Private repository setup guide
+!SETUP_PRIVATE_REPO.md
+# Ollama integration guide
+!OLLAMA_INTEGRATION_GUIDE.md
+# Prompt engineering documentation
+!PROMPT_ENGINEERING_6_TIER_SYSTEM.md
 
 # Allow all documentation in docs/ folder
 !docs/**/*.md

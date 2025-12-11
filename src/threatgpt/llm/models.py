@@ -19,6 +19,7 @@ class LLMProvider(str, Enum):
     OPENAI = "openai"
     ANTHROPIC = "anthropic"
     OPENROUTER = "openrouter"
+    OLLAMA = "ollama"  # Local LLM support via Ollama
     # Future providers can be added here
     # GOOGLE = "google"
     # COHERE = "cohere"
@@ -37,6 +38,18 @@ class LLMModel(str, Enum):
     CLAUDE_3_HAIKU = "claude-3-haiku-20240307"
     CLAUDE_2_1 = "claude-2.1"
     CLAUDE_2 = "claude-2.0"
+    
+    # Ollama Local Models (popular open-source models)
+    LLAMA2 = "llama2"
+    LLAMA2_13B = "llama2:13b"
+    LLAMA2_70B = "llama2:70b"
+    MISTRAL = "mistral"
+    MISTRAL_7B = "mistral:7b"
+    CODELLAMA = "codellama"
+    NEURAL_CHAT = "neural-chat"
+    STARLING = "starling-lm"
+    VICUNA = "vicuna"
+    ORCA_MINI = "orca-mini"
 
 
 class ContentType(str, Enum):

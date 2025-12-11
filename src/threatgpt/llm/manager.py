@@ -14,6 +14,7 @@ from .base import BaseLLMProvider, LLMResponse
 from .providers.openai_provider import OpenAIProvider
 from .providers.anthropic_provider import AnthropicProvider
 from .providers.openrouter_provider import OpenRouterProvider
+from .providers.ollama_provider import OllamaProvider
 
 # Local model providers (with optional imports)
 try:

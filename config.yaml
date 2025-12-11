@@ -48,6 +48,26 @@ llm:
       - "mistralai/mixtral-8x7b-instruct"    # Efficient performance
       - "google/gemini-pro"                  # Google's flagship model
   
+  # Local LLM provider - Ollama (offline, no API key required)
+  ollama:
+    enabled: true
+    base_url: "http://localhost:11434"  # Default Ollama server URL
+    model: "llama2"  # Default model (can be changed)
+    timeout_seconds: 120  # Longer timeout for local generation
+    max_tokens: 1000
+    temperature: 0.7
+    
+    # Popular models you can use with Ollama
+    # To install: ollama pull <model-name>
+    recommended_models:
+      - "llama2"           # Meta's Llama 2 (7B) - Good all-rounder
+      - "llama2:13b"       # Llama 2 13B - Better quality
+      - "mistral"          # Mistral 7B - Fast and capable
+      - "codellama"        # Code-specialized Llama
+      - "neural-chat"      # Intel's neural chat model
+      - "starling-lm"      # Starling - Good for chat
+      - "vicuna"           # Vicuna - ChatGPT alternative
+      - "orca-mini"        # Orca Mini - Compact and fast
   # Local Model Providers (for privacy, cost control, and offline usage)
   
   # Ollama - Server-based local models (recommended for most users)

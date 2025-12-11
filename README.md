@@ -10,12 +10,14 @@
 
 ## Overview
 
-ThreatGPT enables organizations to:
-- **Train Security Teams**: Generate realistic phishing, social engineering, and attack scenarios
-- **Test Security Controls**: Validate detection and response capabilities
-- **Enhance Security Awareness**: Create customized training content for employees
-- **Conduct Red Team Exercises**: Simulate sophisticated attack campaigns
-- **Achieve Compliance**: Document security testing and awareness programs
+- **Multi-LLM Support**: ✅ Integrates with OpenAI GPT-4, Anthropic Claude, OpenRouter, and **Ollama (Local/Offline)**
+- **Local LLM Support**: 🆕 Run completely offline with Ollama - no API keys or internet required!
+- **YAML-Based Configuration**: ✅ Define threat scenarios using intuitive YAML schemas  
+- **Production-Ready Core**: ✅ Scalable simulation engine with proper data models
+- **CLI Interface**: ✅ Command-line tool for scenario management and execution
+- **REST API**: ✅ FastAPI-based REST endpoints for enterprise integration
+- **Safety Framework**: 🚧 Built-in content filtering and compliance (planned)
+- **Analytics & Reporting**: 🚧 Comprehensive logging & metrics (planned)
 
 ### Key Features
 
@@ -131,8 +133,8 @@ pip install -r requirements-dev.txt
 #### 4. Configure API Keys
 
 ```bash
-# Copy example configuration
-cp config.yaml.example config.yaml
+# Set your API key as environment variable
+export OPENROUTER_API_KEY="your-api-key-here"
 
 # Edit config.yaml with your settings
 nano config.yaml
