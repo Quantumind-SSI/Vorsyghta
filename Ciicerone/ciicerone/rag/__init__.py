@@ -1,5 +1,5 @@
 """
-ThreatSimGPT RAG System for Tactical Manuals
+Ciicerone RAG System for Tactical Manuals
 ============================================
 
 A Retrieval-Augmented Generation (RAG) system that powers intelligent

@@ -137,7 +137,7 @@ class DetectionLogic(BaseModel):
 class RuleMetadata(BaseModel):
     """Metadata for a detection rule."""
     
-    author: str = Field("ThreatSimGPT", description="Rule author")
+    author: str = Field("Ciicerone", description="Rule author")
     date: str = Field(
         default_factory=lambda: datetime.now().strftime("%Y/%m/%d"),
         description="Rule creation date"
@@ -171,7 +171,7 @@ class RuleMetadata(BaseModel):
     # Source scenario
     source_scenario_id: Optional[str] = Field(
         None,
-        description="ID of the ThreatSimGPT scenario that generated this rule"
+        description="ID of the Ciicerone scenario that generated this rule"
     )
 
 

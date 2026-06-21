@@ -1,7 +1,7 @@
 """
 MCP Tools Package
 
-Contains tool implementations for the ThreatSimGPT VM MCP server.
+Contains tool implementations for the Ciicerone VM MCP server.
 
 Tool Categories:
     - vm_lifecycle: Create, start, stop, destroy VMs

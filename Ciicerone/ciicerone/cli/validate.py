@@ -224,7 +224,7 @@ def validate_all_cmd(
 
     \b
         # Validate all playbooks in default directory
-        threatsimgpt validate all
+        ciicerone validate all
 
     \b
         # Validate with minimum score requirement

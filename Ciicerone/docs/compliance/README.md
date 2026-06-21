@@ -33,7 +33,7 @@ This directory contains compliance documentation, policies, and framework mappin
 |------|---------|
 | Compliance Lead | Jerry (okino007) |
 | Security Lead | Lara (laradipupo) |
-| DPO Contact | compliance@threatsimgpt.io |
+| DPO Contact | compliance@ciicerone.io |
 
 **Related Documents**
 

@@ -38,13 +38,13 @@ jobs:
         pip install ruff bandit pytest pytest-cov pytest-asyncio
     
     - name: Lint with ruff
-      run: ruff check threatsimgpt/ tests/
+      run: ruff check ciicerone/ tests/
     
     - name: Test with pytest
       run: pytest tests/unit/ -v --tb=short -p no:cacheprovider
     
     - name: Security scan with bandit
-      run: bandit -r threatsimgpt/ -c pyproject.toml
+      run: bandit -r ciicerone/ -c pyproject.toml
 
   build:
     needs: test

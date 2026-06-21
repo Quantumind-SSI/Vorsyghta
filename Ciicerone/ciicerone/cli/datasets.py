@@ -245,7 +245,7 @@ def patterns(ctx: click.Context, pattern_type: str, role: str, industry: str, fo
     """Extract patterns from datasets for threat modeling."""
     try:
         config = {
-            'storage_path': Path('~/.threatsimgpt/datasets').expanduser()
+            'storage_path': Path('~/.ciicerone/datasets').expanduser()
         }
 
         manager = DatasetManager(config)
@@ -306,7 +306,7 @@ def clear_cache(ctx: click.Context):
     """Clear dataset pattern cache."""
     try:
         config = {
-            'storage_path': Path('~/.threatsimgpt/datasets').expanduser()
+            'storage_path': Path('~/.ciicerone/datasets').expanduser()
         }
 
         manager = DatasetManager(config)

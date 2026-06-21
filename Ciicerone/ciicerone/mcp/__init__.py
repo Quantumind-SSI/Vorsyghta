@@ -1,10 +1,10 @@
 """
-ThreatSimGPT MCP Server Package
+Ciicerone MCP Server Package
 
 Provides Model Context Protocol (MCP) integration for AI-controlled
 attack simulations on virtual machines.
 
-This is the PRIMARY implementation approach for ThreatSimGPT VM operations,
+This is the PRIMARY implementation approach for Ciicerone VM operations,
 providing a standardized interface that works with any MCP-compatible
 AI model (Claude, GPT-4, Llama, etc.).
 
@@ -37,13 +37,13 @@ MCP Tools Provided:
 __version__ = "0.1.0"
 
 from .config import MCPConfig, ProxmoxConfig, NetworkConfig, SafetyConfig, TemplateConfig
-from .server import ThreatSimGPTMCPServer, run_server, main
+from .server import CiiceroneMCPServer, run_server, main
 from .providers.proxmox import ProxmoxClient
 from .safety import SafetyController
 
 __all__ = [
     # Server
-    "ThreatSimGPTMCPServer",
+    "CiiceroneMCPServer",
     "run_server",
     "main",
 

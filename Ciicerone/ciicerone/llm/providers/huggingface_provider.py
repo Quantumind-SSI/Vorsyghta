@@ -1,4 +1,4 @@
-"""Hugging Face Transformers provider for ThreatSimGPT.
+"""Hugging Face Transformers provider for Ciicerone.
 
 This provider enables direct loading and inference with Hugging Face models
 using the transformers library, with support for GPU acceleration and quantization.

@@ -270,7 +270,7 @@ class SplunkRuleGenerator(BaseRuleGenerator):
         
         # Add header comment
         lines.append(f"```spl")
-        lines.append(f"| # ThreatSimGPT Detection Rule: {rule.title}")
+        lines.append(f"| # Ciicerone Detection Rule: {rule.title}")
         lines.append(f"| # ID: {rule.rule_id}")
         lines.append(f"| # Severity: {rule.severity}")
         lines.append(f"| # Description: {rule.description[:100]}...")
@@ -618,7 +618,7 @@ class SplunkRuleGenerator(BaseRuleGenerator):
             detection=detection,
             mitre_attack=[mitre_mapping],
             metadata=RuleMetadata(
-                author="ThreatSimGPT Blue Team - David Onoja",
+                author="Ciicerone Blue Team - David Onoja",
                 tags=[f"attack.{technique_id.lower()}"],
             ),
         )

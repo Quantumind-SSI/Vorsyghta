@@ -14,7 +14,7 @@ source .venv/bin/activate
 pip install -e .
 pip install -r requirements-dev.txt
 pytest
-threatsimgpt status
+ciicerone status
 
 ## Optional: Quick setup using Makefile
 

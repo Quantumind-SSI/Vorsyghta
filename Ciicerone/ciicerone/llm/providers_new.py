@@ -417,8 +417,8 @@ class OpenRouterProviderAdapter(BaseLLMProvider):
 
         headers = {
             "Authorization": f"Bearer {self.api_key}",
-            "HTTP-Referer": "https://github.com/threatsimgpt-AI/ThreatSimGPT",
-            "X-Title": "ThreatSimGPT",
+            "HTTP-Referer": "https://github.com/ciicerone-AI/Ciicerone",
+            "X-Title": "Ciicerone",
             "Content-Type": "application/json"
         }
 

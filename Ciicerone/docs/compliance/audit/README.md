@@ -320,7 +320,7 @@ All logs follow the Common Event Format (CEF) extended schema:
 **Section 8.2 Code Example**
 
 ```python
-from threatsimgpt.audit import AuditLogger, AuditEvent, Severity
+from ciicerone.audit import AuditLogger, AuditEvent, Severity
 
 audit = AuditLogger()
 
@@ -392,10 +392,10 @@ await audit.log(AuditEvent(
 
 | Contact | Email | Responsibility |
 |---------|-------|----------------|
-| Audit Lead | audit@threatsimgpt.io | Policy questions |
-| Security Team | security@threatsimgpt.io | Incident response |
-| Compliance | compliance@threatsimgpt.io | Regulatory questions |
-| DPO | dpo@threatsimgpt.io | Privacy concerns |
+| Audit Lead | audit@ciicerone.io | Policy questions |
+| Security Team | security@ciicerone.io | Incident response |
+| Compliance | compliance@ciicerone.io | Regulatory questions |
+| DPO | dpo@ciicerone.io | Privacy concerns |
 
 ---
 

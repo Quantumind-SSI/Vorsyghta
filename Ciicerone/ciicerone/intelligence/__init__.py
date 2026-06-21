@@ -1,4 +1,4 @@
-"""ThreatSimGPT Intelligence Module.
+"""Ciicerone Intelligence Module.
 
 Real-time OSINT and reconnaissance capabilities for enhanced threat simulation.
 This module provides internet-connected intelligence gathering for realistic,
@@ -50,6 +50,49 @@ from .mitre_attack import (
     create_mitre_attack_engine,
 )
 
+# Threat Hunting & CVE Intelligence
+from .threat_hunting import (
+    ThreatHuntingService,
+    get_threat_hunting_service,
+    CVEInfo,
+    CVESeverity,
+    CVEResult,
+    ExploitAvailability,
+    ExploitIntelligence,
+    HuntingHypothesis,
+    HuntingHypothesisStatus,
+    HuntingSession,
+    HuntingSessionStatus,
+    ThreatHuntType,
+    KEVEntry,
+)
+
+# Threat Hunting Frameworks (PEAK, OTHF, TaHiTI, HMM, MITRE ATT&CK)
+from .hunting_frameworks import (
+    HuntingFramework,
+    PEAKPhase,
+    PEAKHuntCycle,
+    PEAKPhaseData,
+    TaHiTIStage,
+    TaHiTIHuntProcess,
+    OTHFPlaybook,
+    OTHFPlaybookStatus,
+    HMMLevel,
+    HMMAssessment,
+    HuntingLifecycle,
+    HuntingLifecyclePhase,
+    TTPCategory,
+    TTPHuntProfile,
+    ComplianceFramework,
+    ComplianceViolationType,
+    ComplianceHuntProfile,
+    ComplianceFinding,
+    IOCType,
+    IOCEntry,
+    IOCHuntProfile,
+    IOCFinding,
+)
+
 __all__ = [
     # Models
     "IntelligenceProfile",
@@ -90,4 +133,43 @@ __all__ = [
     "TACTIC_DESCRIPTIONS",
     "PLATFORMS",
     "create_mitre_attack_engine",
+
+    # Threat Hunting & CVE Intelligence
+    "ThreatHuntingService",
+    "get_threat_hunting_service",
+    "CVEInfo",
+    "CVESeverity",
+    "CVEResult",
+    "ExploitAvailability",
+    "ExploitIntelligence",
+    "HuntingHypothesis",
+    "HuntingHypothesisStatus",
+    "HuntingSession",
+    "HuntingSessionStatus",
+    "ThreatHuntType",
+    "KEVEntry",
+
+    # Threat Hunting Frameworks
+    "HuntingFramework",
+    "PEAKPhase",
+    "PEAKHuntCycle",
+    "PEAKPhaseData",
+    "TaHiTIStage",
+    "TaHiTIHuntProcess",
+    "OTHFPlaybook",
+    "OTHFPlaybookStatus",
+    "HMMLevel",
+    "HMMAssessment",
+    "HuntingLifecycle",
+    "HuntingLifecyclePhase",
+    "TTPCategory",
+    "TTPHuntProfile",
+    "ComplianceFramework",
+    "ComplianceViolationType",
+    "ComplianceHuntProfile",
+    "ComplianceFinding",
+    "IOCType",
+    "IOCEntry",
+    "IOCHuntProfile",
+    "IOCFinding",
 ]

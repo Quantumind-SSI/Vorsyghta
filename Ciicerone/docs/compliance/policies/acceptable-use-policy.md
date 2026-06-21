@@ -243,14 +243,14 @@ Users will be notified of material changes via:
 
 **Section Questions and Support**
 
-- **General Inquiries**: support@threatsimgpt.io
-- **Compliance Questions**: compliance@threatsimgpt.io
-- **Security Reports**: security@threatsimgpt.io
+- **General Inquiries**: support@ciicerone.io
+- **Compliance Questions**: compliance@ciicerone.io
+- **Security Reports**: security@ciicerone.io
 
 **Section Emergency Contact**
 
 For urgent security matters:
-- **Email**: threatsimgpt@hotmail.com
+- **Email**: ciicerone@hotmail.com
 - **Subject**: [URGENT] Security Matter
 
 ---

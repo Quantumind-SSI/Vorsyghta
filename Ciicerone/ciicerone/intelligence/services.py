@@ -1,4 +1,4 @@
-"""OSINT and reconnaissance services for ThreatSimGPT.
+"""OSINT and reconnaissance services for Ciicerone.
 
 This module provides internet-connected intelligence gathering services
 for real-time target reconnaissance and enhanced threat simulation.

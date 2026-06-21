@@ -1,4 +1,4 @@
-"""PhishTank database processor for ThreatSimGPT.
+"""PhishTank database processor for Ciicerone.
 
 This processor handles the PhishTank database to extract realistic
 phishing URL patterns and domain characteristics for enhanced simulations.

@@ -49,7 +49,7 @@ A DPIA **MUST** be conducted when processing involves:
 | **Assessment ID** | DPIA-TSG-001 |
 | **Project Name** | Ciicerone Core Platform |
 | **Project Owner** | Ciicerone Project Team |
-| **DPO** | dpo@threatsimgpt.io |
+| **DPO** | dpo@ciicerone.io |
 | **Assessment Date** | January 20, 2026 |
 | **Assessment Author** | Jeremiah Okino (okino007) |
 | **Review Date** | January 20, 2027 |
@@ -333,7 +333,7 @@ Processing may proceed because:
 | Role | Name | Date | Approval |
 |------|------|------|----------|
 | Project Owner | Ciicerone Team | 2026-01-20 | Approved |
-| DPO | dpo@threatsimgpt.io | 2026-01-20 | Approved |
+| DPO | dpo@ciicerone.io | 2026-01-20 | Approved |
 | Security Lead | Lara (laradipupo) | 2026-01-20 | Approved |
 | Compliance Lead | Jerry (okino007) | 2026-01-20 | Approved |
 

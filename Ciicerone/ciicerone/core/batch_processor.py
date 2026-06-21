@@ -1,4 +1,4 @@
-"""Batch Processing Engine for ThreatSimGPT Simulations.
+"""Batch Processing Engine for Ciicerone Simulations.
 
 This module provides high-performance batch execution of threat simulations
 with configurable concurrency, progress tracking, and graceful shutdown.

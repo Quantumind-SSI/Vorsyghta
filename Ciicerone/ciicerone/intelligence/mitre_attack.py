@@ -1,4 +1,4 @@
-"""Complete MITRE ATT&CK Framework Integration for ThreatSimGPT.
+"""Complete MITRE ATT&CK Framework Integration for Ciicerone.
 
 This module provides comprehensive MITRE ATT&CK coverage including:
 - All Enterprise ATT&CK techniques and sub-techniques

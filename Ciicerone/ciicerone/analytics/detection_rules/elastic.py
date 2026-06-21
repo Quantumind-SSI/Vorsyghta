@@ -328,7 +328,7 @@ class ElasticRuleGenerator(BaseRuleGenerator):
         Returns:
             List of tags
         """
-        tags = ["ThreatSimGPT"]
+        tags = ["Ciicerone"]
         
         # Add custom tags
         tags.extend(rule.metadata.tags)
@@ -440,7 +440,7 @@ class ElasticRuleGenerator(BaseRuleGenerator):
             detection=detection,
             mitre_attack=[mitre_mapping],
             metadata=RuleMetadata(
-                author="ThreatSimGPT Blue Team - David Onoja",
+                author="Ciicerone Blue Team - David Onoja",
                 tags=[f"attack.{technique_id.lower()}"],
             ),
         )

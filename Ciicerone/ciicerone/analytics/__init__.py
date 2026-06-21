@@ -1,4 +1,4 @@
-"""Real-time analytics and dashboard services for ThreatSimGPT campaigns.
+"""Real-time analytics and dashboard services for Ciicerone campaigns.
 
 This module provides comprehensive analytics, machine learning-enhanced
 insights, and real-time dashboards for threat simulation campaigns.

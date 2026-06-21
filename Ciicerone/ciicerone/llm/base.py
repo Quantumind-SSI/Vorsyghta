@@ -1,4 +1,4 @@
-"""Base LLM provider interface for ThreatSimGPT."""
+"""Base LLM provider interface for Ciicerone."""
 
 import logging
 from abc import ABC, abstractmethod

@@ -1,4 +1,4 @@
-"""Comprehensive YAML configuration loader and validator for ThreatSimGPT.
+"""Comprehensive YAML configuration loader and validator for Ciicerone.
 
 This module provides robust YAML loading, validation, and error reporting
 for threat scenario configurations.

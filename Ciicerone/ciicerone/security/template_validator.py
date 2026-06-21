@@ -1,4 +1,4 @@
-"""Template Security Validator for ThreatSimGPT.
+"""Template Security Validator for Ciicerone.
 
 This module provides comprehensive security validation for threat scenario templates,
 detecting injection attacks, malicious content, path traversal, and other security
@@ -57,8 +57,8 @@ MAX_TRAVERSAL_DEPTH = 50  # Prevent stack overflow
 MAX_TEMPLATE_SIZE_BYTES = 1_000_000  # 1MB max template size
 MAX_TEMPLATE_STRING_SIZE = 500_000  # 500KB for string templates (to allow for encoding overhead)
 ALLOWED_STORAGE_BASE_DIRS = [
-    Path("/var/lib/threatsimgpt"),
-    Path.home() / ".threatsimgpt",
+    Path("/var/lib/ciicerone"),
+    Path.home() / ".ciicerone",
     Path.cwd() / "data",
 ]
 

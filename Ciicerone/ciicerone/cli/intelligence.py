@@ -1,4 +1,4 @@
-"""Intelligence CLI commands for ThreatSimGPT.
+"""Intelligence CLI commands for Ciicerone.
 
 This module provides CLI commands for managing OSINT reconnaissance
 and real-time intelligence gathering capabilities.
@@ -197,7 +197,7 @@ def enhance(scenario_file: Path, target: str, output: Optional[Path], preview: b
 def sources(source: Optional[str], confidence: Optional[str]):
     """List available intelligence sources and their capabilities."""
 
-    console.print("[bold cyan]ThreatSimGPT Intelligence Sources[/bold cyan]\n")
+    console.print("[bold cyan]Ciicerone Intelligence Sources[/bold cyan]\n")
 
     sources_info = {
         IntelligenceSource.LINKEDIN: {

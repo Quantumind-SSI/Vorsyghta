@@ -1,4 +1,4 @@
-"""Event Sourcing System for ThreatSimGPT Audit Trail.
+"""Event Sourcing System for Ciicerone Audit Trail.
 
 This module implements a production-ready event sourcing system using PostgreSQL
 for immutable audit logging, compliance, and state reconstruction capabilities.

@@ -194,7 +194,7 @@ class MCPAgentClient:
 
     def __init__(
         self,
-        mcp_server: Any,  # ThreatSimGPTMCPServer instance
+        mcp_server: Any,  # CiiceroneMCPServer instance
         safety_enabled: bool = True
     ):
         self.server = mcp_server
@@ -491,7 +491,7 @@ async def run_attack_simulation(
     Returns:
         Simulation results
     """
-    from ciicerone.mcp import ThreatSimGPTMCPServer, MCPConfig, ProxmoxConfig
+    from ciicerone.mcp import CiiceroneMCPServer, MCPConfig, ProxmoxConfig
 
     # Initialize MCP server
     config = MCPConfig(
@@ -501,7 +501,7 @@ async def run_attack_simulation(
         )
     )
 
-    server = ThreatSimGPTMCPServer(config=config)
+    server = CiiceroneMCPServer(config=config)
     await server.connect_proxmox()
 
     # Create MCP client

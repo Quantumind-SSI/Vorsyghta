@@ -1,4 +1,4 @@
-"""Environment variable validation for ThreatSimGPT.
+"""Environment variable validation for Ciicerone.
 
 This module validates that required environment variables are set
 and have appropriate values before the application starts.
@@ -207,7 +207,7 @@ def print_environment_status():
     environment = os.getenv("ENVIRONMENT", "development")
 
     print("\n" + "=" * 60)
-    print("THREATSIMGPT ENVIRONMENT STATUS")
+    print("CIICERONE ENVIRONMENT STATUS")
     print("=" * 60)
     print(f"Environment: {environment}")
     print("-" * 60)

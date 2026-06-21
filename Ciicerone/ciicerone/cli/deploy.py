@@ -82,9 +82,6 @@ def deploy_campaign(ctx, name, content_file, targets_file, channels, platforms,
     if test_mode is None:
         test_mode = True
     
-    # Debug prints
-    console.print(f"[yellow]DEBUG: test_mode={test_mode}, compliance_approved={compliance_approved}[/yellow]")
-
     deployment_engine = ctx.obj['deployment_engine']
     platform_manager = ctx.obj['platform_manager']
 

@@ -192,7 +192,7 @@ async def handle_vm_lifecycle(
             source_vmid=template_vmid,
             new_vmid=new_vmid,
             name=vm_name,
-            description=f"ThreatSimGPT attack simulation: {vm_name}"
+            description=f"Ciicerone attack simulation: {vm_name}"
         )
 
         # Start the VM

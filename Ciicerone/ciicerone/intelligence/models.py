@@ -1,4 +1,4 @@
-"""Intelligence data models for ThreatSimGPT OSINT capabilities.
+"""Intelligence data models for Ciicerone OSINT capabilities.
 
 This module defines data structures for storing and processing
 real-time intelligence gathered from various online sources.

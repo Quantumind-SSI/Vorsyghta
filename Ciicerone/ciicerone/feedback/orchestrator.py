@@ -1,5 +1,5 @@
 """
-ThreatSimGPT Feedback Loop Orchestrator
+Ciicerone Feedback Loop Orchestrator
 
 The main controller that coordinates the continuous improvement cycle:
     Scenario Generation → Playbook Generation → Analysis → Learning → Enhancement → Repeat

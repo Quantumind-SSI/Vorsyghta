@@ -1,4 +1,4 @@
-"""Enron email corpus processor for ThreatSimGPT.
+"""Enron email corpus processor for Ciicerone.
 
 This processor handles the Enron email dataset to extract realistic
 email communication patterns for enhanced phishing simulations.

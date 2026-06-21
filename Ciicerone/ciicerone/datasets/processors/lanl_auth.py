@@ -1,4 +1,4 @@
-"""LANL authentication logs processor for ThreatSimGPT.
+"""LANL authentication logs processor for Ciicerone.
 
 This processor handles Los Alamos National Laboratory authentication logs
 to extract authentication patterns and anomaly indicators.

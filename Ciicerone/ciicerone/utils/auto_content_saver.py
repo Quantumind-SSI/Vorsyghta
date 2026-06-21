@@ -553,7 +553,7 @@ class AutoContentSaver:
 
 ---
 
-*This content was automatically saved by ThreatSimGPT for educational cybersecurity training purposes.*
+*This content was automatically saved by Ciicerone for educational cybersecurity training purposes.*
 *Real AI content is marked to distinguish from fallback content.*
 """
 

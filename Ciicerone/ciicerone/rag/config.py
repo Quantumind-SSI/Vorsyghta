@@ -149,7 +149,7 @@ class VectorStoreConfig:
     # Connection
     host: str = "localhost"
     port: int = 7687  # Neo4j bolt protocol port
-    collection_name: str = "threatsimgpt_intelligence"
+    collection_name: str = "ciicerone_intelligence"
 
     # Persistence
     persist_directory: str = "./data/vectorstore"

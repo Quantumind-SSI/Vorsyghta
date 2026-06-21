@@ -1,4 +1,4 @@
-"""Professional Template Management System for ThreatSimGPT.
+"""Professional Template Management System for Ciicerone.
 
 This module provides comprehensive template creation, validation, and management
 capabilities following professional software development standards.
@@ -58,7 +58,7 @@ class TemplateCreationWizard:
         """Create a new template through interactive wizard."""
 
         console.print(Panel.fit(
-            "[bold blue]ThreatSimGPT Template Creation Wizard[/bold blue]\n"
+            "[bold blue]Ciicerone Template Creation Wizard[/bold blue]\n"
             "Create professional threat simulation scenarios",
             border_style="blue"
         ))
@@ -95,7 +95,7 @@ class TemplateCreationWizard:
 
         name = Prompt.ask("Template name", default="New Threat Scenario")
         description = Prompt.ask("Description", default="Description of the threat scenario")
-        author = Prompt.ask("Author", default="ThreatSimGPT Team")
+        author = Prompt.ask("Author", default="Ciicerone Team")
         version = Prompt.ask("Version", default="1.0.0")
 
         # Collect tags
@@ -322,7 +322,7 @@ class TemplateCreationWizard:
         # Save file
         self.templates_dir.mkdir(exist_ok=True)
         with open(file_path, 'w', encoding='utf-8') as f:
-            f.write("# ThreatSimGPT Threat Scenario Template\n")
+            f.write("# Ciicerone Threat Scenario Template\n")
             f.write(f"# Generated on {datetime.utcnow().isoformat()}Z\n\n")
             yaml.dump(self.current_template, f, default_flow_style=False, sort_keys=False)
 
@@ -586,7 +586,7 @@ class TemplateManager:
 
                 # Save fixed version
                 with open(template_file, 'w', encoding='utf-8') as f:
-                    f.write("# ThreatSimGPT Threat Scenario Template (Auto-fixed)\n")
+                    f.write("# Ciicerone Threat Scenario Template (Auto-fixed)\n")
                     f.write(f"# Fixes applied: {', '.join(fixes_applied)}\n\n")
                     yaml.dump(template_data, f, default_flow_style=False, sort_keys=False)
 

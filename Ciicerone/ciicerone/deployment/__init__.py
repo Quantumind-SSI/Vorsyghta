@@ -1,4 +1,4 @@
-"""Threat deployment and delivery services for ThreatSimGPT.
+"""Threat deployment and delivery services for Ciicerone.
 
 This module provides comprehensive deployment capabilities for AI-generated
 threat content across multiple channels with real-time metrics collection.

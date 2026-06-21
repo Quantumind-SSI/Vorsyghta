@@ -3,7 +3,7 @@
 >**IMPORTANT: Do NOT use GitHub Issues for security vulnerabilities**
 
 Instead, please report security vulnerabilities to:
-- **Email**: security@threatsimgpt.com
+- **Email**: security@ciicerone.com
 - **Subject**: `[SECURITY] Ciicerone Vulnerability Report` For comprehensive security documentation, see [SECURITY_GUIDE.md](SECURITY_GUIDE.md)**
 
 ## Supported Versions
@@ -25,7 +25,7 @@ The Ciicerone team takes security seriously. We appreciate your efforts to respo
 **⚠️ IMPORTANT: Do NOT use GitHub Issues for security vulnerabilities**
 
 Instead, please report security vulnerabilities to:
-- **Email**: security@threatsimgpt.com
+- **Email**: security@ciicerone.com
 - **Subject**: `[SECURITY] Ciicerone Vulnerability Report`
 
 ### What to Include
@@ -169,9 +169,9 @@ Ciicerone is designed to comply with:
 ### Contact Information
 
 For security-related questions:
-- **Security Email**: security@threatsimgpt.com
-- **General Issues**: [GitHub Issues](https://github.com/threatsimgpt-AI/Ciicerone/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/threatsimgpt-AI/Ciicerone/discussions)
+- **Security Email**: security@ciicerone.com
+- **General Issues**: [GitHub Issues](https://github.com/ciicerone-AI/Ciicerone/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/ciicerone-AI/Ciicerone/discussions)
 
 ---
 

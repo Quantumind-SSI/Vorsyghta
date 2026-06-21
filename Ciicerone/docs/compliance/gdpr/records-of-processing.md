@@ -19,10 +19,10 @@ This document maintains the Records of Processing Activities as required by GDPR
 |-------|-------|
 | **Controller Name** | Ciicerone Project |
 | **Controller Address** | [Address] |
-| **Controller Contact** | privacy@threatsimgpt.io |
+| **Controller Contact** | privacy@ciicerone.io |
 | **Joint Controller** | N/A |
 | **Representative** | N/A (controller established in EU) |
-| **Data Protection Officer** | dpo@threatsimgpt.io |
+| **Data Protection Officer** | dpo@ciicerone.io |
 
 ---
 

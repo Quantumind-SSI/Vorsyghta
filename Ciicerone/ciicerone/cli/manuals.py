@@ -116,15 +116,15 @@ def generate(
 
     \b
     # Generate Blue Team manual for spear-phishing
-    threatsimgpt manuals generate --team blue_team --threat-type spear_phishing
+    ciicerone manuals generate --team blue_team --threat-type spear_phishing
 
     \b
     # Generate all team manuals for healthcare industry
-    threatsimgpt manuals generate --team all --industry healthcare --compliance HIPAA
+    ciicerone manuals generate --team all --industry healthcare --compliance HIPAA
 
     \b
     # Generate Red Team manual with specific MITRE techniques
-    threatsimgpt manuals generate --team red_team -m T1566.001 -m T1566.002
+    ciicerone manuals generate --team red_team -m T1566.001 -m T1566.002
     """
     from ciicerone.core.ai_enhanced_playbooks import (
         AIEnhancedPlaybookGenerator,
@@ -260,7 +260,7 @@ def list_teams():
 
     console.print(table)
 
-    console.print("\n[dim]Use 'threatsimgpt manuals generate --team <team_id>' to generate a manual[/dim]")
+    console.print("\n[dim]Use 'ciicerone manuals generate --team <team_id>' to generate a manual[/dim]")
 
 
 @manuals_group.command()

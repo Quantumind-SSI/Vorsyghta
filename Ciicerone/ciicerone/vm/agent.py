@@ -150,7 +150,7 @@ class AIAttackAgent:
         Use LLM to create an attack plan based on scenario.
 
         Args:
-            scenario: ThreatSimGPT scenario definition (from YAML template)
+            scenario: Ciicerone scenario definition (from YAML template)
             target_info: Information about target environment
 
         Returns:

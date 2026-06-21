@@ -19,7 +19,7 @@ from ciicerone.core.simulator import Simulator
 from ciicerone.llm.manager import LLMManager
 
 # Import API routers
-from ciicerone.api.routers import manuals_router, knowledge_router, feedback_router
+from ciicerone.api.routers import manuals_router, knowledge_router, feedback_router, threat_hunting_router
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -36,24 +36,24 @@ async def lifespan(app: FastAPI):
     global simulator, llm_manager
 
     # Startup
-    logger.info("Starting ThreatSimGPT API...")
+    logger.info("Starting Ciicerone API...")
     try:
         llm_manager = LLMManager()
         simulator = Simulator(llm_provider=llm_manager)
-        logger.info("ThreatSimGPT API started successfully")
+        logger.info("Ciicerone API started successfully")
     except Exception as e:
-        logger.error(f"Failed to initialize ThreatSimGPT API: {str(e)}")
+        logger.error(f"Failed to initialize Ciicerone API: {str(e)}")
         raise
 
     yield
 
     # Shutdown
-    logger.info("Shutting down ThreatSimGPT API...")
+    logger.info("Shutting down Ciicerone API...")
 
 
 # Create FastAPI app
 app = FastAPI(
-    title="ThreatSimGPT API",
+    title="Ciicerone API",
     version="0.1.0",
     description="Advanced AI-powered threat simulation and analysis platform",
     lifespan=lifespan
@@ -72,6 +72,7 @@ app.add_middleware(
 app.include_router(manuals_router, prefix="/api")
 app.include_router(knowledge_router, prefix="/api")
 app.include_router(feedback_router, prefix="/api")
+app.include_router(threat_hunting_router, prefix="/api")
 
 
 # Pydantic models for API
@@ -139,7 +140,7 @@ def get_llm_manager() -> LLMManager:
 async def read_root():
     """Root endpoint."""
     return {
-        "message": "ThreatSimGPT API",
+        "message": "Ciicerone API",
         "version": "0.1.0",
         "status": "operational"
     }

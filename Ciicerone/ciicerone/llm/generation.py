@@ -1,4 +1,4 @@
-"""Content generation service for ThreatSimGPT.
+"""Content generation service for Ciicerone.
 
 This module provides the main content generation interface, combining
 LLM providers, prompt engineering, and response validation into a

@@ -12,8 +12,8 @@ Please read and follow our [Code of Conduct](CODE_OF_CONDUCT.md) to ensure a wel
 
 1. **Fork and Clone the Repository**
    ```bash
-   git clone https://github.com/your-username/threatsimgpt.git
-   cd threatsimgpt
+   git clone https://github.com/your-username/ciicerone.git
+   cd ciicerone
    ```
 
 2. **Set up Python Environment**
@@ -119,7 +119,7 @@ pre-commit run --all-files
 python -m pytest
 
 # Run with coverage
-python -m pytest --cov=src/threatsimgpt --cov-report=html
+python -m pytest --cov=src/ciicerone --cov-report=html
 
 # Run specific test types
 python -m pytest -m unit          # Unit tests only
@@ -256,8 +256,8 @@ async def test_threat_simulation_success():
 Understanding the project structure helps in making targeted contributions:
 
 ```
-threatsimgpt/
-├── src/threatsimgpt/          # Main application code
+ciicerone/
+├── src/ciicerone/          # Main application code
 │   ├── api/               # REST API endpoints
 │   ├── cli/               # Command-line interface
 │   ├── config/            # Configuration management
@@ -287,7 +287,7 @@ threatsimgpt/
 - **Testing**: Increase test coverage and add edge case testing
 
 ### Feature Requests
-Check our [GitHub Issues](https://github.com/threatsimgpt-AI/Ciicerone/issues) for current feature requests and bug reports.
+Check our [GitHub Issues](https://github.com/ciicerone-AI/Ciicerone/issues) for current feature requests and bug reports.
 
 ## Release Process
 
@@ -301,7 +301,7 @@ Check our [GitHub Issues](https://github.com/threatsimgpt-AI/Ciicerone/issues) f
 
 - **GitHub Issues**: For bug reports and feature requests
 - **GitHub Discussions**: For questions and community discussion
-- **Email**: threatsimgpt@hotmail.com for security-related concerns
+- **Email**: ciicerone@hotmail.com for security-related concerns
 
 ## Recognition
 

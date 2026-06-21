@@ -269,7 +269,7 @@ class SigmaRuleGenerator(BaseRuleGenerator):
             detection=detection,
             mitre_attack=[mitre_mapping],
             metadata=RuleMetadata(
-                author="ThreatSimGPT Blue Team - David Onoja",
+                author="Ciicerone Blue Team - David Onoja",
                 tags=[f"attack.{tech_info['tactic_id'].lower()}", f"attack.{technique_id.lower()}"],
                 false_positives=["Legitimate administrative activity", "Authorized security testing"],
             ),

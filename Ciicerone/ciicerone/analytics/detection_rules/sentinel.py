@@ -559,7 +559,7 @@ class SentinelRuleGenerator(BaseRuleGenerator):
             detection=detection,
             mitre_attack=[mitre_mapping],
             metadata=RuleMetadata(
-                author="ThreatSimGPT Blue Team - David Onoja",
+                author="Ciicerone Blue Team - David Onoja",
                 tags=[f"attack.{technique_id.lower()}"],
             ),
         )

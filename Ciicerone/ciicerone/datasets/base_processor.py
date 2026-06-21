@@ -1,4 +1,4 @@
-"""Base dataset processor for ThreatSimGPT.
+"""Base dataset processor for Ciicerone.
 
 This module provides a foundation for all dataset processors, eliminating duplicate
 download logic, parsing patterns, and error handling.

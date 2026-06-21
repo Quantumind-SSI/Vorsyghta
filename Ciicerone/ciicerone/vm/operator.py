@@ -210,7 +210,7 @@ class VMOperator:
         ext, interpreter = script_map.get(script_type, (".sh", "bash"))
 
         # Generate unique script path
-        script_name = f"threatsimgpt_script_{int(time.time())}{ext}"
+        script_name = f"ciicerone_script_{int(time.time())}{ext}"
         if script_type == "powershell":
             remote_path = f"C:\\Windows\\Temp\\{script_name}"
         else:
@@ -718,7 +718,7 @@ class DockerHypervisor(BaseHypervisor):
 
         # Map template names to Docker images
         image_map = {
-            "ubuntu-attacker": "threatsimgpt/ubuntu-attacker:latest",
+            "ubuntu-attacker": "ciicerone/ubuntu-attacker:latest",
             "ubuntu-target": "ubuntu:22.04",
             "windows-target": "mcr.microsoft.com/windows/servercore:ltsc2022",
         }
@@ -738,7 +738,7 @@ class DockerHypervisor(BaseHypervisor):
                 cpu_count=vm_config.cpu_cores,
                 environment={
                     "SSH_USER": vm_config.ssh_user,
-                    "SSH_PASSWORD": vm_config.ssh_password or "threatsimgpt",
+                    "SSH_PASSWORD": vm_config.ssh_password or "ciicerone",
                 },
                 # Keep container running
                 command="tail -f /dev/null" if vm_config.os_type != "windows" else None,
@@ -805,7 +805,7 @@ class DockerHypervisor(BaseHypervisor):
         loop = asyncio.get_event_loop()
         image = await loop.run_in_executor(
             None,
-            lambda: container.commit(repository="threatsimgpt-snapshot", tag=name)
+            lambda: container.commit(repository="ciicerone-snapshot", tag=name)
         )
 
         return image.id

@@ -1,5 +1,5 @@
 """
-ThreatSimGPT Feedback Loop System
+Ciicerone Feedback Loop System
 =================================
 
 Implements a continuous improvement cycle where:

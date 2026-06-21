@@ -1,4 +1,4 @@
-"""Enterprise platform integrations for ThreatSimGPT deployment services.
+"""Enterprise platform integrations for Ciicerone deployment services.
 
 This module provides integrations with major enterprise security platforms
 for automated threat deployment and metrics collection.
@@ -205,7 +205,7 @@ class ProofpointIntegration(BaseIntegration):
 
         # Create simulation campaign
         campaign_data = {
-            "name": content.get("campaign_name", f"ThreatSimGPT Campaign {deployment_id}"),
+            "name": content.get("campaign_name", f"Ciicerone Campaign {deployment_id}"),
             "description": content.get("description", "AI-generated threat simulation"),
             "template": {
                 "subject": content.get("subject"),
@@ -313,11 +313,11 @@ class KnowBe4Integration(BaseIntegration):
 
         # Create phishing campaign
         campaign_data = {
-            "name": content.get("campaign_name", f"ThreatSimGPT Campaign {deployment_id}"),
+            "name": content.get("campaign_name", f"Ciicerone Campaign {deployment_id}"),
             "groups": [group["id"] for group in content.get("target_groups", [])],
             "phish_prone_percentage": content.get("phish_prone_percentage", 100),
             "template": {
-                "name": content.get("template_name", "Custom ThreatSimGPT Template"),
+                "name": content.get("template_name", "Custom Ciicerone Template"),
                 "category": content.get("category", "Phishing"),
                 "difficulty": content.get("difficulty", "Medium"),
                 "content": {

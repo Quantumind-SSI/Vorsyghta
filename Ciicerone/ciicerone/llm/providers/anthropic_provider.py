@@ -1,4 +1,4 @@
-"""Anthropic provider implementation for ThreatSimGPT."""
+"""Anthropic provider implementation for Ciicerone."""
 
 import asyncio
 import logging

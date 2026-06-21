@@ -1,4 +1,4 @@
-"""Comprehensive LLM integration models for ThreatSimGPT.
+"""Comprehensive LLM integration models for Ciicerone.
 
 This module defines the data models, request/response structures, and configuration
 for LLM provider integration supporting OpenAI and Anthropic APIs.
@@ -111,7 +111,7 @@ class LLMRequest(BaseModel):
     frequency_penalty: float = Field(default=0.0, ge=-2.0, le=2.0, description="Frequency penalty")
     presence_penalty: float = Field(default=0.0, ge=-2.0, le=2.0, description="Presence penalty")
 
-    # ThreatSimGPT specific parameters
+    # Ciicerone specific parameters
     scenario_context: Optional[Dict[str, Any]] = Field(None, description="Threat scenario context")
     target_profile: Optional[Dict[str, Any]] = Field(None, description="Target profile information")
     safety_filters: List[str] = Field(default_factory=list, description="Applied safety filters")

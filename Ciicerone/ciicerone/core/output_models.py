@@ -1,4 +1,4 @@
-"""Validated simulation output models for ThreatSimGPT.
+"""Validated simulation output models for Ciicerone.
 
 Defines structure and validation for simulation results saved to log files.
 """

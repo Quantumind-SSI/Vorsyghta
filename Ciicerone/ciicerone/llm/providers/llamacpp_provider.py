@@ -1,4 +1,4 @@
-"""llama.cpp provider for ThreatSimGPT.
+"""llama.cpp provider for Ciicerone.
 
 This provider enables high-performance CPU inference using llama-cpp-python bindings
 with support for quantization and various model formats (GGUF, GGML).

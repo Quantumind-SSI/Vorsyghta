@@ -1,4 +1,4 @@
-"""Content validation and safety filtering for ThreatSimGPT.
+"""Content validation and safety filtering for Ciicerone.
 
 This module provides comprehensive validation of generated content,
 including safety checks, quality assessment, and compliance verification.

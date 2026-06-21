@@ -1,4 +1,4 @@
-"""OpenAI provider implementation for ThreatSimGPT."""
+"""OpenAI provider implementation for Ciicerone."""
 
 import asyncio
 import logging

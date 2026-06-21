@@ -72,6 +72,18 @@ from ciicerone.core.event_sourcing import (
 from ciicerone.core.postgres_event_store import (
     PostgresEventStore,
 )
+from ciicerone.core.audit_logger import (
+    AuditLogger,
+    AuditEvent,
+    AuditCategory,
+    AuditSeverity,
+    AuditSink,
+    MemoryAuditSink,
+    FileAuditSink,
+    get_audit_logger,
+    reset_audit_logger,
+    sanitize_for_log,
+)
 
 __all__ = [
     "SimulationResult",
@@ -128,4 +140,15 @@ __all__ = [
     "ConcurrencyError",
     # PostgreSQL Event Store
     "PostgresEventStore",
+    # Audit Logger
+    "AuditLogger",
+    "AuditEvent",
+    "AuditCategory",
+    "AuditSeverity",
+    "AuditSink",
+    "MemoryAuditSink",
+    "FileAuditSink",
+    "get_audit_logger",
+    "reset_audit_logger",
+    "sanitize_for_log",
 ]

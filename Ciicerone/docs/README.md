@@ -35,7 +35,7 @@ Community guidelines and contribution information:
 
 - [Main README](../README.md) - Project overview and quick start
 - [Templates](../templates/) - Example threat scenario templates
-- [GitHub Repository](https://github.com/threatsimgpt-AI/Ciicerone)
+- [GitHub Repository](https://github.com/ciicerone-AI/Ciicerone)
 
 ---
 

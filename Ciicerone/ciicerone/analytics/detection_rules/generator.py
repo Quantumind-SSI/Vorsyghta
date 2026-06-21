@@ -275,7 +275,7 @@ class DetectionRuleGenerator:
         
         # Create rule
         rule = DetectionRule(
-            title=f"ThreatSimGPT - {request.scenario_name}",
+            title=f"Ciicerone - {request.scenario_name}",
             name=self._slugify(request.scenario_name),
             description=request.scenario_description,
             status=RuleStatus.EXPERIMENTAL,
@@ -284,7 +284,7 @@ class DetectionRuleGenerator:
             detection=detection,
             mitre_attack=mitre_mappings,
             metadata=RuleMetadata(
-                author="ThreatSimGPT Blue Team",
+                author="Ciicerone Blue Team",
                 source_scenario_id=request.scenario_id,
                 tags=[f"attack.{request.attack_type.lower()}"],
                 false_positives=[

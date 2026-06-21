@@ -1,4 +1,4 @@
-"""Detection Rule Generator for ThreatSimGPT.
+"""Detection Rule Generator for Ciicerone.
 
 This module generates SIEM detection rules from attack scenarios.
 Supports multiple formats: Sigma, Splunk SPL, Elastic KQL, and Microsoft Sentinel.

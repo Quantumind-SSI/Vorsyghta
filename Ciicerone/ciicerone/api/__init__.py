@@ -1,4 +1,4 @@
-"""REST API for ThreatSimGPT.
+"""REST API for Ciicerone.
 
 Provides FastAPI-based REST endpoints for threat simulation,
 scenario management, and system integration.

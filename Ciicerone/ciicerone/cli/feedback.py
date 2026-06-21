@@ -1,5 +1,5 @@
 """
-ThreatSimGPT Feedback Loop CLI Commands
+Ciicerone Feedback Loop CLI Commands
 
 Commands for managing the continuous improvement cycle that makes
 scenarios improve playbooks and playbooks improve scenarios.
@@ -523,7 +523,6 @@ def show_history(limit: int):
 @feedback_cli.command(name="init")
 def init_feedback():
     """Initialize the feedback loop system."""
-
     async def _init():
         from ..feedback import FeedbackLoop
 
@@ -554,9 +553,9 @@ def init_feedback():
             await loop.close()
 
             console.print("\n[bold]Ready to use![/bold]")
-            console.print("  threatsimgpt feedback analyze -s scenario.yaml")
-            console.print("  threatsimgpt feedback enhance -p playbook.yaml")
-            console.print("  threatsimgpt feedback cycle --scenarios-dir ./scenarios")
+            console.print("  ciicerone feedback analyze -s scenario.yaml")
+            console.print("  ciicerone feedback enhance -p playbook.yaml")
+            console.print("  ciicerone feedback cycle --scenarios-dir ./scenarios")
 
         except Exception as e:
             console.print(f"[red]Initialization failed: {e}[/red]")
@@ -567,3 +566,141 @@ def init_feedback():
             console.print("    neo4j:latest")
 
     asyncio.run(_init())
+
+
+@feedback_cli.command(name="from-trace")
+@click.argument("trace_file", type=click.Path(exists=True))
+@click.option("--output", "-o", type=click.Path(), help="Save analysis results to file")
+def from_trace(trace_file: str, output: Optional[str]):
+    """Analyze an agent execution trace for quality and learnings.
+
+    Reads a JSONL trace file produced by ``ciicerone agent run --trace``
+    and converts the agent's execution transcript into a scenario-like
+    format for quality analysis via the feedback loop.
+
+    Examples:
+
+        ciicerone feedback from-trace traces/trace-001.jsonl
+
+        ciicerone feedback from-trace traces/trace-001.jsonl -o analysis.json
+    """
+    import json as _json
+
+    async def _from_trace():
+        from ..feedback import FeedbackLoop
+
+        console.print(Panel.fit(
+            f"[bold cyan]🔄 Feedback from Agent Trace[/bold cyan]\n"
+            f"[dim]File: {trace_file}[/dim]",
+            border_style="cyan"
+        ))
+
+        # Load trace entries
+        trace_path = Path(trace_file)
+        entries = []
+        with open(trace_path, "r") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    entries.append(_json.loads(line))
+                except _json.JSONDecodeError:
+                    continue
+
+        if not entries:
+            console.print("[red]No valid trace entries found.[/red]")
+            return
+
+        # Extract objective and transcript from trace.
+        objective = ""
+        transcript = []
+        mitre_techniques = set()
+        tools_used = set()
+        result_status = "unknown"
+        result_summary = ""
+
+        for entry in entries:
+            event = entry.get("event", "")
+            data = entry.get("data", {})
+
+            if event == "run_start":
+                objective = data.get("objective", "")
+            elif event == "action":
+                tool = data.get("tool", "")
+                tools_used.add(tool)
+                transcript.append({
+                    "phase": "action",
+                    "tool": tool,
+                    "arguments": data.get("arguments", {}),
+                    "thought": data.get("thought", ""),
+                })
+            elif event == "observation":
+                transcript.append({
+                    "phase": "observation",
+                    "tool": data.get("tool", ""),
+                    "ok": data.get("ok", True),
+                    "observation": data.get("observation", {}),
+                    "duration_ms": data.get("duration_ms", 0),
+                })
+            elif event == "complete":
+                result_status = data.get("result", "completed")
+                result_summary = data.get("summary", "")
+            elif event == "max_iterations":
+                result_status = "max_iterations"
+
+            # Extract MITRE techniques from any data.
+            data_str = _json.dumps(data, default=str)
+            import re
+            for match in re.findall(r"T\d{4}(?:\.\d{3})?", data_str):
+                mitre_techniques.add(match)
+
+        # Build a scenario-like dict for the feedback analyzer.
+        scenario_data = {
+            "id": trace_path.stem,
+            "name": f"Agent Trace: {objective[:80]}",
+            "description": result_summary or objective,
+            "threat_type": "agent_execution",
+            "mitre_attack_techniques": sorted(mitre_techniques),
+            "tools_used": sorted(tools_used),
+            "transcript": transcript,
+            "result_status": result_status,
+            "iterations": len([e for e in entries if e.get("event") in ("thought", "action")]),
+            "objective": objective,
+        }
+
+        console.print(f"[cyan]Objective:[/cyan] {objective[:100]}")
+        console.print(f"[cyan]Techniques:[/cyan] {', '.join(sorted(mitre_techniques)) or 'none'}")
+        console.print(f"[cyan]Tools:[/cyan] {', '.join(sorted(tools_used)) or 'none'}")
+        console.print(f"[cyan]Result:[/cyan] {result_status}")
+        console.print(f"[cyan]Transcript entries:[/cyan] {len(transcript)}\n")
+
+        neo4j_password = os.environ.get("NEO4J_PASSWORD")
+        loop = FeedbackLoop(neo4j_password=neo4j_password)
+
+        try:
+            await loop.initialize()
+            feedback = await loop.analyze_scenario(scenario_data, trace_path.stem)
+            _display_scenario_feedback(feedback)
+
+            if output:
+                output_path = Path(output)
+                output_path.parent.mkdir(parents=True, exist_ok=True)
+                output_path.write_text(_json.dumps({
+                    "trace_file": str(trace_path),
+                    "scenario_id": trace_path.stem,
+                    "feedback": {
+                        "quality_metrics": feedback.quality_metrics.__dict__ if hasattr(feedback.quality_metrics, '__dict__') else str(feedback.quality_metrics),
+                        "strengths": feedback.strengths,
+                        "weaknesses": feedback.weaknesses,
+                    },
+                }, indent=2, default=str))
+                console.print(f"\n[green]✓ Analysis saved to: {output}[/green]")
+
+            await loop.close()
+
+        except Exception as e:
+            console.print(f"[red]Analysis failed: {e}[/red]")
+            console.print("\n[dim]Make sure Neo4j is running for full feedback analysis.[/dim]")
+
+    asyncio.run(_from_trace())

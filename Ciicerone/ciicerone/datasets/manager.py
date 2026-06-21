@@ -1,4 +1,4 @@
-"""Dataset management module for ThreatSimGPT.
+"""Dataset management module for Ciicerone.
 
 This module provides functionality to integrate and manage various cybersecurity datasets
 including Enron corpus, PhishTank, CERT insider threat data, and LANL authentication logs.
@@ -116,7 +116,7 @@ class TTPPattern:
 
 
 class DatasetManager:
-    """Manages cybersecurity datasets for ThreatSimGPT."""
+    """Manages cybersecurity datasets for Ciicerone."""
 
     def __init__(self, config: Dict[str, Any]):
         """Initialize dataset manager.

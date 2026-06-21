@@ -1,4 +1,4 @@
-"""Comprehensive configuration models for ThreatSimGPT.
+"""Comprehensive configuration models for Ciicerone.
 
 This module defines the complete YAML schema using Pydantic models for
 threat scenario configurations, validation, and type safety.

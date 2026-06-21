@@ -1,7 +1,7 @@
 """
 MCP Server Configuration
 
-Configuration classes for the ThreatSimGPT MCP server, including:
+Configuration classes for the Ciicerone MCP server, including:
 - Proxmox VE connection settings
 - Network isolation configuration
 - Safety controls and blocked commands
@@ -33,7 +33,7 @@ class ProxmoxConfig:
         default_factory=lambda: int(os.environ.get("PROXMOX_PORT", "8006"))
     )
     user: str = field(
-        default_factory=lambda: os.environ.get("PROXMOX_USER", "threatsimgpt@pve")
+        default_factory=lambda: os.environ.get("PROXMOX_USER", "ciicerone@pve")
     )
     token_name: str = field(
         default_factory=lambda: os.environ.get("PROXMOX_TOKEN_NAME", "automation")
@@ -172,7 +172,7 @@ class TemplateConfig:
             "cpu_cores": 4,
             "memory_mb": 8192,
             "default_user": "root",
-            "default_password": "threatsimgpt",  # nosec B105 - intentional lab credential
+            "default_password": "ciicerone",  # nosec B105 - intentional lab credential
             "tools": ["nmap", "metasploit", "gobuster", "nuclei", "hydra"]
         },
         "ubuntu-target": {
@@ -226,7 +226,7 @@ class MCPConfig:
     templates: TemplateConfig = field(default_factory=TemplateConfig)
 
     # Server settings
-    server_name: str = "threatsimgpt-vm"
+    server_name: str = "ciicerone-vm"
     log_level: str = "INFO"
 
     @classmethod
@@ -267,7 +267,7 @@ class MCPConfig:
             network=NetworkConfig(**data.get("network", {})),
             safety=SafetyConfig(**data.get("safety", {})),
             templates=TemplateConfig(templates=data.get("templates", {})),
-            server_name=data.get("server_name", "threatsimgpt-vm"),
+            server_name=data.get("server_name", "ciicerone-vm"),
             log_level=data.get("log_level", "INFO"),
         )
 

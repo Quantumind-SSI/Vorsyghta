@@ -1,4 +1,4 @@
-"""Security module for ThreatSimGPT.
+"""Security module for Ciicerone.
 
 This module provides comprehensive security validation, sanitization, and
 threat detection capabilities for template content and user inputs.

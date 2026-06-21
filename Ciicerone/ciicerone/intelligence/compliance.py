@@ -1,4 +1,4 @@
-"""Privacy and compliance framework for ThreatSimGPT intelligence gathering.
+"""Privacy and compliance framework for Ciicerone intelligence gathering.
 
 This module implements comprehensive privacy controls, data retention policies,
 GDPR compliance, and ethical boundaries for responsible OSINT operations.

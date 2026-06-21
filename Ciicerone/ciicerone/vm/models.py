@@ -244,9 +244,9 @@ class InfrastructureConfig(BaseModel):
     api_token: Optional[str] = Field(None)
 
     # Network settings
-    attack_network_name: str = Field("threatsimgpt-attack-net")
+    attack_network_name: str = Field("ciicerone-attack-net")
     attack_network_subnet: str = Field("10.0.100.0/24")
-    management_network_name: str = Field("threatsimgpt-mgmt-net")
+    management_network_name: str = Field("ciicerone-mgmt-net")
     internet_access: bool = Field(False)  # Should be False for safety
 
     # VM templates

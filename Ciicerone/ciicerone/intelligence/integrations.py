@@ -1,4 +1,4 @@
-"""Intelligence integration layer for ThreatSimGPT.
+"""Intelligence integration layer for Ciicerone.
 
 This module integrates OSINT reconnaissance data with LLM prompt engineering
 to create highly personalized and realistic threat simulation scenarios.
@@ -16,7 +16,7 @@ from .services import OSINTService
 
 
 class IntelligenceEngine:
-    """Central intelligence processing engine for ThreatSimGPT."""
+    """Central intelligence processing engine for Ciicerone."""
 
     def __init__(self, osint_service: OSINTService, cache_ttl_hours: int = 24):
         self.osint_service = osint_service

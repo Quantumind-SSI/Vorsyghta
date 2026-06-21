@@ -1,4 +1,4 @@
-"""Playbook Validation Framework for ThreatSimGPT.
+"""Playbook Validation Framework for Ciicerone.
 
 This module provides comprehensive validation of field manuals and playbooks
 to ensure they meet industry standards and provide actionable, high-quality content.

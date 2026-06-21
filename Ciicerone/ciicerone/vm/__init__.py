@@ -1,4 +1,4 @@
-"""VM-based attack simulation module for ThreatSimGPT.
+"""VM-based attack simulation module for Ciicerone.
 
 This module provides AI-controlled virtual machine capabilities for executing
 realistic attack simulations in isolated environments.

@@ -1,4 +1,4 @@
-"""Simulation result logging system for ThreatSimGPT.
+"""Simulation result logging system for Ciicerone.
 
 This module handles saving simulation results to files with proper validation,
 organization, and retrieval capabilities.

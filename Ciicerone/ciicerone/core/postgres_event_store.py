@@ -1,4 +1,4 @@
-"""PostgreSQL Event Store Implementation for ThreatSimGPT.
+"""PostgreSQL Event Store Implementation for Ciicerone.
 
 This module provides the PostgreSQL persistence layer for the event sourcing system.
 It implements async database operations using asyncpg with connection pooling.

@@ -2,7 +2,7 @@
 Proxmox VE API Client
 
 Async client for Proxmox Virtual Environment REST API.
-This is the primary hypervisor interface for ThreatSimGPT VM operations.
+This is the primary hypervisor interface for Ciicerone VM operations.
 
 Features:
     - Async operations for parallel VM management
@@ -50,7 +50,7 @@ class ProxmoxClient:
     """
     Async Proxmox VE API client.
 
-    Provides async methods for all VM operations needed by ThreatSimGPT.
+    Provides async methods for all VM operations needed by Ciicerone.
     Uses API tokens for authentication (more secure than user/password).
 
     Attributes:
@@ -242,7 +242,7 @@ class ProxmoxClient:
                 "newid": new_vmid,
                 "name": name,
                 "full": 1 if full else 0,
-                "description": description or f"ThreatSimGPT attack simulation VM: {name}"
+                "description": description or f"Ciicerone attack simulation VM: {name}"
             }
         )
 
@@ -388,7 +388,7 @@ class ProxmoxClient:
             f"/nodes/{self.config.node}/qemu/{vmid}/snapshot",
             data={
                 "snapname": name,
-                "description": description or f"ThreatSimGPT snapshot: {name}",
+                "description": description or f"Ciicerone snapshot: {name}",
                 "vmstate": 1 if include_ram else 0
             }
         )

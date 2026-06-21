@@ -1,4 +1,4 @@
-"""Dataset processors for ThreatSimGPT.
+"""Dataset processors for Ciicerone.
 
 This module contains processors for different cybersecurity datasets.
 """

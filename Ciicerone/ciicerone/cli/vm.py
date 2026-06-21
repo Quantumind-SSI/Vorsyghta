@@ -6,6 +6,7 @@ AI-controlled VM attack simulations.
 
 import asyncio
 import json
+import os
 from pathlib import Path
 from typing import Optional
 
@@ -31,18 +32,23 @@ def vm_group():
 @vm_group.command("setup")
 @click.option(
     "--hypervisor", "-h",
-    type=click.Choice(["docker", "proxmox", "libvirt", "vmware"]),
+    type=click.Choice(["docker", "azure", "proxmox", "libvirt", "vmware"]),
     default="docker",
     help="Hypervisor type to use"
 )
 @click.option("--force", "-f", is_flag=True, help="Force setup even if already configured")
-def setup_infrastructure(hypervisor: str, force: bool):
+@click.option("--location", "-l", default="eastus2", help="Azure region (azure only)")
+@click.option("--vm-size", "-s", default="Standard_D4s_v3", help="Azure VM size (azure only)")
+def setup_infrastructure(hypervisor: str, force: bool, location: str, vm_size: str):
     """Set up VM infrastructure for attack simulations.
 
     This will:
     1. Create isolated network for attacks
     2. Pull/create base VM templates
     3. Configure security settings
+
+    For Azure: provisions a cloud VM with Docker, Phantom Kali tool-server,
+    and a DVWA target. Requires Azure CLI (az) installed and logged in.
     """
     console.print(Panel(
         "[bold]VM Attack Simulation Setup[/bold]\n\n"
@@ -52,9 +58,11 @@ def setup_infrastructure(hypervisor: str, force: bool):
 
     if hypervisor == "docker":
         _setup_docker_infrastructure(force)
+    elif hypervisor == "azure":
+        _setup_azure_infrastructure(force, location, vm_size)
     else:
         console.print(f"[yellow]Hypervisor '{hypervisor}' support coming soon.[/yellow]")
-        console.print("Currently only Docker is fully implemented.")
+        console.print("Currently only Docker and Azure are fully implemented.")
 
 
 def _setup_docker_infrastructure(force: bool):
@@ -232,6 +240,55 @@ CMD service apache2 start && /usr/sbin/sshd -D
     console.print("\nNext steps:")
     console.print("  1. Run: [cyan]ciicerone vm start-lab[/cyan]")
     console.print("  2. Run: [cyan]ciicerone vm attack --scenario phishing[/cyan]")
+
+
+def _setup_azure_infrastructure(force: bool, location: str, vm_size: str):
+    """Set up Azure-based infrastructure with Docker sandbox."""
+    import subprocess
+    import shutil as _shutil
+
+    console.print("\n[bold]Step 1: Checking Azure CLI...[/bold]")
+
+    if _shutil.which("az") is None:
+        console.print("[red]Azure CLI (az) not found. Install: brew install azure-cli[/red]")
+        return
+
+    result = subprocess.run(["az", "account", "show"], capture_output=True, text=True)
+    if result.returncode != 0:
+        console.print("[red]Not logged in to Azure. Run: az login[/red]")
+        return
+    console.print("[green]✓ Azure CLI authenticated[/green]")
+
+    console.print("\n[bold]Step 2: Locating provisioning script...[/bold]")
+
+    script_path = Path(__file__).resolve().parents[1].parent / "scripts" / "azure_provision.sh"
+    if not script_path.exists():
+        console.print(f"[red]Provisioning script not found at {script_path}[/red]")
+        return
+    console.print(f"[green]✓ Script found: {script_path}[/green]")
+
+    console.print("\n[bold]Step 3: Provisioning Azure resources...[/bold]")
+    console.print(f"[dim]Location: {location} | VM Size: {vm_size}[/dim]")
+    console.print("[yellow]This takes 5-10 minutes. Building Kali image inside VM...[/yellow]\n")
+
+    env = os.environ.copy()
+    env["CIICERONE_LOCATION"] = location
+    env["CIICERONE_VM_SIZE"] = vm_size
+
+    result = subprocess.run(
+        ["bash", str(script_path)],
+        env=env,
+    )
+
+    if result.returncode == 0:
+        console.print("\n[bold green]✓ Azure sandbox provisioned successfully![/bold green]")
+        console.print("\nNext steps:")
+        console.print("  1. Set CIICERONE_TOOL_SERVER_URL in your .env")
+        console.print("  2. Run: [cyan]ciicerone agent run \"Scan 10.0.100.10 for vulnerabilities\"[/cyan]")
+        console.print("  3. Cleanup: [cyan]az group delete --name ciicerone-rg --yes --no-wait[/cyan]")
+    else:
+        console.print(f"\n[red]Provisioning failed with exit code {result.returncode}[/red]")
+        console.print("Check the output above for details.")
 
 
 @vm_group.command("start-lab")

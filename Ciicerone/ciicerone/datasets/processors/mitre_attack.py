@@ -1,4 +1,4 @@
-"""MITRE ATT&CK framework processor for ThreatSimGPT.
+"""MITRE ATT&CK framework processor for Ciicerone.
 
 This processor handles the MITRE ATT&CK framework data to extract
 tactics, techniques, and procedures (TTPs) for enhanced threat modeling.

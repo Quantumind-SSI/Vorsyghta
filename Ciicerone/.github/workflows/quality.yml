@@ -25,10 +25,10 @@ jobs:
         pip install ruff
     
     - name: Run ruff linter
-      run: ruff check threatsimgpt/ tests/
+      run: ruff check ciicerone/ tests/
     
     - name: Check ruff formatting
-      run: ruff format --check threatsimgpt/ tests/ || true
+      run: ruff format --check ciicerone/ tests/ || true
 
   test-coverage:
     name: Test Coverage
@@ -52,7 +52,7 @@ jobs:
         pip install pytest pytest-cov pytest-asyncio
     
     - name: Generate coverage report
-      run: pytest tests/unit/ -v --cov=threatsimgpt --cov-report=xml --cov-report=term-missing -p no:cacheprovider || true
+      run: pytest tests/unit/ -v --cov=ciicerone --cov-report=xml --cov-report=term-missing -p no:cacheprovider || true
     
     - name: SonarCloud Scan
       uses: SonarSource/sonarcloud-github-action@master

@@ -1,4 +1,4 @@
-"""Local LLM provider base class for ThreatSimGPT.
+"""Local LLM provider base class for Ciicerone.
 
 This module provides the foundation for local model providers that can run
 models directly on the user's hardware without external API calls.

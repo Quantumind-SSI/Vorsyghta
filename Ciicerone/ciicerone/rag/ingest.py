@@ -52,7 +52,7 @@ class SourceCrawler(ABC):
     async def __aenter__(self):
         """Async context manager entry."""
         headers = {
-            "User-Agent": "ThreatSimGPT-Intelligence/1.0",
+            "User-Agent": "Ciicerone-Intelligence/1.0",
             **self.config.headers
         }
         if self.config.api_key:

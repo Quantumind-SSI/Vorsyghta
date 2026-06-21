@@ -1,7 +1,7 @@
 blank_issues_enabled: false
 contact_links:
   - name: 🔐 Security Vulnerability
-    url: mailto:threatsimgpt@hotmail.com
+    url: mailto:ciicerone@hotmail.com
     about: Please report security vulnerabilities via email. Do NOT create a public issue.
   - name: 💬 Community Discussions
     url: https://github.com/Ciicerone/Ciicerone/discussions

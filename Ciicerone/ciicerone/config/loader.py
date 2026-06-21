@@ -51,6 +51,18 @@ class LoggingConfig(BaseModel):
     enable_console_logging: bool = True
 
 
+class AuditConfig(BaseModel):
+    """Audit logging configuration for the unified audit trail."""
+    enabled: bool = True
+    file_path: str = "logs/audit/audit.jsonl"
+    max_file_size_mb: int = 100
+    rotate_count: int = 5
+    enable_chain: bool = True
+    enable_memory_sink: bool = True
+    enable_file_sink: bool = True
+    sanitize_values: bool = True
+
+
 class APIConfig(BaseModel):
     """API server configuration."""
     host: str = "0.0.0.0"
@@ -68,6 +80,7 @@ class CiiceroneConfig(BaseModel):
     simulation: SimulationConfig = Field(default_factory=SimulationConfig)
     safety: SafetyConfig = Field(default_factory=SafetyConfig)
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
+    audit: AuditConfig = Field(default_factory=AuditConfig)
     api: APIConfig = Field(default_factory=APIConfig)
 
     # Optional configurations
@@ -196,6 +209,19 @@ def _apply_environment_overrides(config_data: Dict[str, Any]) -> Dict[str, Any]:
         if 'openrouter' not in config_data['llm']:
             config_data['llm']['openrouter'] = {}
         config_data['llm']['openrouter']['api_key'] = os.getenv('OPENROUTER_API_KEY')
+
+    if os.getenv('AZURE_OPENAI_API_KEY'):
+        if 'llm' not in config_data:
+            config_data['llm'] = {}
+        if 'azure' not in config_data['llm']:
+            config_data['llm']['azure'] = {}
+        config_data['llm']['azure']['api_key'] = os.getenv('AZURE_OPENAI_API_KEY')
+        if os.getenv('AZURE_OPENAI_ENDPOINT'):
+            config_data['llm']['azure']['endpoint'] = os.getenv('AZURE_OPENAI_ENDPOINT')
+        if os.getenv('AZURE_OPENAI_DEPLOYMENT'):
+            config_data['llm']['azure']['deployment'] = os.getenv('AZURE_OPENAI_DEPLOYMENT')
+        if os.getenv('AZURE_OPENAI_API_VERSION'):
+            config_data['llm']['azure']['api_version'] = os.getenv('AZURE_OPENAI_API_VERSION')
 
     # API Configuration
     if os.getenv('API_KEY'):

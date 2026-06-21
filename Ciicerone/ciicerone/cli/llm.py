@@ -1,4 +1,4 @@
-"""LLM integration CLI commands for ThreatSimGPT.
+"""LLM integration CLI commands for Ciicerone.
 
 This module provides CLI commands for testing and managing LLM integrations.
 """

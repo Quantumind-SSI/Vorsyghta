@@ -1,4 +1,4 @@
-"""Templates command for ThreatSimGPT CLI.
+"""Templates command for Ciicerone CLI.
 
 Comprehensive template management with YAML validation and detailed display.
 """

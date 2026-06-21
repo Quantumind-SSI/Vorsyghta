@@ -1,4 +1,4 @@
-"""CERT insider threat processor for ThreatSimGPT.
+"""CERT insider threat processor for Ciicerone.
 
 This processor handles CERT insider threat dataset to extract behavioral
 patterns and indicators for enhanced insider threat simulations.
@@ -124,7 +124,7 @@ class CERTInsiderProcessor:
                 "timeline_analysis"
             ],
             use_cases=[
-                "insider_threat_simulation",
+                "insider_ciicerone_simulation",
                 "behavioral_pattern_modeling",
                 "detection_system_training",
                 "risk_assessment_scenarios"

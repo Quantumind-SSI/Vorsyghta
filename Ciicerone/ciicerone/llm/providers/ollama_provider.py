@@ -1,4 +1,4 @@
-"""Ollama provider implementation for ThreatSimGPT.
+"""Ollama provider implementation for Ciicerone.
 
 Ollama is a popular tool for running large language models locally.
 This provider integrates with Ollama's REST API for seamless local model usage.

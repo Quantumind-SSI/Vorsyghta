@@ -11,6 +11,7 @@ Priority: critical
 """
 
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Optional, List
@@ -35,10 +36,10 @@ def detect_group():
     and Microsoft Sentinel.
     
     Examples:
-        threatgpt detect generate -s scenario.yaml --format sigma
-        threatgpt detect validate rules/my_rule.yaml --format sigma
-        threatgpt detect list-formats
-        threatgpt detect from-technique T1566.001 --format splunk
+        ciicerone detect generate -s scenario.yaml --format sigma
+        ciicerone detect validate rules/my_rule.yaml --format sigma
+        ciicerone detect list-formats
+        ciicerone detect from-technique T1566.001 --format splunk
     """
     pass
 
@@ -93,13 +94,13 @@ def generate_rules(
     
     Examples:
         # Generate Sigma rules
-        threatgpt detect generate -s phishing_scenario.yaml -f sigma
+        ciicerone detect generate -s phishing_scenario.yaml -f sigma
         
         # Generate for all platforms
-        threatgpt detect generate -s scenario.yaml -f all -o ./rules/
+        ciicerone detect generate -s scenario.yaml -f all -o ./rules/
         
         # Generate with validation disabled
-        threatgpt detect generate -s scenario.yaml --no-validate
+        ciicerone detect generate -s scenario.yaml --no-validate
     """
     from ..analytics.detection_rules import (
         SigmaRuleGenerator,
@@ -107,7 +108,10 @@ def generate_rules(
         ElasticRuleGenerator,
         SentinelRuleGenerator,
         RuleValidator,
-        RuleSeverity
+        RuleSeverity,
+        DetectionRuleGenerator,
+        RuleFormat,
+        RuleGenerationRequest,
     )
     from ..config.yaml_loader import YAMLConfigLoader, ConfigurationError, SchemaValidationError
     
@@ -131,25 +135,25 @@ def generate_rules(
             progress.update(task, description=f"[red]✗ Failed to load scenario[/red]")
             console.print(f"[red]Error:[/red] {e}")
             sys.exit(1)
-    
-    # Get generators based on format
-    generators = {}
-    if output_format == "all":
-        generators = {
-            "sigma": SigmaRuleGenerator(),
-            "splunk": SplunkRuleGenerator(),
-            "elastic": ElasticRuleGenerator(),
-            "sentinel": SentinelRuleGenerator(),
-        }
-    else:
-        generator_map = {
-            "sigma": SigmaRuleGenerator,
-            "splunk": SplunkRuleGenerator,
-            "elastic": ElasticRuleGenerator,
-            "sentinel": SentinelRuleGenerator,
-        }
-        generators = {output_format: generator_map[output_format]()}
-    
+
+    # Extract scenario fields for rule generation.
+    metadata = scenario_config.metadata
+    threat_type_val = scenario_config.threat_type.value if hasattr(scenario_config.threat_type, 'value') else str(scenario_config.threat_type)
+    behavioral = scenario_config.behavioral_pattern
+    mitre_techniques = behavioral.mitre_attack_techniques if hasattr(behavioral, 'mitre_attack_techniques') else []
+
+    # Build a RuleGenerationRequest from the scenario config.
+    format_map = {
+        "sigma": RuleFormat.SIGMA,
+        "splunk": RuleFormat.SPLUNK,
+        "elastic": RuleFormat.ELASTIC,
+        "sentinel": RuleFormat.SENTINEL,
+        "all": [RuleFormat.SIGMA, RuleFormat.SPLUNK, RuleFormat.ELASTIC, RuleFormat.SENTINEL],
+    }
+    requested_formats = format_map.get(output_format, [RuleFormat.SIGMA])
+    if not isinstance(requested_formats, list):
+        requested_formats = [requested_formats]
+
     # Parse severity override
     severity_override = None
     if severity:
@@ -160,45 +164,75 @@ def generate_rules(
             "critical": RuleSeverity.CRITICAL,
         }
         severity_override = severity_map[severity]
-    
-    # Generate rules
+
+    request = RuleGenerationRequest(
+        scenario_id=scenario_path.stem,
+        scenario_name=metadata.name,
+        scenario_description=metadata.description,
+        attack_type=threat_type_val,
+        attack_vectors=[threat_type_val],
+        mitre_techniques=mitre_techniques,
+        formats=requested_formats,
+        severity_override=severity_override,
+    )
+
+    # Use the DetectionRuleGenerator (orchestrator) to build and generate rules.
+    console.print("[bold cyan]Generating detection rules...[/bold cyan]\n")
+
+    # Format-specific generators for output rendering.
+    output_generators = {
+        "sigma": SigmaRuleGenerator(),
+        "splunk": SplunkRuleGenerator(),
+        "elastic": ElasticRuleGenerator(),
+        "sentinel": SentinelRuleGenerator(),
+    }
+
     all_rules = {}
     validator = RuleValidator() if validate else None
-    
-    console.print("[bold cyan]Generating detection rules...[/bold cyan]\n")
-    
-    for format_name, generator in generators.items():
-        with console.status(f"[yellow]Generating {format_name} rules...[/yellow]"):
+
+    # Build the rule via the orchestrator.
+    gen = DetectionRuleGenerator()
+    try:
+        result = gen.generate_from_scenario(request)
+        if not result.success:
+            console.print(f"[red]Rule generation failed: {result.validation_errors}[/red]")
+            sys.exit(1)
+        rule = result.rule
+    except Exception as e:
+        console.print(f"[red]Rule generation error: {e}[/red]")
+        sys.exit(1)
+
+    # Render the rule in each requested format.
+    for fmt in requested_formats:
+        fmt_name = fmt.value if hasattr(fmt, 'value') else str(fmt)
+        generator = output_generators.get(fmt_name)
+        if not generator:
+            continue
+        with console.status(f"[yellow]Generating {fmt_name} rules...[/yellow]"):
             try:
-                rules = generator.from_scenario(scenario_config)
-                
-                # Apply severity override if specified
-                if severity_override:
-                    for rule in rules:
-                        rule.severity = severity_override
-                
-                all_rules[format_name] = rules
-                
+                formatted = generator.format_rule(rule)
+                all_rules[fmt_name] = [rule]
+
                 # Validate if requested
                 validation_status = ""
-                if validator and rules:
-                    validation_results = [validator.validate(rule, format_name) for rule in rules]
-                    valid_count = sum(1 for r in validation_results if r.is_valid)
-                    if valid_count == len(rules):
+                if validator:
+                    val_result = validator.validate(rule)
+                    if val_result.is_valid:
                         validation_status = " [green]✓ validated[/green]"
                     else:
-                        validation_status = f" [yellow]⚠ {valid_count}/{len(rules)} valid[/yellow]"
-                
-                console.print(f"  [green]✓[/green] {format_name.capitalize()}: {len(rules)} rule(s){validation_status}")
-                
+                        errors = val_result.errors[:2] if val_result.errors else []
+                        validation_status = f" [yellow]⚠ validation issues: {errors}[/yellow]"
+
+                console.print(f"  [green]✓[/green] {fmt_name.capitalize()}: 1 rule(s){validation_status}")
+
             except Exception as e:
-                console.print(f"  [red]✗[/red] {format_name.capitalize()}: Failed - {e}")
-                all_rules[format_name] = []
-    
+                console.print(f"  [red]✗[/red] {fmt_name.capitalize()}: Failed - {e}")
+                all_rules[fmt_name] = []
+
     if not any(all_rules.values()):
         console.print("\n[yellow]No rules were generated. Check if the scenario contains detectable threat indicators.[/yellow]")
         sys.exit(1)
-    
+
     # Display generated rules
     console.print("\n[bold cyan]Generated Rules:[/bold cyan]\n")
     
@@ -208,7 +242,7 @@ def generate_rules(
             
         for i, rule in enumerate(rules, 1):
             # Get the formatted output
-            generator = generators[format_name]
+            generator = output_generators[format_name]
             formatted_rule = generator.format_rule(rule)
             
             # Determine syntax highlighting
@@ -234,9 +268,7 @@ def generate_rules(
             metadata_table.add_column("Field", style="cyan")
             metadata_table.add_column("Value")
             metadata_table.add_row("Severity", f"[{_severity_color(rule.severity)}]{rule.severity.value}[/]")
-            metadata_table.add_row("MITRE ATT&CK", ", ".join(m.technique_id for m in rule.mitre_mappings) if rule.mitre_mappings else "N/A")
-            if rule.false_positive_rate:
-                metadata_table.add_row("Est. FP Rate", f"{rule.false_positive_rate.estimated_rate:.1%}")
+            metadata_table.add_row("MITRE ATT&CK", ", ".join(m.technique_id for m in rule.mitre_attack) if rule.mitre_attack else "N/A")
             console.print(metadata_table)
             console.print()
     
@@ -253,7 +285,7 @@ def generate_rules(
                 if not rules:
                     continue
                 
-                generator = generators[format_name]
+                generator = output_generators[format_name]
                 ext = _get_extension(format_name)
                 
                 for i, rule in enumerate(rules, 1):
@@ -267,7 +299,7 @@ def generate_rules(
                 # Output is a file
                 rules = all_rules.get(output_format, [])
                 if rules:
-                    generator = generators[output_format]
+                    generator = output_generators[output_format]
                     # Combine all rules into one file
                     all_formatted = "\n\n---\n\n".join(generator.format_rule(r) for r in rules)
                     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -277,7 +309,7 @@ def generate_rules(
                 # Output is a directory
                 output_path.mkdir(parents=True, exist_ok=True)
                 rules = all_rules.get(output_format, [])
-                generator = generators[output_format]
+                generator = output_generators[output_format]
                 ext = _get_extension(output_format)
                 
                 for rule in rules:
@@ -329,9 +361,9 @@ def from_technique(
     identifier (e.g., T1566.001 for Spearphishing Attachment).
     
     Examples:
-        threatgpt detect from-technique T1566.001
-        threatgpt detect from-technique T1059.001 -f splunk -o powershell.spl
-        threatgpt detect from-technique T1078 -f all --severity critical
+        ciicerone detect from-technique T1566.001
+        ciicerone detect from-technique T1059.001 -f splunk -o powershell.spl
+        ciicerone detect from-technique T1078 -f all --severity critical
     """
     from ..analytics.detection_rules import (
         SigmaRuleGenerator,
@@ -445,8 +477,8 @@ def validate_rule(
     for the specified format.
     
     Examples:
-        threatgpt detect validate rule.yaml --format sigma
-        threatgpt detect validate rule.spl --strict
+        ciicerone detect validate rule.yaml --format sigma
+        ciicerone detect validate rule.spl --strict
     """
     from ..analytics.detection_rules import RuleValidator, DetectionRule, RuleSeverity, RuleStatus
     
@@ -582,10 +614,10 @@ def list_formats():
     console.print("\n[bold cyan]Quick Examples:[/bold cyan]\n")
     
     examples = [
-        ("Generate Sigma rules", "threatgpt detect generate -s scenario.yaml -f sigma"),
-        ("Generate all formats", "threatgpt detect generate -s scenario.yaml -f all -o ./rules/"),
-        ("From MITRE technique", "threatgpt detect from-technique T1566.001 -f splunk"),
-        ("Validate a rule", "threatgpt detect validate rule.yaml --format sigma"),
+        ("Generate Sigma rules", "ciicerone detect generate -s scenario.yaml -f sigma"),
+        ("Generate all formats", "ciicerone detect generate -s scenario.yaml -f all -o ./rules/"),
+        ("From MITRE technique", "ciicerone detect from-technique T1566.001 -f splunk"),
+        ("Validate a rule", "ciicerone detect validate rule.yaml --format sigma"),
     ]
     
     for desc, cmd in examples:
@@ -623,8 +655,8 @@ def convert_rule(
     Currently supports conversion from Sigma format to other formats.
     
     Examples:
-        threatgpt detect convert rule.yaml --to splunk
-        threatgpt detect convert sigma_rule.yml -t elastic -o elastic_rule.json
+        ciicerone detect convert rule.yaml --to splunk
+        ciicerone detect convert sigma_rule.yml -t elastic -o elastic_rule.json
     """
     import yaml
     from ..analytics.detection_rules import (
@@ -668,7 +700,7 @@ def convert_rule(
             description=sigma_data.get("description", "Converted rule"),
             severity=severity,
             status=RuleStatus.EXPERIMENTAL,
-            author=sigma_data.get("author", "ThreatSimGPT"),
+            author=sigma_data.get("author", "Ciicerone"),
             tags=sigma_data.get("tags", []),
             references=sigma_data.get("references", []),
         )
@@ -711,6 +743,203 @@ def convert_rule(
     except Exception as e:
         console.print(f"[red]Error converting rule: {e}[/red]")
         sys.exit(1)
+
+
+@detect_group.command(name="from-trace")
+@click.argument("trace_file", type=click.Path(exists=True))
+@click.option(
+    "--format", "-f", "output_format",
+    type=click.Choice(["sigma", "splunk", "elastic", "sentinel", "all"]),
+    default="sigma",
+    help="Detection rule format to generate"
+)
+@click.option(
+    "--output", "-o",
+    type=click.Path(),
+    help="Output file or directory path"
+)
+@click.option(
+    "--severity",
+    type=click.Choice(["low", "medium", "high", "critical"]),
+    default="high",
+    help="Rule severity level"
+)
+def from_trace(
+    trace_file: str,
+    output_format: str,
+    output: Optional[str],
+    severity: str
+):
+    """Generate detection rules from an agent execution trace.
+
+    Reads a JSONL trace file produced by ``ciicerone agent run --trace``
+    and generates SIEM detection rules based on the MITRE ATT&CK techniques
+    and tools observed during the agent's execution.
+
+    Examples:
+
+        ciicerone detect from-trace traces/trace-001.jsonl -f sigma
+
+        ciicerone detect from-trace traces/trace-001.jsonl -f all -o ./rules/
+    """
+    import json as _json
+
+    from ..analytics.detection_rules import (
+        SigmaRuleGenerator,
+        SplunkRuleGenerator,
+        ElasticRuleGenerator,
+        SentinelRuleGenerator,
+        RuleSeverity
+    )
+
+    console.print(f"\n[bold blue]🔍 Detection from Agent Trace[/bold blue]")
+    console.print(f"[dim]Trace: {trace_file}[/dim]\n")
+
+    # Load trace entries
+    trace_path = Path(trace_file)
+    entries = []
+    with open(trace_path, "r") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                entries.append(_json.loads(line))
+            except _json.JSONDecodeError:
+                continue
+
+    if not entries:
+        console.print("[red]No valid trace entries found.[/red]")
+        sys.exit(1)
+
+    # Extract MITRE techniques and tools from trace.
+    mitre_techniques = set()
+    tools_used = set()
+    actions = []
+    for entry in entries:
+        event = entry.get("event", "")
+        data = entry.get("data", {})
+        if event == "action":
+            tool = data.get("tool", "")
+            tools_used.add(tool)
+            actions.append(data)
+            # Extract techniques from the tool's arguments if present.
+            args = data.get("arguments", {})
+            args_str = _json.dumps(args)
+            for match in re.findall(r"T\d{4}(?:\.\d{3})?", args_str):
+                mitre_techniques.add(match)
+        # Also check observation data for technique references.
+        if event == "observation":
+            obs = data.get("observation", {})
+            obs_str = _json.dumps(obs, default=str)
+            for match in re.findall(r"T\d{4}(?:\.\d{3})?", obs_str):
+                mitre_techniques.add(match)
+
+    # Also extract from run_start objective.
+    for entry in entries:
+        if entry.get("event") == "run_start":
+            obj = entry.get("data", {}).get("objective", "")
+            for match in re.findall(r"T\d{4}(?:\.\d{3})?", obj):
+                mitre_techniques.add(match)
+
+    if not mitre_techniques:
+        console.print("[yellow]No MITRE ATT&CK techniques found in trace. Using tools as fallback.[/yellow]")
+        # Map common tools to techniques.
+        tool_to_technique = {
+            "nmap": "T1046",
+            "run_command": "T1059",
+            "hydra": "T1110",
+            "mimikatz": "T1003",
+            "smbclient": "T1021",
+            "crackmapexec": "T1021",
+        }
+        for tool in tools_used:
+            tech = tool_to_technique.get(tool.lower())
+            if tech:
+                mitre_techniques.add(tech)
+
+    if not mitre_techniques:
+        console.print("[red]Could not extract any MITRE techniques from the trace.[/red]")
+        sys.exit(1)
+
+    console.print(f"[cyan]Extracted techniques:[/cyan] {', '.join(sorted(mitre_techniques))}")
+    console.print(f"[cyan]Tools observed:[/cyan] {', '.join(sorted(tools_used)) or 'none'}")
+    console.print(f"[cyan]Actions in trace:[/cyan] {len(actions)}\n")
+
+    # Get generators
+    generators = {}
+    if output_format == "all":
+        generators = {
+            "sigma": SigmaRuleGenerator(),
+            "splunk": SplunkRuleGenerator(),
+            "elastic": ElasticRuleGenerator(),
+            "sentinel": SentinelRuleGenerator(),
+        }
+    else:
+        generator_map = {
+            "sigma": SigmaRuleGenerator,
+            "splunk": SplunkRuleGenerator,
+            "elastic": ElasticRuleGenerator,
+            "sentinel": SentinelRuleGenerator,
+        }
+        generators = {output_format: generator_map[output_format]()}
+
+    severity_map = {
+        "low": RuleSeverity.LOW,
+        "medium": RuleSeverity.MEDIUM,
+        "high": RuleSeverity.HIGH,
+        "critical": RuleSeverity.CRITICAL,
+    }
+    rule_severity = severity_map[severity]
+
+    # Generate rules for each technique
+    console.print("[bold cyan]Generating detection rules...[/bold cyan]\n")
+    total_rules = 0
+    saved_files = []
+
+    for format_name, generator in generators.items():
+        for tech_id in sorted(mitre_techniques):
+            try:
+                rules = generator.from_attack_technique(tech_id, rule_severity)
+                if not rules:
+                    continue
+
+                for rule in rules:
+                    formatted = generator.format_rule(rule)
+                    total_rules += 1
+
+                    syntax_lang = {
+                        "sigma": "yaml",
+                        "splunk": "sql",
+                        "elastic": "json",
+                        "sentinel": "sql",
+                    }.get(format_name, "text")
+
+                    title = f"{format_name.upper()}: {rule.name}"
+                    syntax = Syntax(formatted[:2000], syntax_lang, theme="monokai", line_numbers=True)
+                    console.print(Panel(syntax, title=title, border_style="blue"))
+
+                    if output:
+                        output_path = Path(output)
+                        if output_format == "all":
+                            output_path.mkdir(parents=True, exist_ok=True)
+                            ext = _get_extension(format_name)
+                            file_path = output_path / f"{tech_id}_{format_name}.{ext}"
+                        else:
+                            file_path = output_path
+                            file_path.parent.mkdir(parents=True, exist_ok=True)
+                        file_path.write_text(formatted)
+                        saved_files.append(file_path)
+
+            except Exception as e:
+                console.print(f"[red]Error generating {format_name} rules for {tech_id}: {e}[/red]")
+
+    if saved_files:
+        console.print(f"\n[green]✓ Saved {len(saved_files)} rule file(s):[/green]")
+        for f in saved_files[:10]:
+            console.print(f"  → {f}")
+
+    console.print(f"\n[bold green]✓ Generated {total_rules} detection rule(s) from trace[/bold green]")
 
 
 def _severity_color(severity) -> str:

@@ -1,5 +1,5 @@
 """
-Content Safety Filter for ThreatSimGPT
+Content Safety Filter for Ciicerone
 Multi-layer filtering to prevent generation of harmful content
 
 Author: Temi Adebola (TSG-RED Lead)

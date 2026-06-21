@@ -1,4 +1,4 @@
-"""Model management utilities for ThreatSimGPT local models.
+"""Model management utilities for Ciicerone local models.
 
 This module provides utilities to help users discover, download, install,
 and manage local models across different providers.
@@ -302,7 +302,7 @@ class ModelManager:
                     },
                     {
                         "step": 4,
-                        "title": "Update ThreatSimGPT Config",
+                        "title": "Update Ciicerone Config",
                         "commands": [
                             "# In config.yaml:",
                             "llm:",
@@ -336,7 +336,7 @@ class ModelManager:
                     },
                     {
                         "step": 2,
-                        "title": "Update ThreatSimGPT Config",
+                        "title": "Update Ciicerone Config",
                         "commands": [
                             "# In config.yaml:",
                             "llm:",
@@ -378,7 +378,7 @@ class ModelManager:
                     },
                     {
                         "step": 3,
-                        "title": "Update ThreatSimGPT Config",
+                        "title": "Update Ciicerone Config",
                         "commands": [
                             "# In config.yaml:",
                             "llm:",

@@ -1,4 +1,4 @@
-"""Command Line Interface for ThreatSimGPT.
+"""Command Line Interface for Ciicerone.
 
 Provides command-line tools for threat simulation, configuration validation,
 and report generation.
