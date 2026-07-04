@@ -1,0 +1,99 @@
+# Ciicerone End-to-End Demo Scenario
+# Narrative: "Project Nightfall" — Acme Corp Q3 security assessment
+# Target: Alice Johnson, Chief Financial Officer (acme-corp.com)
+
+metadata:
+  name: 'Project Nightfall: CFO Spear-Phishing'
+  description: >-
+    Authorized red-team engagement simulating a targeted spear-phishing attack
+    against Acme Corp's CFO using a fraudulent "Q3 Board Materials" lure.
+    Demonstrates the full kill-chain from recon to detection.
+  author: Ciicerone Demo
+  version: 1.0.0
+  tags:
+    - demo
+    - end-to-end
+    - spear-phishing
+    - bec
+    - executive
+    - acme-corp
+  references:
+    - https://attack.mitre.org/techniques/T1566/001/
+    - https://attack.mitre.org/techniques/T1566/002/
+    - https://attack.mitre.org/techniques/T1078/
+
+threat_type: spear_phishing
+delivery_vector: email
+
+target_profile:
+  role: Chief Financial Officer
+  seniority: c_level
+  department: Finance
+  technical_level: moderate
+  industry: financial_services
+  company_size: large
+  typical_working_hours: 8:00-18:00
+  communication_style: formal_professional
+  security_awareness_level: 7
+  interests:
+    - financial_reporting
+    - compliance
+    - risk_management
+    - board_governance
+
+behavioral_pattern:
+  mitre_attack_techniques:
+    - T1566.001
+    - T1566.002
+    - T1078
+    - T1059.001
+    - T1003
+  mitre_attack_tactics:
+    - Initial Access
+    - Execution
+    - Credential Access
+  psychological_triggers:
+    - authority
+    - urgency
+    - professional_obligation
+  social_engineering_tactics:
+    - pretexting
+    - impersonation
+    - time_pressure
+  technical_methods:
+    - email_spoofing
+    - domain_spoofing
+    - credential_harvesting_page
+  evasion_techniques:
+    - legitimate_service_abuse
+    - url_shortening
+
+difficulty_level: 7
+estimated_duration: 45
+
+simulation_parameters:
+  max_iterations: 3
+  max_duration_minutes: 60
+  escalation_enabled: true
+  response_adaptation: true
+  language: en
+  tone: urgent_professional
+  urgency_level: 8
+  audit_logging: true
+  content_filtering: true
+
+custom_parameters:
+  demo_mode: true
+  engagement_name: 'Project Nightfall'
+  client_name: 'Acme Corp'
+  client_domain: 'acme-corp.com'
+  lure_subject: 'URGENT: Q3 Board Materials - Confidential Review Required by EOD'
+  pretext: 'Board Secretary impersonation requesting urgent review of confidential Q3 financials'
+  fake_login_page: 'Office 365 Document Portal'
+  success_metrics:
+    primary_goals:
+      - credential_capture
+      - email_open_rate
+    secondary_goals:
+      - time_to_action
+      - link_click_rate

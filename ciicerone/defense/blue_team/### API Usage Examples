@@ -1,0 +1,178 @@
+### API Usage Examples
+<details>
+<summary><b>Creating a New Flow (GraphQL)</b></summary>
+
+```graphql
+mutation CreateFlow {
+  createFlow(
+    modelProvider: "openai"
+    input: "Test the security of https://example.com"
+  ) {
+    id
+    title
+    status
+    createdAt
+  }
+}
+```
+
+</details>
+
+<details>
+<summary><b>Listing Flows (REST API)</b></summary>
+
+```bash
+curl https://your-pentagi-instance:8443/api/v1/flows \
+  -H "Authorization: Bearer YOUR_API_TOKEN" \
+  | jq '.flows[] | {id, title, status}'
+```
+
+</details>
+
+<details>
+<summary><b>Python Client Example</b></summary>
+
+```python
+import requests
+
+class PentAGIClient:
+    def __init__(self, base_url, api_token):
+        self.base_url = base_url
+        self.headers = {
+            "Authorization": f"Bearer {api_token}",
+            "Content-Type": "application/json"
+        }
+    
+    def create_flow(self, provider, target):
+        query = """
+        mutation CreateFlow($provider: String!, $input: String!) {
+          createFlow(modelProvider: $provider, input: $input) {
+            id
+            title
+            status
+          }
+        }
+        """
+        response = requests.post(
+            f"{self.base_url}/api/v1/graphql",
+            json={
+                "query": query,
+                "variables": {
+                    "provider": provider,
+                    "input": target
+                }
+            },
+            headers=self.headers
+        )
+        return response.json()
+    
+    def get_flows(self):
+        response = requests.get(
+            f"{self.base_url}/api/v1/flows",
+            headers=self.headers
+        )
+        return response.json()
+
+# Usage
+client = PentAGIClient(
+    "https://your-pentagi-instance:8443",
+    "your_api_token_here"
+)
+
+# Create a new flow
+flow = client.create_flow("openai", "Scan https://example.com for vulnerabilities")
+print(f"Created flow: {flow}")
+
+# List all flows
+flows = client.get_flows()
+print(f"Total flows: {len(flows['flows'])}")
+```
+
+</details>
+
+<details>
+<summary><b>TypeScript Client Example</b></summary>
+
+```typescript
+import axios, { AxiosInstance } from 'axios';
+
+interface Flow {
+  id: string;
+  title: string;
+  status: string;
+  createdAt: string;
+}
+
+class PentAGIClient {
+  private client: AxiosInstance;
+
+  constructor(baseURL: string, apiToken: string) {
+    this.client = axios.create({
+      baseURL: `${baseURL}/api/v1`,
+      headers: {
+        'Authorization': `Bearer ${apiToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+  }
+
+  async createFlow(provider: string, input: string): Promise<Flow> {
+    const query = `
+      mutation CreateFlow($provider: String!, $input: String!) {
+        createFlow(modelProvider: $provider, input: $input) {
+          id
+          title
+          status
+          createdAt
+        }
+      }
+    `;
+
+    const response = await this.client.post('/graphql', {
+      query,
+      variables: { provider, input },
+    });
+
+    return response.data.data.createFlow;
+  }
+
+  async getFlows(): Promise<Flow[]> {
+    const response = await this.client.get('/flows');
+    return response.data.flows;
+  }
+
+  async getFlow(flowId: string): Promise<Flow> {
+    const response = await this.client.get(`/flows/${flowId}`);
+    return response.data;
+  }
+}
+
+// Usage
+const client = new PentAGIClient(
+  'https://your-pentagi-instance:8443',
+  'your_api_token_here'
+);
+
+// Create a new flow
+const flow = await client.createFlow(
+  'openai',
+  'Perform penetration test on https://example.com'
+);
+console.log('Created flow:', flow);
+
+// List all flows
+const flows = await client.getFlows();
+console.log(`Total flows: ${flows.length}`);
+```
+
+</details>
+
+### Security Best Practices
+When working with API tokens:
+
+- **Never commit tokens to version control** - use environment variables or secrets management
+- **Rotate tokens regularly** - set appropriate expiration dates and create new tokens periodically
+- **Use separate tokens for different applications** - makes it easier to revoke access if needed
+- **Monitor token usage** - review API token activity in the Settings page
+- **Revoke unused tokens** - disable or delete tokens that are no longer needed
+- **Use HTTPS only** - never send API tokens over unencrypted connections

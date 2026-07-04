@@ -1,0 +1,309 @@
+{
+  "metadata": {
+    "name": "Project Nightfall: CFO Spear-Phishing",
+    "description": "Authorized red-team engagement simulating a targeted spear-phishing attack against Acme Corp's CFO using a fraudulent \"Q3 Board Materials\" lure. Demonstrates the full kill-chain from recon to detection.",
+    "version": "1.0.0",
+    "author": "Ciicerone Demo",
+    "created_at": "2026-06-27 11:22:46.764892",
+    "updated_at": "2026-06-27 11:22:46.764900",
+    "tags": [
+      "demo",
+      "end-to-end",
+      "spear-phishing",
+      "bec",
+      "executive",
+      "acme-corp"
+    ],
+    "references": [
+      "https://attack.mitre.org/techniques/T1566/001/",
+      "https://attack.mitre.org/techniques/T1566/002/",
+      "https://attack.mitre.org/techniques/T1078/"
+    ]
+  },
+  "threat_type": "spear_phishing",
+  "delivery_vector": "email",
+  "target_profile": {
+    "role": "Chief Financial Officer",
+    "seniority": "mid",
+    "department": "Finance",
+    "technical_level": "moderate",
+    "industry": "financial_services",
+    "company_size": "large",
+    "company_name": null,
+    "typical_working_hours": "8:00-18:00",
+    "communication_style": "formal_professional",
+    "security_awareness_level": 7,
+    "interests": [
+      "financial_reporting",
+      "compliance",
+      "risk_management",
+      "board_governance"
+    ],
+    "social_media_presence": null
+  },
+  "behavioral_pattern": {
+    "mitre_attack_techniques": [
+      "T1566.001",
+      "T1566.002",
+      "T1078",
+      "T1059.001",
+      "T1003"
+    ],
+    "mitre_attack_tactics": [
+      "Initial Access",
+      "Execution",
+      "Credential Access"
+    ],
+    "psychological_triggers": [
+      "authority",
+      "urgency",
+      "professional_obligation"
+    ],
+    "social_engineering_tactics": [
+      "pretexting",
+      "impersonation",
+      "time_pressure"
+    ],
+    "technical_methods": [
+      "email_spoofing",
+      "domain_spoofing",
+      "credential_harvesting_page"
+    ],
+    "evasion_techniques": [
+      "legitimate_service_abuse",
+      "url_shortening"
+    ]
+  },
+  "difficulty_level": 7,
+  "estimated_duration": 45,
+  "simulation_parameters": {
+    "max_iterations": 3,
+    "max_duration_minutes": 60,
+    "escalation_enabled": true,
+    "response_adaptation": true,
+    "time_pressure_simulation": false,
+    "multi_stage_attack": false,
+    "persistence_simulation": false,
+    "language": "en",
+    "tone": "urgent_professional",
+    "urgency_level": 8,
+    "compliance_mode": true,
+    "content_filtering": true,
+    "audit_logging": true
+  },
+  "custom_parameters": {
+    "demo_mode": true,
+    "engagement_name": "Project Nightfall",
+    "client_name": "",
+    "client_domain": "acme-corp.com",
+    "lure_subject": "URGENT: Q3 Board Materials - Confidential Review Required by EOD",
+    "pretext": "Board Secretary impersonation requesting urgent review of confidential Q3 financials",
+    "fake_login_page": "Office 365 Document Portal",
+    "success_metrics": {
+      "primary_goals": [
+        "credential_capture",
+        "email_open_rate"
+      ],
+      "secondary_goals": [
+        "time_to_action",
+        "link_click_rate"
+      ]
+    },
+    "client_network_topology": {
+      "id": "53b57fd5-a3d6-45bb-9922-dea110cc01a0",
+      "name": "Acme Corp Demo Network",
+      "nodes": [
+        {
+          "id": "ac676a53-2aad-405b-881a-5f1fcc46c08d",
+          "node_id": "router-1",
+          "name": "Core Router",
+          "node_type": "router",
+          "properties": {
+            "console": null,
+            "console_type": null,
+            "symbol": null,
+            "port_name_format": null,
+            "first_port_name": null
+          }
+        },
+        {
+          "id": "e1ef968c-8eab-4f3d-9f15-4024b75615a1",
+          "node_id": "switch-1",
+          "name": "Office Switch",
+          "node_type": "switch",
+          "properties": {
+            "console": null,
+            "console_type": null,
+            "symbol": null,
+            "port_name_format": null,
+            "first_port_name": null
+          }
+        },
+        {
+          "id": "1ead959e-da7a-4133-9a29-26c25d120ea3",
+          "node_id": "server-1",
+          "name": "Finance Server",
+          "node_type": "server",
+          "properties": {
+            "console": null,
+            "console_type": null,
+            "symbol": null,
+            "port_name_format": null,
+            "first_port_name": null
+          }
+        },
+        {
+          "id": "94af1bb8-4ea2-4e63-b5da-b89765931790",
+          "node_id": "workstation-1",
+          "name": "CFO Workstation",
+          "node_type": "workstation",
+          "properties": {
+            "console": null,
+            "console_type": null,
+            "symbol": null,
+            "port_name_format": null,
+            "first_port_name": null
+          }
+        }
+      ],
+      "links": [],
+      "subnets": [],
+      "metadata": {
+        "version": "unknown"
+      }
+    },
+    "client_assets": [
+      {
+        "id": "e8463117-7f02-49c9-8e55-133a453b6d61",
+        "source_id": "router-1",
+        "name": "Core Router",
+        "asset_type": "router",
+        "ip_address": null,
+        "os": null,
+        "services": [],
+        "tags": [],
+        "metadata": {
+          "console": null,
+          "console_type": null,
+          "symbol": null,
+          "port_name_format": null,
+          "first_port_name": null
+        }
+      },
+      {
+        "id": "47d7f940-5f7d-4eee-9335-14d2a4be53fc",
+        "source_id": "switch-1",
+        "name": "Office Switch",
+        "asset_type": "switch",
+        "ip_address": null,
+        "os": null,
+        "services": [],
+        "tags": [],
+        "metadata": {
+          "console": null,
+          "console_type": null,
+          "symbol": null,
+          "port_name_format": null,
+          "first_port_name": null
+        }
+      },
+      {
+        "id": "67087933-fd6d-425b-90ae-4a3f5ef609e4",
+        "source_id": "server-1",
+        "name": "Finance Server",
+        "asset_type": "server",
+        "ip_address": null,
+        "os": null,
+        "services": [],
+        "tags": [],
+        "metadata": {
+          "console": null,
+          "console_type": null,
+          "symbol": null,
+          "port_name_format": null,
+          "first_port_name": null
+        }
+      },
+      {
+        "id": "81c0ba44-6b9f-4a97-845b-acbc9ffb8e22",
+        "source_id": "workstation-1",
+        "name": "CFO Workstation",
+        "asset_type": "workstation",
+        "ip_address": null,
+        "os": null,
+        "services": [],
+        "tags": [],
+        "metadata": {
+          "console": null,
+          "console_type": null,
+          "symbol": null,
+          "port_name_format": null,
+          "first_port_name": null
+        }
+      }
+    ],
+    "client_tenant_id": "acme-demo",
+    "client_employees": [
+      {
+        "name": "Alice Johnson",
+        "role": "Chief Financial Officer",
+        "department": "Finance",
+        "email": "alice.finance@acme-corp.com"
+      },
+      {
+        "name": "Bob Smith",
+        "role": "Senior Software Engineer",
+        "department": "Engineering",
+        "email": "bob.engineer@acme-corp.com"
+      },
+      {
+        "name": "Carol Davis",
+        "role": "Sales Director",
+        "department": "Sales",
+        "email": "carol.sales@acme-corp.com"
+      }
+    ],
+    "company_recon": {
+      "company_name": "Welcome to ACME Corporation",
+      "domain": "acme-corp.com",
+      "industry": "Unknown",
+      "company_size": null,
+      "headquarters": "FR",
+      "business_description": null,
+      "recent_news": [
+        {
+          "title": "'Coyote Vs. Acme' Trailer Sees Attorney Will Forte Takes On Acme Corp - Deadline",
+          "url": "https://news.google.com/rss/articles/CBMif0FVX3lxTE5SWDhiUVNjNmNud0FRV0xXVDY3dlBHcU9iVmNoSmx4Y3FZUkRUc1ZqVHc4VHFnZndEMDdDWm5zUTFwNVZIWE1hbzZ4TDdVY2lxdUN3SjhyeHh5NXFNSkozNG81ZlJjU1VJbkJzS1l6MjVUVVliNFFiNEVrRTAzMkk?oc=5",
+          "published": "Wed, 22 Apr 2026 07:00:00 GMT"
+        },
+        {
+          "title": "\u2018Coyote vs. Acme\u2019 Confirms Long-Awaited UK & Irish Cinema Release Date - The Arts Shelf",
+          "url": "https://news.google.com/rss/articles/CBMihgFBVV95cUxNeFJya3hRQkxTVnZGSUxQdlhnSEl5N0tNNV9CRldJTVhWWEk1OVhMcWZKLWE0dGdMQmdmZE9oMjE3anNvT3BuNm9ta0EwSzlEeTZscjhfZlZUbnFaWE0wZVZGc2VTcWdOWEc5SlBSaVllM0NvQllZWENXTlN5bFVXTzk2bVBkdw?oc=5",
+          "published": "Sat, 20 Jun 2026 10:32:39 GMT"
+        },
+        {
+          "title": "\u2018Coyote vs. Acme\u2019 Official Trailer: Film Saved From Warners\u2019 Ax Reveals First Footage - The Hollywood Reporter",
+          "url": "https://news.google.com/rss/articles/CBMijwFBVV95cUxNMnBWQ0cxeW05UTFtWW5HcWZnNE5zX3Zjb0t3SXlVMUVtTnl5UUhVZndhWUYwdVpVckVUOXJEaTRKVmxJekcwRndNTlBXZU42NGFiSm8takc0bks3dFhPaktZTjdSSWk2ZElvU3dfWVlzWi0yeEozcGZMamtZOFJEY0wxZC1MaEI0X19FNWx6SQ?oc=5",
+          "published": "Wed, 22 Apr 2026 07:00:00 GMT"
+        },
+        {
+          "title": "'Coyote vs. Acme' Trailer: The 'Looney Tunes' Movie Finally Comes to Theaters Years After Warner Bros. Axed Its Release - Variety Australia",
+          "url": "https://news.google.com/rss/articles/CBMiggFBVV95cUxPSl8tV1hUVDAtc3dOLUg4RnpjMmdEb0g2NE1vQll2d1B1aHJncVNNWnVIb0hHRmFoc3hrYy1ORjBHNVR6cWh0Z3lQcXRaalZuNXhubDk4QVA0bVZ3S2NlVmkyZFBER3RfNHFzMDI4QnRpRzdnYlVodVJTRFJrMGg5UmJR?oc=5",
+          "published": "Thu, 23 Apr 2026 07:00:00 GMT"
+        },
+        {
+          "title": "The first trailer for the almost-deleted Coyote vs. Acme looks good as hell - LaineyGossip",
+          "url": "https://news.google.com/rss/articles/CBMinAFBVV95cUxNeVl0Yk5EYnQ4YVNCX0FBdGwzZjdhX3FLQTRrTVlvelIyLUxmTjVsMF9jcC04VlFmUGFzcDBkd2trdFotZy13WHNqc19EUDhuWF9jSnNoQUJyNGFsVnhIV3FZSmNkbnJtZ0RQOXRoTS1Kbmw2T1IzM1Jqd1dXWktsTkstRGY4Y2stYUFpNzE4V29scjlxZGtHM0M4dWc?oc=5",
+          "published": "Wed, 22 Apr 2026 07:00:00 GMT"
+        }
+      ],
+      "linkedin_company_page": null,
+      "twitter_accounts": [],
+      "confidence_level": "medium",
+      "sources": [
+        "company_website",
+        "domain_whois"
+      ]
+    }
+  }
+}

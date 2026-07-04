@@ -1,0 +1,25 @@
+{
+  "scenario_file": "demos/end_to_end/output/enriched_scenario.json",
+  "content_type": "email_phishing",
+  "generation_timestamp": "2026-06-27T12:10:15.748686",
+  "variants": [
+    {
+      "generation_id": "gen_1782562209998",
+      "content": "Subject: Updated Vendor Payment Instructions - Action Required  \nFrom: Emily Carter <emily.carter@vendor-financeupdate.com>  \nTo: John Smith (Chief Financial Officer, TechCorp Inc.)  \n\n---\n\n**Dear Mr. Smith,**  \n\nI hope this email finds you well. I am reaching out regarding an urgent update to the payment instructions for one of TechCorp Inc.'s key vendors, Innovate Supplies Ltd. As part of their recent compliance audit, Innovate Supplies has updated their banking information to better align with international payment standards.  \n\nTo avoid any delays in upcoming payments, we kindly request that you update the vendor\u2019s payment details in your system before the next scheduled transaction. Attached, you will find the updated banking information in a secure PDF document. Please review the details and confirm once the changes have been applied.  \n\n**Note:** Innovate Supplies Ltd. has indicated that failure to update the payment details before the next invoice deadline (Friday, [insert date]) may result in penalties for late payment.  \n\nIf you have any questions or require further clarification, do not hesitate to reach out. We appreciate your prompt attention to this matter to ensure smooth financial operations.  \n\n**Attachment:** Innovate_Supplies_Banking_Update.pdf  \n\nThank you for your cooperation.  \n\nBest regards,  \nEmily Carter  \nVendor Accounts Coordinator  \nVendor Finance Update Team  \nemily.carter@vendor-financeupdate.com  \n\n---\n\n**Training Notes:**  \n\n1. **Urgency Trigger:** The email uses a deadline (Friday) to create a sense of urgency, pressuring the recipient to act quickly without thoroughly verifying the information.  \n2. **Professional Tone:** The language is formal and professional, matching the target's seniority and role. This reduces suspicion.  \n3. **Familiarity:** The email references a plausible vendor name (Innovate Supplies Ltd.) to build credibility.  \n4. **Attachment:** The attachment, named to sound legitimate, is a common vector for malware or credential theft in phishing attacks.  \n5. **Sender Email Red Flag:** The sender's domain, \"vendor-financeupdate.com,\" appears professional but is not a known domain for TechCorp Inc. or its vendors. This discrepancy may alert security-conscious recipients.  \n6. **Lack of Personalization:** While the email is professionally formatted, it lacks specific details about the vendor relationship or invoice history, which might raise suspicion among vigilant employees.  \n\nThis email demonstrates how attackers can exploit urgency and professional formatting to deceive recipients. Employees should be trained to verify sender identities, scrutinize attachments, and confirm sensitive requests through trusted channels.",
+      "provider": "azure",
+      "model": "gpt-4",
+      "quality_metrics": {
+        "quality_score": 0.81,
+        "realism_score": 1.0,
+        "effectiveness_score": 0.5
+      },
+      "safety_passed": true,
+      "safety_issues": [],
+      "usage_metrics": {
+        "tokens_used": 1011,
+        "generation_time_ms": 5750,
+        "cost_estimate": 0.030329999999999996
+      }
+    }
+  ]
+}

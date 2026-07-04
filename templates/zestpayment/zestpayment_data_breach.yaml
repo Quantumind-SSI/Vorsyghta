@@ -1,0 +1,225 @@
+# =============================================================================
+# ZestPayment - Data Breach Simulation Template
+# =============================================================================
+# Simulates data breach scenarios targeting ZestPayment's customer data,
+# transaction history, payment data, and backup archives. Tests detection
+# capabilities, data loss prevention, and incident response procedures.
+#
+# USAGE:
+#   ciicerone simulate -s templates/zestpayment/zestpayment_data_breach.yaml
+
+metadata:
+  name: "ZestPayment Data Breach Simulation"
+  description: "Simulates data exfiltration and breach scenarios targeting ZestPayment customer and payment data"
+  version: "1.0.0"
+  author: "Ciicerone Security Team"
+  created_at: "2026-06-29T10:00:00Z"
+  updated_at: "2026-06-29T10:00:00Z"
+  tags: ["data_breach", "exfiltration", "pci-dss", "ndpr", "zestpayment", "customer_data"]
+  references:
+    - "https://attack.mitre.org/tactics/TA0010/"
+    - "https://www.pcisecuritystandards.org/"
+    - "https://ndpr.gov.ng/"
+
+threat_type: "data_breach"
+delivery_vector: "network"
+
+difficulty_level: 9
+estimated_duration: 120
+
+target_profile:
+  role: "Database Administrator"
+  department: "Engineering"
+  seniority: "senior"
+  technical_level: "high"
+  security_awareness_level: 7
+  industry: "fintech"
+  company_size: "medium"
+  typical_working_hours: "9:00-17:00 WAT"
+  communication_style: "technical"
+
+behavioral_pattern:
+  mitre_attack_techniques:
+    - "T1005"  # Data from Local System
+    - "T1213.001"  # Data from Information Repositories: Confluence
+    - "T1530"  # Data from Cloud Storage
+    - "T1041"  # Exfiltration Over C2 Channel
+    - "T1567.002"  # Exfiltration to Cloud Storage
+    - "T1074.001"  # Local Data Staging
+    - "T1056"  # Input Capture
+
+  mitre_attack_tactics:
+    - "Collection"
+    - "Staging"
+    - "Exfiltration"
+    - "Impact"
+
+  psychological_triggers:
+    - "curiosity"
+    - "financial_gain"
+
+  social_engineering_tactics:
+    - "database_access_phishing"
+    - "backup_theft"
+    - "analytics_data_harvesting"
+
+  technical_methods:
+    - "payment_data_exfiltration"
+    - "customer_database_breach"
+    - "transaction_history_harvesting"
+    - "analytics_data_theft"
+    - "backup_archive_compromise"
+    - "data_staging_and_compression"
+    - "covert_exfiltration_channel"
+
+  evasion_techniques:
+    - "data_compression"
+    - "protocol_encapsulation"
+    - "legitimate_service_abuse"
+    - "slow_exfiltration"
+    - "dns_tunneling"
+
+simulation_parameters:
+  max_iterations: 6
+  max_duration_minutes: 150
+  escalation_enabled: true
+  response_adaptation: true
+  time_pressure_simulation: false
+  multi_stage_attack: true
+  language: "en-US"
+  tone: "technical"
+  urgency_level: 9
+  compliance_mode: true
+  content_filtering: true
+  audit_logging: true
+  pci_dss_mode: true
+  ndpr_mode: true
+  redact_pii: true
+  redact_pan: true
+
+custom_parameters:
+  data_targets:
+    - name: "Customer Database"
+      data_type: "PII"
+      sensitivity: "critical"
+      compliance: ["NDPR", "PCI-DSS"]
+      description: "Customer profiles, KYC data, contact information"
+      protection_required: "encryption_at_rest, access_control, audit_logging"
+
+    - name: "Payment Transaction Records"
+      data_type: "PCI"
+      sensitivity: "critical"
+      compliance: ["PCI-DSS"]
+      description: "Transaction history, card data, payment metadata"
+      protection_required: "tokenization, encryption, pci_dss_audit_trail"
+
+    - name: "Analytics Data Warehouse"
+      data_type: "Business Intelligence"
+      sensitivity: "high"
+      compliance: ["NDPR"]
+      description: "Transaction analytics, customer behavior data"
+      protection_required: "access_control, encryption, data_masking"
+
+    - name: "Backup Archives"
+      data_type: "Full System Backup"
+      sensitivity: "critical"
+      compliance: ["PCI-DSS", "NDPR"]
+      description: "OBS backup buckets containing full system snapshots"
+      protection_required: "encryption, access_policy, immutability"
+
+    - name: "API Logs and Audit Trails"
+      data_type: "Security Logs"
+      sensitivity: "high"
+      compliance: ["PCI-DSS"]
+      description: "API access logs, audit trails, security events"
+      protection_required: "immutability, retention_policy, siem_integration"
+
+  attack_scenarios:
+    - name: "Payment Data Exfiltration"
+      description: "Extract PAN and payment card data from transaction processing system"
+      attack_vector: "database_direct_access"
+      data_at_risk: "Payment card numbers, transaction details"
+      detection_point: "DLP monitoring, database access anomaly detection"
+      pci_dss_requirement: "Requirement 3 (Protect stored cardholder data)"
+
+    - name: "Customer Database Breach"
+      description: "Access and exfiltrate customer PII and KYC data"
+      attack_vector: "sql_injection_or_credential_access"
+      data_at_risk: "Customer PII, KYC documents, contact details"
+      detection_point: "Database audit logging, anomaly detection"
+      ndpr_requirement: "Data protection and breach notification"
+
+    - name: "Transaction History Harvesting"
+      description: "Bulk extract transaction history via API abuse"
+      attack_vector: "api_bulk_data_extraction"
+      data_at_risk: "Transaction records, merchant data"
+      detection_point: "API rate limiting anomaly, data access monitoring"
+      pci_dss_requirement: "Requirement 10 (Track and monitor access)"
+
+    - name: "Analytics Data Theft"
+      description: "Steal business intelligence and analytics data"
+      attack_vector: "data_warehouse_access"
+      data_at_risk: "Business intelligence, customer behavior analytics"
+      detection_point: "Data warehouse access monitoring"
+      ndpr_requirement: "Lawful processing and data minimization"
+
+    - name: "Backup Archive Compromise"
+      description: "Access and compromise OBS backup buckets"
+      attack_vector: "obs_bucket_access_policy_exploitation"
+      data_at_risk: "Full system backups, historical data"
+      detection_point: "OBS access logging, bucket policy monitoring"
+      pci_dss_requirement: "Requirement 12 (Maintain an information security policy)"
+
+  exfiltration_methods:
+    - "dns_tunneling"
+    - "https_to_external_service"
+    - "cloud_storage_sync"
+    - "compressed_archive_transfer"
+    - "covert_channel_via_api"
+
+  regulatory_context:
+    pci_dss:
+      applicable: true
+      requirements:
+        - "Req 3: Protect stored cardholder data"
+        - "Req 4: Encrypt transmission of cardholder data"
+        - "Req 10: Track and monitor all access"
+        - "Req 12: Information security policy"
+    ndpr:
+      applicable: true
+      requirements:
+        - "Data protection by design"
+        - "Breach notification within 72 hours"
+        - "Data subject rights"
+        - "Cross-border data transfer restrictions"
+    cbn:
+      applicable: true
+      requirements:
+        - "Central Bank of Nigeria data residency"
+        - "Payment system security requirements"
+
+  incident_response:
+    detection_sla: "15 minutes"
+    containment_sla: "1 hour"
+    notification_sla: "72 hours (NDPR)"
+    ir_playbook: "nist_800_61"
+    forensics_required: true
+
+  success_indicators:
+    exfiltration_detected: true
+    dlp_alert_triggered: true
+    database_anomaly_detected: true
+    obs_access_anomaly_alerted: true
+    incident_response_initiated: true
+    forensic_capture_started: true
+    siem_correlation_alert: true
+    compliance_team_notified: true
+
+  learning_objectives:
+    - "Detect data exfiltration attempts across multiple channels"
+    - "Validate DLP controls for payment and customer data"
+    - "Test incident response procedures for data breaches"
+    - "Understand PCI-DSS data protection requirements"
+    - "Understand NDPR breach notification obligations"
+    - "Validate backup security and immutability controls"
+    - "Practice forensic evidence collection and preservation"

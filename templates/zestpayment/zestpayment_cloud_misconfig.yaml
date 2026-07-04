@@ -1,0 +1,192 @@
+# =============================================================================
+# ZestPayment - Cloud Infrastructure Attack Simulation Template
+# =============================================================================
+# Simulates cloud-specific attacks against ZestPayment's Huawei Cloud
+# infrastructure including resource misconfiguration, exposed API endpoints,
+# insecure storage, compromised container images, and cloud credential theft.
+#
+# USAGE:
+#   ciicerone simulate -s templates/zestpayment/zestpayment_cloud_misconfig.yaml
+
+metadata:
+  name: "ZestPayment Cloud Infrastructure Attack Simulation"
+  description: "Simulates cloud misconfiguration and infrastructure attacks on ZestPayment's Huawei Cloud deployment"
+  version: "1.0.0"
+  author: "Ciicerone Security Team"
+  created_at: "2026-06-29T10:00:00Z"
+  updated_at: "2026-06-29T10:00:00Z"
+  tags: ["cloud_security", "misconfiguration", "huawei_cloud", "container_security", "zestpayment"]
+  references:
+    - "https://attack.mitre.org/techniques/T1578/"
+    - "https://attack.mitre.org/techniques/T1611/"
+    - "https://www.cisecurity.org/benchmark/cloud"
+
+threat_type: "cloud_infrastructure_attack"
+delivery_vector: "cloud"
+
+difficulty_level: 8
+estimated_duration: 90
+
+target_profile:
+  role: "Cloud Infrastructure Engineer"
+  department: "Engineering"
+  seniority: "senior"
+  technical_level: "high"
+  security_awareness_level: 6
+  industry: "fintech"
+  company_size: "medium"
+  typical_working_hours: "9:00-17:00 WAT"
+  communication_style: "technical"
+
+behavioral_pattern:
+  mitre_attack_techniques:
+    - "T1578"  # Modify Cloud Compute Infrastructure
+    - "T1611"  # Escape to Host
+    - "T1613"  # Container and Resource Discovery
+    - "T1525"  # Implant Internal Image
+    - "T1552.005"  # Cloud Instance Metadata API
+    - "T1530"  # Data from Cloud Storage
+
+  mitre_attack_tactics:
+    - "Initial Access"
+    - "Discovery"
+    - "Privilege Escalation"
+    - "Collection"
+    - "Impact"
+
+  psychological_triggers:
+    - "convenience"
+    - "misplaced_trust"
+
+  social_engineering_tactics:
+    - "cloud_credential_phishing"
+    - "service_account_compromise"
+
+  technical_methods:
+    - "cloud_resource_misconfiguration"
+    - "exposed_api_endpoints"
+    - "insecure_cloud_storage"
+    - "compromised_container_images"
+    - "cloud_credential_theft"
+    - "metadata_service_exploitation"
+    - "iam_privilege_escalation"
+    - "vpc_network_traversal"
+
+  evasion_techniques:
+    - "legitimate_cloud_api_usage"
+    - "container_image_persistence"
+    - "cloud_service_abuse"
+
+simulation_parameters:
+  max_iterations: 5
+  max_duration_minutes: 120
+  escalation_enabled: true
+  response_adaptation: true
+  time_pressure_simulation: false
+  multi_stage_attack: true
+  language: "en-US"
+  tone: "technical"
+  urgency_level: 8
+  compliance_mode: true
+  content_filtering: true
+  audit_logging: true
+  pci_dss_mode: true
+
+custom_parameters:
+  cloud_platform: "huawei_cloud"
+
+  cloud_services_targeted:
+    - service: "CCE (Cloud Container Engine)"
+      risk: "critical"
+      attack_surface: "Container orchestration, pod escape"
+    - service: "EVS (Elastic Volume Service)"
+      risk: "high"
+      attack_surface: "Persistent storage, snapshot access"
+    - service: "OBS (Object Storage)"
+      risk: "high"
+      attack_surface: "Log storage, backup archives"
+    - service: "ELB (Elastic Load Balancer)"
+      risk: "medium"
+      attack_surface: "Traffic routing, SSL termination"
+    - service: "DEW (Data Encryption Workshop)"
+      risk: "critical"
+      attack_surface: "Key management, secret storage"
+    - service: "SWR (Software Repository for Containers)"
+      risk: "high"
+      attack_surface: "Container image integrity"
+    - service: "VPC (Virtual Private Cloud)"
+      risk: "high"
+      attack_surface: "Network segmentation, security groups"
+    - service: "LTS (Log Tank Service)"
+      risk: "medium"
+      attack_surface: "Log integrity, audit trail"
+
+  attack_scenarios:
+    - name: "Cloud Resource Misconfiguration"
+      description: "Exploit misconfigured security groups and IAM policies"
+      attack_vector: "security_group_misconfiguration"
+      detection_point: "Cloud configuration monitoring (CSPM)"
+      mitre: "T1578"
+
+    - name: "Exposed API Endpoints"
+      description: "Discover and exploit publicly exposed management APIs"
+      attack_vector: "api_endpoint_discovery"
+      detection_point: "API gateway logging and alerting"
+      mitre: "T1190"
+
+    - name: "Insecure Cloud Storage"
+      description: "Access OBS buckets with misconfigured access policies"
+      attack_vector: "obs_bucket_misconfiguration"
+      detection_point: "OBS access logging and anomaly detection"
+      mitre: "T1530"
+
+    - name: "Compromised Container Images"
+      description: "Inject malicious code into SWR container images"
+      attack_vector: "container_image_poisoning"
+      detection_point: "Image signing and scanning controls"
+      mitre: "T1525"
+
+    - name: "Cloud Credential Theft"
+      description: "Steal cloud credentials from metadata service or config files"
+      attack_vector: "metadata_service_exploitation"
+      detection_point: "Metadata service protection and credential monitoring"
+      mitre: "T1552.005"
+
+    - name: "Container Escape"
+      description: "Escape container isolation to access host and other pods"
+      attack_vector: "container_escape"
+      detection_point: "Container runtime security (Falco/SELinux)"
+      mitre: "T1611"
+
+    - name: "IAM Privilege Escalation"
+      description: "Escalate privileges via IAM policy manipulation"
+      attack_vector: "iam_policy_exploitation"
+      detection_point: "IAM change monitoring and alerting"
+      mitre: "T1578.004"
+
+  network_topology:
+    vpc: "dedicated_vpc_for_ciicerone"
+    subnets:
+      - "payment_processing_subnet (isolated)"
+      - "management_subnet (restricted)"
+      - "public_subnet (ELB only)"
+    security_groups:
+      - "ciicerone-sg (ingress: 8000, 443; egress: restricted)"
+      - "ollama-sg (ingress: 11434 from ciicerone-sg only)"
+
+  success_indicators:
+    misconfiguration_detected: true
+    unauthorized_access_blocked: true
+    container_escape_prevented: true
+    credential_theft_detected: true
+    obs_access_anomaly_alerted: true
+    iam_change_detected: true
+    siem_alert_generated: true
+
+  learning_objectives:
+    - "Identify cloud misconfiguration vulnerabilities"
+    - "Understand container security and escape prevention"
+    - "Detect cloud credential theft attempts"
+    - "Validate IAM and security group configurations"
+    - "Test cloud storage access controls"
+    - "Understand Huawei Cloud security best practices"

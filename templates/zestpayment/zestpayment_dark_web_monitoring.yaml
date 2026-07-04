@@ -1,0 +1,358 @@
+# =============================================================================
+# ZestPayment - Dark Web Monitoring & Confidential Data Exposure Simulation
+# =============================================================================
+# Simulates dark web search and monitoring scenarios targeting ZestPayment's
+# confidential data including credentials, payment data, customer PII, API
+# keys, and source code. Tests detection capabilities, breach response
+# procedures, and compliance notification workflows.
+#
+# USAGE:
+#   ciicerone simulate -s templates/zestpayment/zestpayment_dark_web_monitoring.yaml
+
+metadata:
+  name: "ZestPayment Dark Web Monitoring Simulation"
+  description: "Simulates dark web searches for leaked ZestPayment confidential data including credentials, payment data, and internal documents"
+  version: "1.0.0"
+  author: "Ciicerone Security Team"
+  created_at: "2026-07-03T08:00:00Z"
+  updated_at: "2026-07-03T08:00:00Z"
+  tags: ["dark_web", "credential_leak", "data_exposure", "pci-dss", "ndpr", "zestpayment", "osint", "breach_monitoring"]
+  references:
+    - "https://attack.mitre.org/techniques/T1585/"
+    - "https://attack.mitre.org/techniques/T1586/"
+    - "https://www.pcisecuritystandards.org/"
+    - "https://ndpr.gov.ng/"
+
+threat_type: "dark_web_exposure"
+delivery_vector: "osint"
+
+difficulty_level: 8
+estimated_duration: 90
+
+target_profile:
+  role: "Security Operations Center Analyst"
+  department: "Information Security"
+  seniority: "mid"
+  technical_level: "high"
+  security_awareness_level: 8
+  industry: "fintech"
+  company_size: "medium"
+  typical_working_hours: "9:00-17:00 WAT"
+  communication_style: "technical"
+
+behavioral_pattern:
+  mitre_attack_techniques:
+    - "T1585"  # Establish Accounts
+    - "T1585.001"  # Social Media Accounts
+    - "T1586"  # Obtain Capabilities
+    - "T1586.002"  # Code Signing Certificates
+    - "T1591"  # Gather Victim Host Information
+    - "T1592"  # Gather Victim Host Information
+    - "T1590"  # Gather Victim Identity Information
+    - "T1590.001"  # Credentials
+    - "T1590.002"  # Email Addresses
+    - "T1590.003"  # Employee Names
+    - "T1590.004"  # Employee Information
+    - "T1590.005"  # Phone Numbers
+    - "T1590.006"  # Organization Emails
+
+  mitre_attack_tactics:
+    - "Reconnaissance"
+    - "Resource Development"
+    - "Collection"
+    - "Exfiltration"
+
+  psychological_triggers:
+    - "urgency"
+    - "financial_gain"
+    - "reputation_damage"
+
+  social_engineering_tactics:
+    - "credential_stuffing"
+    - "spear_phishing_with_leaked_data"
+    - "impersonation_using_exposed_info"
+
+  technical_methods:
+    - "dark_web_marketplace_monitoring"
+    - "breach_database_searching"
+    - "credential_leak_detection"
+    - "payment_data_exposure_monitoring"
+    - "api_key_leak_scanning"
+    - "source_code_leak_detection"
+    - "ransomware_claim_monitoring"
+    - "data_sale_listing_tracking"
+
+  evasion_techniques:
+    - "tor_network_routing"
+    - "encrypted_messaging_platforms"
+    - "cryptocurrency_transactions"
+    - "anonymous_marketplace_accounts"
+
+simulation_parameters:
+  max_iterations: 5
+  max_duration_minutes: 120
+  escalation_enabled: true
+  response_adaptation: true
+  time_pressure_simulation: true
+  multi_stage_attack: true
+  language: "en-US"
+  tone: "technical"
+  urgency_level: 9
+  compliance_mode: true
+  content_filtering: true
+  audit_logging: true
+  pci_dss_mode: true
+  ndpr_mode: true
+  redact_pii: true
+  redact_pan: true
+  sanitize_credentials: true
+
+custom_parameters:
+  monitoring_targets:
+    - name: "Employee Credentials"
+      data_type: "Credentials"
+      sensitivity: "critical"
+      compliance: ["NDPR", "PCI-DSS", "ISO-27001"]
+      description: "Employee email addresses, usernames, and password hashes leaked in breaches"
+      search_sources:
+        - "HaveIBeenPwned"
+        - "DeHashed"
+        - "Dark web marketplaces"
+        - "Paste sites"
+      protection_required: "password_reset, mfa_enforcement, access_log_review"
+
+    - name: "Customer Payment Data"
+      data_type: "PCI"
+      sensitivity: "critical"
+      compliance: ["PCI-DSS"]
+      description: "Payment card numbers, transaction records, and payment metadata"
+      search_sources:
+        - "Dark web marketplaces"
+        - "Carding forums"
+        - "Breach databases"
+        - "Ransomware leak sites"
+      protection_required: "card_reissuance, pci_incident_response, acquirer_notification"
+
+    - name: "Customer PII and KYC Data"
+      data_type: "PII"
+      sensitivity: "critical"
+      compliance: ["NDPR"]
+      description: "Customer profiles, KYC documents, contact information, BVN data"
+      search_sources:
+        - "Dark web forums"
+        - "Leak sites"
+        - "Social engineering marketplaces"
+        - "Doxxing platforms"
+      protection_required: "breach_notification, customer_alert, data_minimization_review"
+
+    - name: "API Keys and Access Tokens"
+      data_type: "Secrets"
+      sensitivity: "critical"
+      compliance: ["PCI-DSS", "ISO-27001"]
+      description: "API keys, OAuth tokens, JWT secrets, and cloud credentials"
+      search_sources:
+        - "GitHub/Pastebin leaks"
+        - "Dark web marketplaces"
+        - "Code repositories"
+        - "Cloud misconfiguration databases"
+      protection_required: "key_rotation, access_audit, api_gateway_hardening"
+
+    - name: "Source Code and Internal Documents"
+      data_type: "Intellectual Property"
+      sensitivity: "high"
+      compliance: ["ISO-27001"]
+      description: "Source code repositories, internal documentation, architecture diagrams"
+      search_sources:
+        - "Dark web forums"
+        - "Ransomware leak sites"
+        - "Code sharing platforms"
+        - "Paste sites"
+      protection_required: "secret_scanning, repository_access_review, git_history_audit"
+
+    - name: "Database Dumps"
+      data_type: "Database"
+      sensitivity: "critical"
+      compliance: ["PCI-DSS", "NDPR"]
+      description: "Full or partial database dumps containing customer and transaction data"
+      search_sources:
+        - "Dark web marketplaces"
+        - "Ransomware leak sites"
+        - "Breach databases"
+        - "File sharing platforms"
+      protection_required: "forensic_investigation, data_breach_assessment, law_enforcement_notification"
+
+  exposure_scenarios:
+    - name: "Credential Leak Detection"
+      description: "Detect ZestPayment employee credentials being sold on dark web marketplaces"
+      exposure_type: "credential_leak"
+      severity: "critical"
+      search_terms:
+        - "zestpayment.com"
+        - "@zestpayment.com"
+        - "zestpayment credentials"
+        - "zestpayment login"
+      detection_point: "Dark web monitoring alerts, breach database notifications"
+      pci_dss_requirement: "Requirement 8 (Identify users and authenticate access)"
+      ndpr_requirement: "Data security and breach notification"
+
+    - name: "Payment Data Sale Monitoring"
+      description: "Monitor dark web marketplaces for ZestPayment payment card data listings"
+      exposure_type: "payment_data_leak"
+      severity: "critical"
+      search_terms:
+        - "zestpayment cards"
+        - "zestpayment pan"
+        - "zestpayment payment data"
+        - "zestpayment transaction"
+      detection_point: "Carding forum monitoring, payment processor alerts"
+      pci_dss_requirement: "Requirement 3 (Protect stored cardholder data)"
+
+    - name: "Customer Database Dump Discovery"
+      description: "Detect full or partial customer database dumps on dark web"
+      exposure_type: "database_dump"
+      severity: "critical"
+      search_terms:
+        - "zestpayment database"
+        - "zestpayment dump"
+        - "zestpayment customer data"
+        - "zestpayment kyc"
+      detection_point: "Dark web monitoring, data loss prevention alerts"
+      ndpr_requirement: "Breach notification within 72 hours"
+
+    - name: "API Key Exposure Detection"
+      description: "Find leaked API keys and access tokens on paste sites and forums"
+      exposure_type: "api_key_leak"
+      severity: "high"
+      search_terms:
+        - "zestpayment api key"
+        - "zestpayment token"
+        - "zestpayment secret"
+        - "zestpayment oauth"
+      detection_point: "GitHub secret scanning, paste site monitoring"
+      pci_dss_requirement: "Requirement 6 (Develop secure software systems)"
+
+    - name: "Ransomware Claim Monitoring"
+      description: "Monitor ransomware leak sites for ZestPayment data claims"
+      exposure_type: "ransomware_claim"
+      severity: "critical"
+      search_terms:
+        - "zestpayment ransomware"
+        - "zestpayment lockbit"
+        - "zestpayment blackcat"
+        - "zestpayment leaked"
+      detection_point: "Ransomware tracker monitoring, threat intelligence feeds"
+
+    - name: "Source Code Leak Detection"
+      description: "Detect ZestPayment source code on dark web or code sharing platforms"
+      exposure_type: "source_code_leak"
+      severity: "high"
+      search_terms:
+        - "zestpayment source code"
+        - "zestpayment github"
+        - "zestpayment repository"
+        - "zestpayment internal"
+      detection_point: "Code repository scanning, dark web monitoring"
+
+    - name: "Access Sale Monitoring"
+      description: "Monitor for actors selling network access to ZestPayment infrastructure"
+      exposure_type: "selling_access"
+      severity: "critical"
+      search_terms:
+        - "zestpayment access"
+        - "zestpayment network"
+        - "zestpayment vpn"
+        - "zestpayment rdp"
+      detection_point: "Access market monitoring, threat intelligence"
+
+  monitoring_configuration:
+    providers:
+      - name: "HaveIBeenPwned"
+        type: "breach_database"
+        api_required: true
+        env_var: "HIBP_API_KEY"
+      - name: "DeHashed"
+        type: "credential_database"
+        api_required: true
+        env_var: "DEHASHED_API_KEY"
+      - name: "Recorded Future"
+        type: "dark_web_monitoring"
+        api_required: true
+        env_var: "RECORDED_FUTURE_API_KEY"
+      - name: "ZeroFox"
+        type: "dark_web_monitoring"
+        api_required: true
+        env_var: "ZEROFOX_API_KEY"
+      - name: "Flare"
+        type: "dark_web_monitoring"
+        api_required: true
+        env_var: "FLARE_API_KEY"
+
+    search_keywords:
+      - "zestpayment"
+      - "zestpayment.com"
+      - "zest payment"
+      - "zestpay"
+      - "zest-payment"
+      - "zestpayment api"
+      - "zestpayment database"
+      - "zestpayment credentials"
+      - "zestpayment customer"
+      - "zestpayment transaction"
+
+    monitoring_frequency: "daily"
+    alert_threshold: "medium"
+    auto_escalation: true
+
+  regulatory_context:
+    pci_dss:
+      applicable: true
+      requirements:
+        - "Req 3: Protect stored cardholder data"
+        - "Req 8: Identify users and authenticate access"
+        - "Req 10: Track and monitor all access"
+        - "Req 12: Information security policy"
+    ndpr:
+      applicable: true
+      requirements:
+        - "Breach notification within 72 hours"
+        - "Data protection by design"
+        - "Data subject rights"
+        - "Security safeguards"
+    cbn:
+      applicable: true
+      requirements:
+        - "Central Bank of Nigeria data residency"
+        - "Payment system security requirements"
+        - "Incident reporting to CBN"
+
+  incident_response:
+    detection_sla: "15 minutes"
+    containment_sla: "1 hour"
+    notification_sla: "72 hours (NDPR)"
+    ir_playbook: "nist_800_61"
+    forensics_required: true
+    law_enforcement_notification: true
+    regulatory_notification: true
+
+  success_indicators:
+    dark_web_exposure_detected: true
+    credential_leak_alert_triggered: true
+    payment_data_listing_found: true
+    api_key_exposure_detected: true
+    ransomware_claim_identified: true
+    incident_response_initiated: true
+    compliance_team_notified: true
+    customer_breach_notification_prepared: true
+    forensic_capture_started: true
+    credential_reset_enforced: true
+    api_keys_rotated: true
+
+  learning_objectives:
+    - "Detect confidential data exposures across dark web sources"
+    - "Validate dark web monitoring tooling and alerting"
+    - "Test incident response for credential leak scenarios"
+    - "Practice PCI-DSS breach response for payment data exposure"
+    - "Understand NDPR breach notification obligations for dark web exposures"
+    - "Validate API key rotation and access revocation procedures"
+    - "Practice threat actor attribution from dark web listings"
+    - "Test coordination between security, compliance, and engineering teams"

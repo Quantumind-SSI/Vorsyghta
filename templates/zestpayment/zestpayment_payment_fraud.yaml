@@ -1,0 +1,141 @@
+# =============================================================================
+# ZestPayment - Payment Fraud Simulation Template
+# =============================================================================
+# Simulates payment fraud scenarios targeting ZestPayment's payment processing
+# platform including card skimming, transaction interception, settlement
+# manipulation, refund/chargeback fraud, and currency conversion attacks.
+#
+# USAGE:
+#   ciicerone simulate -s templates/zestpayment/zestpayment_payment_fraud.yaml
+
+metadata:
+  name: "ZestPayment Payment Fraud Simulation"
+  description: "Simulates payment fraud attacks against ZestPayment's payment processing platform"
+  version: "1.0.0"
+  author: "Ciicerone Security Team"
+  created_at: "2026-06-29T10:00:00Z"
+  updated_at: "2026-06-29T10:00:00Z"
+  tags: ["payment_fraud", "financial", "pci-dss", "zestpayment", "african_markets"]
+  references:
+    - "https://attack.mitre.org/techniques/T1565/"
+    - "https://www.pcisecuritystandards.org/"
+
+threat_type: "payment_fraud"
+delivery_vector: "api_abuse"
+
+difficulty_level: 7
+estimated_duration: 60
+
+target_profile:
+  role: "Payment Operations Engineer"
+  department: "Payment Operations"
+  seniority: "mid"
+  technical_level: "high"
+  security_awareness_level: 6
+  industry: "fintech"
+  company_size: "medium"
+  typical_working_hours: "9:00-17:00 WAT"
+  communication_style: "professional"
+
+behavioral_pattern:
+  mitre_attack_techniques:
+    - "T1565.001"  # Stored Data Manipulation
+    - "T1565.002"  # Transmitted Data Manipulation
+    - "T1565.003"  # Runtime Data Manipulation
+    - "T1059.004"  # Command and Scripting Interpreter: Python
+    - "T1071.001"  # Application Layer Protocol: Web Protocols
+
+  mitre_attack_tactics:
+    - "Initial Access"
+    - "Execution"
+    - "Impact"
+
+  psychological_triggers:
+    - "urgency"
+    - "financial_gain"
+    - "authority"
+
+  social_engineering_tactics:
+    - "pretexting"
+    - "transaction_manipulation"
+    - "fraudulent_refund_requests"
+
+  technical_methods:
+    - "payment_card_skimming"
+    - "transaction_interception"
+    - "settlement_manipulation"
+    - "refund_chargeback_fraud"
+    - "currency_conversion_exploitation"
+
+  evasion_techniques:
+    - "legitimate_transaction_mimicry"
+    - "rate_limit_evasion"
+    - "fraud_detection_bypass"
+
+simulation_parameters:
+  max_iterations: 4
+  max_duration_minutes: 90
+  escalation_enabled: true
+  response_adaptation: true
+  time_pressure_simulation: true
+  multi_stage_attack: true
+  language: "en-US"
+  tone: "professional"
+  urgency_level: 8
+  compliance_mode: true
+  content_filtering: true
+  audit_logging: true
+  pci_dss_mode: true
+  redact_pan: true
+
+custom_parameters:
+  payment_methods_targeted:
+    - "cards"
+    - "qr"
+    - "ussd"
+    - "transfers"
+
+  fraud_scenarios:
+    - name: "Card Skimming Simulation"
+      description: "Simulate card data interception at payment gateway"
+      attack_vector: "mitm_on_payment_gateway"
+      detection_point: "PCI-DSS Requirement 4 (Encrypt transmission)"
+
+    - name: "Transaction Interception"
+      description: "Intercept and modify transaction in transit"
+      attack_vector: "api_transaction_modification"
+      detection_point: "Transaction integrity verification"
+
+    - name: "Settlement Manipulation"
+      description: "Manipulate settlement amounts and reconciliation"
+      attack_vector: "settlement_api_abuse"
+      detection_point: "Reconciliation discrepancy detection"
+
+    - name: "Refund/Chargeback Fraud"
+      description: "Process fraudulent refunds via API"
+      attack_vector: "refund_api_exploitation"
+      detection_point: "Refund authorization controls"
+
+    - name: "Currency Conversion Attack"
+      description: "Exploit FX rate manipulation in multi-currency transactions"
+      attack_vector: "fx_rate_exploitation"
+      detection_point: "FX rate validation controls"
+
+  geographic_context:
+    primary_markets: ["Nigeria", "Kenya", "Ghana", "South Africa"]
+    currencies: ["NGN", "KES", "GHS", "ZAR", "USD"]
+    regulatory_frameworks: ["CBN", "PCI-DSS", "NDPR"]
+
+  success_indicators:
+    fraud_detected: true
+    transaction_blocked: true
+    alert_triggered: true
+    reconciliation_discrepancy: true
+    fraud_team_notified: true
+
+  learning_objectives:
+    - "Detect payment fraud patterns in real-time"
+    - "Understand PCI-DSS transaction security requirements"
+    - "Identify settlement manipulation indicators"
+    - "Recognize refund fraud attack patterns"
+    - "Validate fraud detection rule effectiveness"

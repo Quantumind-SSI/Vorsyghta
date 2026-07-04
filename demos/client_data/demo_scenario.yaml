@@ -1,0 +1,51 @@
+metadata:
+  name: 'Demo: CFO Spear Phishing'
+  description: Demonstration of client-data enrichment targeting the Acme Corp CFO
+  author: Ciicerone Demo
+  version: 1.0.0
+  tags:
+    - demo
+    - phishing
+    - client-data
+  references:
+    - https://attack.mitre.org/techniques/T1566/001/
+threat_type: spear_phishing
+delivery_vector: email
+target_profile:
+  role: Chief Financial Officer
+  seniority: c_level
+  department: Finance
+  technical_level: moderate
+  industry: financial_services
+  company_size: large
+  typical_working_hours: 8:00-18:00
+  communication_style: formal_professional
+  security_awareness_level: 7
+  interests:
+    - financial_reporting
+    - compliance
+behavioral_pattern:
+  mitre_attack_techniques:
+    - T1566.001
+  psychological_triggers:
+    - authority
+    - urgency
+  social_engineering_tactics:
+    - pretexting
+    - impersonation
+  technical_methods:
+    - email_spoofing
+  evasion_techniques:
+    - sandbox_evasion
+difficulty_level: 6
+estimated_duration: 30
+simulation_parameters:
+  max_iterations: 3
+  max_duration_minutes: 60
+  escalation_enabled: true
+  language: en
+  tone: urgent_professional
+  urgency_level: 7
+  audit_logging: true
+custom_parameters:
+  demo_mode: true

@@ -1,0 +1,169 @@
+# =============================================================================
+# ZestPayment - API Security Threat Simulation Template
+# =============================================================================
+# Simulates API abuse attacks against ZestPayment's API-first developer
+# ecosystem including endpoint abuse, authentication token theft, rate
+# limiting bypass, MITM attacks, and API key compromise.
+#
+# USAGE:
+#   ciicerone simulate -s templates/zestpayment/zestpayment_api_abuse.yaml
+
+metadata:
+  name: "ZestPayment API Security Simulation"
+  description: "Simulates API abuse and security attacks against ZestPayment's developer API ecosystem"
+  version: "1.0.0"
+  author: "Ciicerone Security Team"
+  created_at: "2026-06-29T10:00:00Z"
+  updated_at: "2026-06-29T10:00:00Z"
+  tags: ["api_security", "api_abuse", "zestpayment", "developer_ecosystem", "owasp_api"]
+  references:
+    - "https://owasp.org/API-Security/"
+    - "https://attack.mitre.org/techniques/T1190/"
+
+threat_type: "api_abuse"
+delivery_vector: "api"
+
+difficulty_level: 8
+estimated_duration: 75
+
+target_profile:
+  role: "API Developer"
+  department: "Engineering"
+  seniority: "mid"
+  technical_level: "high"
+  security_awareness_level: 5
+  industry: "fintech"
+  company_size: "medium"
+  typical_working_hours: "9:00-17:00 WAT"
+  communication_style: "technical"
+
+behavioral_pattern:
+  mitre_attack_techniques:
+    - "T1190"  # Exploit Public-Facing Application
+    - "T1078"  # Valid Accounts
+    - "T1552.001"  # Credentials In Files
+    - "T1557"  # Adversary-in-the-Middle
+    - "T1119"  # Automated Collection
+
+  mitre_attack_tactics:
+    - "Initial Access"
+    - "Credential Access"
+    - "Collection"
+    - "Defense Evasion"
+
+  psychological_triggers:
+    - "convenience"
+    - "trust"
+    - "urgency"
+
+  social_engineering_tactics:
+    - "api_documentation_exploitation"
+    - "developer_token_theft"
+    - "oauth_flow_hijacking"
+
+  technical_methods:
+    - "api_endpoint_abuse"
+    - "authentication_token_theft"
+    - "rate_limiting_bypass"
+    - "man_in_the_middle_attack"
+    - "api_key_compromise"
+    - "graphql_introspection_abuse"
+    - "webhook_manipulation"
+
+  evasion_techniques:
+    - "distributed_requests"
+    - "ip_rotation"
+    - "user_agent_spoofing"
+    - "legitimate_api_usage_mimicry"
+
+simulation_parameters:
+  max_iterations: 5
+  max_duration_minutes: 90
+  escalation_enabled: true
+  response_adaptation: true
+  time_pressure_simulation: false
+  multi_stage_attack: true
+  language: "en-US"
+  tone: "technical"
+  urgency_level: 7
+  compliance_mode: true
+  content_filtering: true
+  audit_logging: true
+  pci_dss_mode: true
+
+custom_parameters:
+  api_endpoints_targeted:
+    - path: "/api/v1/payments"
+      method: "POST"
+      risk: "critical"
+      description: "Payment initiation endpoint"
+    - path: "/api/v1/refunds"
+      method: "POST"
+      risk: "high"
+      description: "Refund processing endpoint"
+    - path: "/api/v1/transactions"
+      method: "GET"
+      risk: "medium"
+      description: "Transaction history endpoint"
+    - path: "/api/v1/customers"
+      method: "GET"
+      risk: "high"
+      description: "Customer data endpoint"
+    - path: "/api/v1/webhooks"
+      method: "POST"
+      risk: "high"
+      description: "Webhook configuration endpoint"
+    - path: "/api/v1/settlements"
+      method: "POST"
+      risk: "critical"
+      description: "Settlement processing endpoint"
+
+  attack_scenarios:
+    - name: "Rate Limiting Bypass"
+      description: "Bypass API rate limits using distributed requests and IP rotation"
+      owasp_category: "API4:2023 - Unrestricted Resource Consumption"
+      detection_point: "Rate limiting monitoring and alerting"
+
+    - name: "Authentication Token Theft"
+      description: "Steal OAuth tokens via malicious redirect URI"
+      owasp_category: "API2:2023 - Broken Authentication"
+      detection_point: "OAuth flow anomaly detection"
+
+    - name: "API Key Compromise"
+      description: "Extract API keys from compromised developer environments"
+      owasp_category: "API3:2023 - Broken Object Property Level Authorization"
+      detection_point: "API key usage anomaly detection"
+
+    - name: "Webhook Manipulation"
+      description: "Hijack webhooks to intercept payment notifications"
+      owasp_category: "API8:2023 - Security Misconfiguration"
+      detection_point: "Webhook endpoint validation"
+
+    - name: "GraphQL Introspection Abuse"
+      description: "Exploit exposed GraphQL introspection to map API schema"
+      owasp_category: "API8:2023 - Security Misconfiguration"
+      detection_point: "GraphQL introspection controls"
+
+  developer_ecosystem_context:
+    sdk_versions: ["python", "nodejs", "php", "java"]
+    authentication_methods: ["oauth2", "api_key", "hmac_signature"]
+    rate_limits:
+      standard: "100 req/min"
+      premium: "1000 req/min"
+    webhook_delivery: "retry_with_exponential_backoff"
+
+  success_indicators:
+    rate_limit_triggered: true
+    token_theft_detected: true
+    api_key_revoked: true
+    webhook_validation_failed: true
+    anomalous_api_usage_detected: true
+    siem_alert_generated: true
+
+  learning_objectives:
+    - "Identify API abuse patterns and rate limiting bypass attempts"
+    - "Understand OAuth token security and theft prevention"
+    - "Detect API key compromise indicators"
+    - "Validate webhook security controls"
+    - "Test API authentication and authorization mechanisms"
+    - "Understand OWASP API Security Top 10 risks"

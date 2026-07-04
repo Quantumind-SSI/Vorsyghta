@@ -1,0 +1,96 @@
+# Ciicerone Attack Docker Compose Stack
+# Deploys Ciicerone Attack autonomous penetration testing system
+# Usage: docker-compose -f docker-compose.attack.yml up -d
+#
+# Requirements: 16GB RAM, 100GB disk, Docker + Docker Compose
+
+services:
+  attack:
+    image: ciiceroneacr1782424350.azurecr.io/ciicerone-attack:latest
+    container_name: ciicerone-attack
+    ports:
+      - "3000:3000"   # Web UI
+      - "8080:8080"   # REST API
+      - "8081:8081"   # GraphQL API
+    environment:
+      # LLM Provider - uses Azure OpenAI
+      - OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
+      - OPENAI_BASE_URL=${AZURE_OPENAI_ENDPOINT}
+      - OPENAI_MODEL=${AZURE_OPENAI_DEPLOYMENT:-gpt-4o}
+
+      # Database
+      - DATABASE_URL=postgres://attack:${CIICERONE_ATTACK_DB_PASSWORD:-attack}@attack-db:5432/attack
+
+      # Redis
+      - REDIS_URL=redis://attack-redis:6379
+
+      # Security
+      - SECRET_KEY=${CIICERONE_ATTACK_SECRET_KEY:-changeme-in-production}
+      - API_TOKEN=${CIICERONE_ATTACK_API_TOKEN:-ciicerone-attack-token}
+
+      # Docker access for sandboxed tool execution
+      - DOCKER_HOST=unix:///var/run/docker.sock
+
+      # Optional: Search providers
+      - TAVILY_API_KEY=${TAVILY_API_KEY:-}
+      - SERP_API_KEY=${SERP_API_KEY:-}
+
+      # Optional: Langfuse observability
+      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-}
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-}
+      - LANGFUSE_HOST=${LANGFUSE_HOST:-}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - attack-data:/app/data
+    depends_on:
+      attack-db:
+        condition: service_healthy
+      attack-redis:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - attack-net
+
+  attack-db:
+    image: vxcontrol/pgvector:latest
+    container_name: ciicerone-attack-db
+    environment:
+      - POSTGRES_DB=attack
+      - POSTGRES_USER=attack
+      - POSTGRES_PASSWORD=${CIICERONE_ATTACK_DB_PASSWORD:-attack}
+    volumes:
+      - attack-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U attack"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - attack-net
+
+  attack-redis:
+    image: redis:7-alpine
+    container_name: ciicerone-attack-redis
+    volumes:
+      - attack-redis-data:/data
+    restart: unless-stopped
+    networks:
+      - attack-net
+
+  # Optional: Scraper for web intelligence
+  attack-scraper:
+    image: vxcontrol/scraper:latest
+    container_name: ciicerone-attack-scraper
+    restart: unless-stopped
+    networks:
+      - attack-net
+
+volumes:
+  attack-data:
+  attack-db-data:
+  attack-redis-data:
+
+networks:
+  attack-net:
+    driver: bridge

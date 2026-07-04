@@ -1,0 +1,46 @@
+{
+  "data": [
+    {
+      "id": "emp-001",
+      "email": "alice.finance@acme-corp.com",
+      "name": "Alice Johnson",
+      "title": "Chief Financial Officer",
+      "department": "Finance",
+      "seniority": "c_level",
+      "technical_level": "moderate",
+      "phone": "+1-555-0101",
+      "manager": "CEO",
+      "location": "New York, NY",
+      "interests": ["financial reporting", "compliance", "risk management"],
+      "security_awareness_level": 7
+    },
+    {
+      "id": "emp-002",
+      "email": "bob.engineer@acme-corp.com",
+      "name": "Bob Smith",
+      "title": "Senior Software Engineer",
+      "department": "Engineering",
+      "seniority": "senior",
+      "technical_level": "advanced",
+      "phone": "+1-555-0102",
+      "manager": "Alice Johnson",
+      "location": "San Francisco, CA",
+      "interests": ["open source", "cloud infrastructure"],
+      "security_awareness_level": 8
+    },
+    {
+      "id": "emp-003",
+      "email": "carol.sales@acme-corp.com",
+      "name": "Carol Davis",
+      "title": "Sales Director",
+      "department": "Sales",
+      "seniority": "director",
+      "technical_level": "basic",
+      "phone": "+1-555-0103",
+      "manager": "CEO",
+      "location": "Chicago, IL",
+      "interests": ["golf", "enterprise software"],
+      "security_awareness_level": 4
+    }
+  ]
+}
