@@ -14,6 +14,10 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
+# Air-gap mode: when True, all external HTTP calls for model downloads are blocked.
+# Set AIR_GAPPED_MODE=true in the environment to enable.
+AIR_GAPPED_MODE: bool = os.getenv("AIR_GAPPED_MODE", "false").lower() in ("true", "1", "yes")
+
 # Optional imports with fallbacks
 try:
     import aiohttp
@@ -407,6 +411,11 @@ class ModelManager:
         progress_callback: Optional[Callable[[float, int, int], None]] = None
     ) -> Dict[str, Any]:
         """Download a model file for local providers."""
+        if AIR_GAPPED_MODE:
+            return {
+                "error": "Air-gap mode is enabled — external model downloads are blocked. "
+                         "Pre-load models into the model cache directory before deployment."
+            }
         if not REQUESTS_AVAILABLE:
             return {"error": "requests library required for downloads"}
 

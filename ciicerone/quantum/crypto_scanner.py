@@ -9,10 +9,33 @@ import asyncio
 import logging
 import re
 from typing import Any, Dict, List, Optional
+from urllib.parse import urlparse
 
 from .models import CryptoAlgorithmType, CryptoInventoryItem
 
 logger = logging.getLogger(__name__)
+
+
+def _validate_url_for_tls_scan(url: str) -> str:
+    """Validate and normalize a URL before using it in a TLS subprocess scan.
+
+    Raises ValueError for malformed or suspicious URLs.
+    Returns the 'host:port' string safe to pass to openssl s_client -connect.
+    """
+    try:
+        parsed = urlparse(url if "://" in url else f"https://{url}")
+        host = parsed.hostname or ""
+        port = parsed.port or 443
+    except Exception as exc:
+        raise ValueError(f"Cannot parse URL {url!r}: {exc}") from exc
+
+    # Validate hostname: only allow safe chars
+    if not re.match(r'^[a-zA-Z0-9._\-]{1,253}$', host):
+        raise ValueError(f"Unsafe hostname in URL {url!r}: {host!r}")
+    if not (1 <= port <= 65535):
+        raise ValueError(f"Port {port} out of range in URL {url!r}")
+
+    return f"{host}:{port}"
 
 
 # Algorithm detection patterns
@@ -179,9 +202,10 @@ class CryptoInventoryScanner:
         items: List[CryptoInventoryItem] = []
 
         try:
+            connect_target = _validate_url_for_tls_scan(url)
             proc = await asyncio.create_subprocess_exec(
-                "openssl", "s_client", "-connect", url.split("//")[1].split("/")[0],
-                "-showcerts", "-2>/dev/null",
+                "openssl", "s_client", "-connect", connect_target,
+                "-showcerts",
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )

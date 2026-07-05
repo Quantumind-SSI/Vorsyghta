@@ -32,6 +32,8 @@ class QualityDimension(Enum):
     COMPLIANCE_ALIGNMENT = "compliance_alignment"
     SECTOR_RELEVANCE = "sector_relevance"
     TEMPORAL_RELEVANCE = "temporal_relevance"
+    EFFECTIVENESS = "effectiveness"
+    COVERAGE = "coverage"
 
 
 class ImprovementCategory(Enum):
@@ -61,6 +63,8 @@ class QualityMetrics:
     compliance_alignment: float = 0.0    # 0-1: Regulatory alignment
     sector_relevance: float = 0.0        # 0-1: Sector-specific relevance
     temporal_relevance: float = 0.0      # 0-1: Current threat landscape fit
+    effectiveness_score: float = 0.0     # 0-1: How effective the content is
+    coverage_score: float = 0.0          # 0-1: Attack vector coverage
 
     # Calculated
     overall_score: float = 0.0
@@ -390,3 +394,145 @@ class CycleMetrics:
                 self.improvement_trend = "declining"
             else:
                 self.improvement_trend = "stable"
+
+
+# ---------------------------------------------------------------------------
+# Extended models used by the orchestrator
+# ---------------------------------------------------------------------------
+
+@dataclass
+class LearningInsight:
+    """A single learning insight extracted from scenario/playbook analysis."""
+    id: str = ""
+    source_type: str = ""       # 'scenario' or 'playbook'
+    source_id: str = ""
+    insight: str = ""
+    dimension: Optional["QualityDimension"] = None
+    confidence_score: float = 0.8
+    improvement_action: str = ""
+    context: Dict[str, Any] = field(default_factory=dict)
+    created_at: datetime = field(default_factory=datetime.utcnow)
+
+    def __post_init__(self):
+        if not self.id:
+            content = f"{self.source_type}{self.source_id}{self.insight}"
+            self.id = f"li_{hashlib.sha256(content.encode()).hexdigest()[:12]}"
+
+
+@dataclass
+class ScenarioFeedback:
+    """Feedback collected from analyzing a single scenario."""
+    scenario_id: str = ""
+    quality_metrics: QualityMetrics = field(default_factory=QualityMetrics)
+    strengths: List[str] = field(default_factory=list)
+    weaknesses: List[str] = field(default_factory=list)
+    metadata: Dict[str, Any] = field(default_factory=dict)
+    created_at: datetime = field(default_factory=datetime.utcnow)
+
+
+@dataclass
+class PlaybookFeedback:
+    """Feedback collected from analyzing a single playbook."""
+    playbook_id: str = ""
+    linked_scenario_id: Optional[str] = None
+    quality_metrics: QualityMetrics = field(default_factory=QualityMetrics)
+    strengths: List[str] = field(default_factory=list)
+    weaknesses: List[str] = field(default_factory=list)
+    metadata: Dict[str, Any] = field(default_factory=dict)
+    created_at: datetime = field(default_factory=datetime.utcnow)
+
+
+@dataclass
+class EvolutionCycle:
+    """Record of a single evolution / improvement cycle."""
+    cycle_id: str = ""
+    started_at: datetime = field(default_factory=datetime.utcnow)
+    completed_at: Optional[datetime] = None
+    scenarios_processed: int = 0
+    playbooks_processed: int = 0
+    learnings_generated: int = 0
+    improvements_applied: int = 0
+    quality_delta: float = 0.0
+    scenario_feedbacks: List[str] = field(default_factory=list)
+    playbook_feedbacks: List[str] = field(default_factory=list)
+    learnings: List[str] = field(default_factory=list)
+
+
+class FeedbackStore:
+    """
+    Persistence layer for feedback loop data.
+
+    Default implementation stores learnings in memory; can be subclassed to
+    persist to Neo4j or another backend.
+    """
+
+    def __init__(self, neo4j_uri: str = "", neo4j_password: Optional[str] = None):
+        self._uri = neo4j_uri
+        self._password = neo4j_password
+        self._learnings: List[LearningInsight] = []
+        self._cycles: List[EvolutionCycle] = []
+        self._scenario_feedbacks: List[ScenarioFeedback] = []
+        self._playbook_feedbacks: List[PlaybookFeedback] = []
+        self._enhancements: List[Dict[str, Any]] = []
+
+    async def initialize(self) -> None:
+        """Initialize the store (connect to backend if needed)."""
+        pass
+
+    async def close(self) -> None:
+        """Release resources."""
+        pass
+
+    # ------------------------------------------------------------------
+    # Evolution cycle
+    # ------------------------------------------------------------------
+
+    async def store_cycle(self, cycle: EvolutionCycle) -> None:
+        self._cycles.append(cycle)
+
+    async def get_evolution_history(self, limit: int = 100) -> List[EvolutionCycle]:
+        return self._cycles[-limit:]
+
+    # ------------------------------------------------------------------
+    # Learning insights
+    # ------------------------------------------------------------------
+
+    async def store_learning(self, learning: LearningInsight) -> None:
+        self._learnings.append(learning)
+
+    async def get_learnings_by_context(
+        self,
+        context_type: str,
+        context_value: str,
+    ) -> List[LearningInsight]:
+        return [
+            l for l in self._learnings
+            if l.context.get(context_type) == context_value
+        ]
+
+    async def get_high_impact_learnings(self, limit: int = 5) -> List[LearningInsight]:
+        sorted_learnings = sorted(self._learnings, key=lambda l: l.confidence_score, reverse=True)
+        return sorted_learnings[:limit]
+
+    async def get_successful_enhancements(
+        self,
+        content_type: str,
+        min_improvement: float = 0.1,
+        limit: int = 5,
+    ) -> List[str]:
+        results = [
+            e["description"]
+            for e in self._enhancements
+            if e.get("content_type") == content_type and e.get("improvement", 0) >= min_improvement
+        ]
+        return results[:limit]
+
+    # ------------------------------------------------------------------
+    # Feedback records
+    # ------------------------------------------------------------------
+
+    async def store_scenario_feedback(self, feedback: ScenarioFeedback) -> None:
+        self._scenario_feedbacks.append(feedback)
+
+    async def store_playbook_feedback(self, feedback: PlaybookFeedback) -> None:
+        self._playbook_feedbacks.append(feedback)

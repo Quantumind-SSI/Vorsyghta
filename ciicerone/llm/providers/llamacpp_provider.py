@@ -16,6 +16,10 @@ from ..base import LLMResponse
 
 logger = logging.getLogger(__name__)
 
+import os
+# Air-gap mode: blocks all external HTTP downloads when set.
+_AIR_GAPPED_MODE: bool = os.getenv("AIR_GAPPED_MODE", "false").lower() in ("true", "1", "yes")
+
 # Optional imports with fallbacks
 try:
     from llama_cpp import Llama, LlamaGrammar
@@ -422,6 +426,12 @@ class LlamaCppProvider(LocalLLMProvider):
         progress_callback: Optional[callable] = None
     ) -> bool:
         """Download a model from URL."""
+        if _AIR_GAPPED_MODE:
+            logger.error(
+                "Air-gap mode is enabled — external model downloads are blocked. "
+                "Pre-load GGUF models into the model directory before deployment."
+            )
+            return False
         if not REQUESTS_AVAILABLE:
             logger.error("requests library required for model downloading")
             return False

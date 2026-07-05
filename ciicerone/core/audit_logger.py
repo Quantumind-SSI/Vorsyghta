@@ -194,6 +194,59 @@ class FileAuditSink(AuditSink):
         pass
 
 
+class HashChainAuditSink(AuditSink):
+    """Wraps another sink and adds SHA-256 hash-chain integrity to events.
+
+    Each event is augmented with:
+    - prev_hash: SHA-256 of the previous event's JSON (or zeros for first event)
+    - event_hash: SHA-256 of this event's JSON (including prev_hash)
+
+    This creates a tamper-evident chain: modifying any event breaks all
+    subsequent hashes.
+    """
+
+    _ZERO_HASH = "0" * 64
+
+    def __init__(self, inner_sink: AuditSink) -> None:
+        self._inner = inner_sink
+        self._prev_hash = self._ZERO_HASH
+        self._lock = threading.Lock()
+
+    def write(self, event: AuditEvent) -> None:
+        import hashlib
+        with self._lock:
+            prev_hash = self._prev_hash
+
+            event_dict = event.to_dict()
+            event_dict["prev_hash"] = prev_hash
+
+            event_json = json.dumps(event_dict, sort_keys=True, default=str)
+            event_hash = hashlib.sha256(event_json.encode()).hexdigest()
+            event_dict["event_hash"] = event_hash
+
+            # Advance the chain
+            self._prev_hash = event_hash
+
+            augmented = AuditEvent(
+                event_type=event.event_type,
+                category=event.category,
+                severity=event.severity,
+                actor=event.actor,
+                target=event.target,
+                context={**event.context, "prev_hash": prev_hash, "event_hash": event_hash},
+                timestamp=event.timestamp,
+                correlation_id=event.correlation_id,
+                description=event.description,
+            )
+
+        self._inner.write(augmented)
+
+    @property
+    def prev_hash(self) -> str:
+        with self._lock:
+            return self._prev_hash
+
+
 # ---------------------------------------------------------------------------
 # Logger
 # ---------------------------------------------------------------------------

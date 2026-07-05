@@ -20,6 +20,9 @@ from .models import (
     PlaybookLearning,
     ImprovementSuggestion,
     ImprovementCategory,
+    ScenarioFeedback,
+    PlaybookFeedback,
+    LearningInsight,
 )
 
 logger = logging.getLogger(__name__)
@@ -276,6 +279,61 @@ class PlaybookAnalyzer:
 
     async def analyze(
         self,
+        playbook_id_or_dict,
+        playbook_content_or_id: Optional[str] = None,
+        linked_scenario_id: Optional[str] = None,
+        sector: Optional[str] = None,
+    ):
+        """
+        Analyze a playbook and extract learnings.
+
+        Supports two calling conventions:
+        1. analyze(playbook_id, playbook_content, sector=sector)
+           -> returns PlaybookLearning
+        2. analyze(playbook_dict, playbook_id, linked_scenario_id)
+           -> returns PlaybookFeedback (used by FeedbackLoop orchestrator)
+        """
+        # Detect orchestrator calling convention: first arg is a dict
+        if isinstance(playbook_id_or_dict, dict):
+            playbook_dict: Dict[str, Any] = playbook_id_or_dict
+            playbook_id: str = playbook_content_or_id or playbook_dict.get("id", "unknown")
+            playbook_content = str(playbook_dict)
+            return await self._analyze_to_feedback(playbook_id, playbook_content, linked_scenario_id)
+
+        # Legacy calling convention
+        playbook_id = playbook_id_or_dict
+        playbook_content = playbook_content_or_id or ""
+        return await self._analyze_to_learning(playbook_id, playbook_content, sector)
+
+    async def _analyze_to_feedback(
+        self,
+        playbook_id: str,
+        playbook_content: str,
+        linked_scenario_id: Optional[str] = None,
+    ) -> PlaybookFeedback:
+        """Return PlaybookFeedback (used by orchestrator)."""
+        metrics = await self.scorer.score_content(playbook_content, "playbook", None)
+
+        strengths: List[str] = []
+        weaknesses: List[str] = []
+        if metrics.technique_coverage > 0.7:
+            strengths.append("Comprehensive technique coverage")
+        elif metrics.technique_coverage < 0.3:
+            weaknesses.append("Limited technique coverage")
+        if metrics.engagement_score > 0.7:
+            strengths.append("High engagement value")
+
+        return PlaybookFeedback(
+            playbook_id=playbook_id,
+            linked_scenario_id=linked_scenario_id,
+            quality_metrics=metrics,
+            strengths=strengths,
+            weaknesses=weaknesses,
+            metadata={"content_length": len(playbook_content)},
+        )
+
+    async def _analyze_to_learning(
+        self,
         playbook_id: str,
         playbook_content: str,
         sector: Optional[str] = None
@@ -499,6 +557,65 @@ class ScenarioAnalyzer:
 
     async def analyze(
         self,
+        scenario_id_or_dict,
+        scenario_content_or_id: Optional[str] = None,
+        sector: Optional[str] = None,
+        simulation_results: Optional[Dict[str, Any]] = None
+    ):
+        """
+        Analyze a scenario and extract learnings.
+
+        Supports two calling conventions:
+        1. analyze(scenario_id, scenario_content, sector, simulation_results)
+           -> returns ScenarioLearning
+        2. analyze(scenario_dict, scenario_id)
+           -> returns ScenarioFeedback (used by FeedbackLoop orchestrator)
+        """
+        # Detect orchestrator calling convention: first arg is a dict
+        if isinstance(scenario_id_or_dict, dict):
+            scenario_dict: Dict[str, Any] = scenario_id_or_dict
+            scenario_id: str = scenario_content_or_id or scenario_dict.get("id", "unknown")
+            scenario_content = str(scenario_dict)
+            feedback = await self._analyze_to_feedback(scenario_id, scenario_content, sector)
+            return feedback
+
+        # Legacy calling convention: first arg is a string (scenario_id)
+        scenario_id = scenario_id_or_dict
+        scenario_content = scenario_content_or_id or ""
+        return await self._analyze_to_learning(
+            scenario_id, scenario_content, sector, simulation_results
+        )
+
+    async def _analyze_to_feedback(
+        self,
+        scenario_id: str,
+        scenario_content: str,
+        sector: Optional[str] = None,
+    ) -> ScenarioFeedback:
+        """Return a ScenarioFeedback (used by orchestrator)."""
+        metrics = await self.scorer.score_content(scenario_content, "scenario", sector)
+
+        strengths: List[str] = []
+        weaknesses: List[str] = []
+        if metrics.realism_score > 0.7:
+            strengths.append("High realism")
+        elif metrics.realism_score < 0.4:
+            weaknesses.append("Low realism")
+        if metrics.technique_coverage > 0.7:
+            strengths.append("Good technique coverage")
+        elif metrics.technique_coverage < 0.3:
+            weaknesses.append("Poor technique coverage")
+
+        return ScenarioFeedback(
+            scenario_id=scenario_id,
+            quality_metrics=metrics,
+            strengths=strengths,
+            weaknesses=weaknesses,
+            metadata={"content_length": len(scenario_content), "sector": sector},
+        )
+
+    async def _analyze_to_learning(
+        self,
         scenario_id: str,
         scenario_content: str,
         sector: Optional[str] = None,
@@ -702,3 +819,73 @@ class ScenarioAnalyzer:
                 threats.append(threat)
 
         return threats if threats else ['general']
+
+
+# ---------------------------------------------------------------------------
+# Helper aggregators used by the FeedbackLoop orchestrator
+# ---------------------------------------------------------------------------
+
+class FeedbackAggregator:
+    """Aggregates quality metrics from multiple feedback objects."""
+
+    def aggregate_scenario_quality(self, feedbacks: List[ScenarioFeedback]) -> float:
+        """Return mean overall_score across all scenario feedbacks, or 0 if empty."""
+        if not feedbacks:
+            return 0.0
+        scores = [f.quality_metrics.overall_score for f in feedbacks]
+        return sum(scores) / len(scores)
+
+    def aggregate_playbook_quality(self, feedbacks: List[PlaybookFeedback]) -> float:
+        """Return mean overall_score across all playbook feedbacks, or 0 if empty."""
+        if not feedbacks:
+            return 0.0
+        scores = [f.quality_metrics.overall_score for f in feedbacks]
+        return sum(scores) / len(scores)
+
+
+class CrossAnalyzer:
+    """
+    Analyzes scenario-playbook pairs to derive cross-cutting insights.
+
+    Identifies how well a playbook addresses a scenario and vice versa.
+    """
+
+    async def analyze_pair(
+        self,
+        scenario_feedback: ScenarioFeedback,
+        playbook_feedback: PlaybookFeedback,
+    ) -> List[LearningInsight]:
+        """
+        Generate cross-cutting learning insights from a matched pair.
+
+        Returns:
+            List of LearningInsight objects describing the interaction.
+        """
+        insights: List[LearningInsight] = []
+
+        sm = scenario_feedback.quality_metrics
+        pm = playbook_feedback.quality_metrics
+
+        # Insight: detection gap
+        if sm.detection_difficulty > 0.7 and pm.coverage_score < 0.5:
+            insights.append(LearningInsight(
+                source_type="pair",
+                source_id=f"{scenario_feedback.scenario_id}+{playbook_feedback.playbook_id}",
+                insight="High-difficulty scenario lacks adequate playbook coverage",
+                dimension=QualityDimension.COVERAGE,
+                confidence_score=0.8,
+                improvement_action="Improve playbook coverage for high-difficulty scenarios",
+            ))
+
+        # Insight: good alignment
+        if abs(sm.overall_score - pm.overall_score) < 0.1:
+            insights.append(LearningInsight(
+                source_type="pair",
+                source_id=f"{scenario_feedback.scenario_id}+{playbook_feedback.playbook_id}",
+                insight="Scenario and playbook are well aligned in quality",
+                dimension=QualityDimension.EFFECTIVENESS,
+                confidence_score=0.9,
+                improvement_action="Use this pair as a quality benchmark",
+            ))
+
+        return insights

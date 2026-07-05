@@ -5,6 +5,7 @@ for threat simulation, scenario management, and system health checks.
 """
 
 import logging
+import os
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 from contextlib import asynccontextmanager
@@ -19,7 +20,10 @@ from ciicerone.core.simulator import Simulator
 from ciicerone.llm.manager import LLMManager
 
 # Import API routers
-from ciicerone.api.routers import manuals_router, knowledge_router, feedback_router
+from ciicerone.api.routers import manuals_router, knowledge_router, feedback_router, auth_router
+
+# Import security dependencies
+from ciicerone.security.rbac import get_current_user, require_analyst, CurrentUser
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -62,7 +66,7 @@ app = FastAPI(
 # Add CORS middleware - Production should configure ALLOWED_ORIGINS env var
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # nosemgrep: python.fastapi.security.wildcard-cors.wildcard-cors
+    allow_origins=os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -72,6 +76,7 @@ app.add_middleware(
 app.include_router(manuals_router, prefix="/api")
 app.include_router(knowledge_router, prefix="/api")
 app.include_router(feedback_router, prefix="/api")
+app.include_router(auth_router, prefix="/api")
 # TODO: Implement threat_hunting router and re-enable
 # app.include_router(threat_hunting_router, prefix="/api")
 
@@ -222,7 +227,8 @@ async def create_scenario(request: ScenarioRequest):
 @app.post("/simulations", status_code=status.HTTP_202_ACCEPTED)
 async def run_simulation(
     request: SimulationRequest,
-    sim: Simulator = Depends(get_simulator)
+    sim: Simulator = Depends(get_simulator),
+    current_user: CurrentUser = Depends(require_analyst)
 ):
     """Execute a threat simulation."""
     try:
@@ -254,7 +260,10 @@ async def run_simulation(
 
 
 @app.get("/simulations/active")
-async def get_active_simulations(sim: Simulator = Depends(get_simulator)):
+async def get_active_simulations(
+    sim: Simulator = Depends(get_simulator),
+    current_user: CurrentUser = Depends(require_analyst)
+):
     """Get currently active simulations."""
     try:
         active = sim.get_active_simulations()
@@ -302,7 +311,8 @@ class ContentGenerationResponse(BaseModel):
 @app.post("/llm/generate", response_model=ContentGenerationResponse)
 async def generate_content(
     request: ContentGenerationRequest,
-    llm: LLMManager = Depends(get_llm_manager)
+    llm: LLMManager = Depends(get_llm_manager),
+    current_user: CurrentUser = Depends(get_current_user)
 ):
     """Generate content directly using LLM providers."""
     try:
@@ -338,7 +348,10 @@ async def generate_content(
 
 
 @app.get("/llm/providers")
-async def list_providers(llm: LLMManager = Depends(get_llm_manager)):
+async def list_providers(
+    llm: LLMManager = Depends(get_llm_manager),
+    current_user: CurrentUser = Depends(get_current_user)
+):
     """List available LLM providers."""
     try:
         providers = llm.get_available_providers()

@@ -7,6 +7,7 @@ and security levels for PQ/TLS configurations.
 
 import asyncio
 import logging
+import re
 import time
 import uuid
 from datetime import datetime
@@ -15,6 +16,24 @@ from typing import Any, Dict, Optional
 from .models import HybridCryptoValidationResult
 
 logger = logging.getLogger(__name__)
+
+# Validates endpoint format: host:port (e.g. "example.com:443" or "192.168.1.1:8443")
+_ENDPOINT_RE = re.compile(r'^[a-zA-Z0-9._\-]{1,253}:[0-9]{1,5}$')
+
+
+def _validate_endpoint(endpoint: str) -> str:
+    """Sanitize and validate an endpoint string before passing to subprocess.
+
+    Raises ValueError if the endpoint does not match host:port format.
+    """
+    if not _ENDPOINT_RE.match(endpoint):
+        raise ValueError(
+            f"Invalid endpoint format {endpoint!r}. Expected 'host:port' (e.g. 'example.com:443')."
+        )
+    port = int(endpoint.rsplit(":", 1)[1])
+    if not (1 <= port <= 65535):
+        raise ValueError(f"Port {port} out of valid range 1-65535.")
+    return endpoint
 
 
 # Supported hybrid PQ/TLS cipher suites
@@ -71,6 +90,12 @@ class HybridCryptoValidator:
         endpoint = config.get("endpoint", "localhost:443")
         cipher_suite = config.get("cipher_suite", "x25519_kyber768")
         fallback_enabled = config.get("fallback_enabled", True)
+
+        # Validate endpoint format before passing to subprocess (security: prevent arg injection)
+        try:
+            endpoint = _validate_endpoint(endpoint)
+        except ValueError as exc:
+            raise ValueError(f"Invalid endpoint: {exc}") from exc
 
         classical_status = await self._test_classical_component(endpoint)
         pqc_status = await self._test_pqc_component(endpoint, cipher_suite)

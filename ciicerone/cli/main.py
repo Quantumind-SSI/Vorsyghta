@@ -689,6 +689,10 @@ cli.add_command(feedback_cli, name="feedback")
 # Add Detection Rule Generator commands (Issue #25 - Blue Team)
 cli.add_command(detect_group, name="detect")
 
+# Add Exercise orchestration commands (Phase 2 — color-team exercises)
+from .exercise import exercise_group
+cli.add_command(exercise_group, name="exercise")
+
 # TODO: Implement agent module and re-enable
 # from .agent import agent_group
 # cli.add_command(agent_group, name="agent")

@@ -63,6 +63,11 @@ from .models import (
     FeedbackEntry,
     GenerationCycle,
     CycleMetrics,
+    LearningInsight,
+    ScenarioFeedback,
+    PlaybookFeedback,
+    EvolutionCycle,
+    FeedbackStore,
 )
 
 from .analyzer import (
@@ -102,6 +107,11 @@ __all__ = [
     "FeedbackEntry",
     "GenerationCycle",
     "CycleMetrics",
+    "LearningInsight",
+    "ScenarioFeedback",
+    "PlaybookFeedback",
+    "EvolutionCycle",
+    "FeedbackStore",
     # Analysis
     "ScenarioAnalyzer",
     "PlaybookAnalyzer",
