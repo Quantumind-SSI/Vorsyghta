@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# Pre-commit hook: strip Devin attribution lines from staged files.
+
+set -euo pipefail
+
+PATTERNS=(
+    'Generated with \[Devin'
+)
+
+# Build a single regex from the patterns (case-insensitive).
+REGEX=$(printf '%s' "${PATTERNS[0]}")
+for p in "${PATTERNS[@]:1}"; do
+    REGEX="${REGEX}|${p}"
+done
+
+# Get staged files that are added or modified, excluding deleted files.
+mapfile -t FILES < <(git diff --cached --name-only --diff-filter=AM)
+
+if [ ${#FILES[@]} -eq 0 ]; then
+    exit 0
+fi
+
+CHANGED=0
+for FILE in "${FILES[@]}"; do
+    if [ ! -f "$FILE" ]; then
+        continue
+    fi
+
+    # Make a temp copy of the staged version and clean it.
+    TMPFILE=$(mktemp)
+    git show :"$FILE" > "$TMPFILE" 2>/dev/null || cp "$FILE" "$TMPFILE"
+
+    if grep -iE "$REGEX" "$TMPFILE" >/dev/null 2>&1; then
+        # Clean matching lines from the staged file.
+        sed -i -E "/${REGEX}/Id" "$TMPFILE"
+        cat "$TMPFILE" > "$FILE"
+        git add "$FILE"
+        CHANGED=1
+    fi
+    rm -f "$TMPFILE"
+done
+
+if [ $CHANGED -ne 0 ]; then
+    echo "pre-commit: stripped Devin attribution lines from staged files."
+fi
+
+exit 0

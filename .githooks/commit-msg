@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Commit-msg hook: strip Devin attribution lines from commit messages.
+
+set -euo pipefail
+
+MSG_FILE="${1:?commit message file required}"
+
+PATTERNS=(
+    'Generated with \[Devin'
+)
+
+REGEX=$(printf '%s' "${PATTERNS[0]}")
+for p in "${PATTERNS[@]:1}"; do
+    REGEX="${REGEX}|${p}"
+done
+
+if grep -iE "$REGEX" "$MSG_FILE" >/dev/null 2>&1; then
+    sed -i -E "/${REGEX}/Id" "$MSG_FILE"
+    echo "commit-msg: stripped Devin attribution lines from commit message."
+fi
+
+exit 0
