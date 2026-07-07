@@ -326,7 +326,7 @@ class ExerciseOrchestrator:
         logger.info("Exercise %s: starting yellow team phase", result.exercise_id)
 
         from ciicerone.core.yellow_team import InfrastructureManager
-        manager = InfrastructureManager(tenant_id=self.tenant_id)
+        manager = InfrastructureManager()
         env_report = await manager.provision_environment(
             scenario=scenario,
             tenant_id=self.tenant_id,
@@ -415,7 +415,7 @@ class ExerciseOrchestrator:
         logger.info("Exercise %s: starting orange team phase", result.exercise_id)
 
         from ciicerone.core.orange_team import ComplianceGovernanceEngine
-        engine = ComplianceGovernanceEngine(tenant_id=self.tenant_id)
+        engine = ComplianceGovernanceEngine()
 
         framework_mapping = engine.map_to_frameworks(
             red_team_stages=result.red_team_stages,
