@@ -1048,6 +1048,31 @@ class VectorStoreManager:
         # Add to store
         await self._store.add_chunks(chunks, embeddings)
 
+    async def add_document(
+        self,
+        doc_id: str,
+        content: str,
+        metadata: Optional[Dict[str, Any]] = None,
+    ):
+        """Add a single document to the vector store.
+
+        Convenience wrapper around ``add_documents`` that builds the chunk
+        dict expected by the underlying store from a simple (id, content,
+        metadata) triple.
+        """
+        meta = metadata or {}
+        chunk = {
+            "id": doc_id,
+            "content": content,
+            "document_id": meta.get("document_id", doc_id),
+            "source_url": meta.get("source_url", ""),
+            "document_title": meta.get("title", meta.get("document_title", "")),
+            "chunk_index": meta.get("chunk_index", 0),
+            "technique_ids": meta.get("mitre_techniques", meta.get("technique_ids", [])),
+            "metadata": meta,
+        }
+        await self.add_documents([chunk])
+
     async def search(
         self,
         query: str,
@@ -1116,3 +1141,39 @@ class VectorStoreManager:
         """Close vector store connections."""
         if isinstance(self._store, Neo4jStore):
             await self._store.close()
+
+
+# ==========================================
+# Singleton factory (process-wide)
+# ==========================================
+
+_vectorstore_singleton: Optional[VectorStoreManager] = None
+_vectorstore_lock = asyncio.Lock()
+
+
+async def get_vectorstore() -> VectorStoreManager:
+    """Return the process-wide :class:`VectorStoreManager` singleton.
+
+    Lazily initializes the manager from ``RAGConfig.default()`` on first
+    call. Subsequent calls return the cached instance. This is the entry
+    point used by API routers (e.g. ``knowledge``) that need to add
+    documents to or search the vector store without constructing and
+    initializing a fresh manager per request.
+    """
+    global _vectorstore_singleton
+    if _vectorstore_singleton is not None:
+        return _vectorstore_singleton
+
+    async with _vectorstore_lock:
+        # Double-checked locking — another coroutine may have initialized
+        # while we waited on the lock.
+        if _vectorstore_singleton is not None:
+            return _vectorstore_singleton
+
+        from .config import RAGConfig
+        config = RAGConfig.default()
+        manager = VectorStoreManager(config.vectorstore, config.embedding)
+        await manager.initialize()
+        _vectorstore_singleton = manager
+        logger.info("Initialized process-wide VectorStoreManager singleton")
+        return manager

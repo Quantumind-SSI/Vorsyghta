@@ -249,34 +249,29 @@ async def register(request: RegisterRequest):
     Users are persisted to PostgreSQL (primary) with Redis as a read-through
     cache. Falls back to Redis-only if the database is unavailable.
 
-    Self-registration as admin is not allowed. Admin accounts must be
-    created by an existing admin or via direct database seeding.
+    Security: self-registration ALWAYS creates a ``viewer`` account in the
+    ``default`` tenant. Client-supplied ``role`` and ``tenant_id`` fields are
+    accepted in the request body for backward compatibility but are NEVER
+    honored — they are ignored entirely. This closes the privilege-escalation
+    and tenant-isolation vector where an unauthenticated caller could
+    self-register as ``admin`` (or any elevated role) under an arbitrary
+    tenant. Elevated roles and non-default tenants must be provisioned by an
+    existing admin or via an invite/SSO context, never via this endpoint.
     """
     if await _load_user(request.email):
         raise HTTPException(status_code=400, detail="User already exists")
 
-    # Prevent self-registration as admin — critical security control
-    if request.role == Role.ADMIN.value:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Self-registration as admin is not allowed. Contact a system administrator.",
-        )
-
-    # Validate role
-    try:
-        Role(request.role)
-    except ValueError:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid role. Must be one of: {[r.value for r in Role]}",
-        )
+    # Force the only safe values for self-registration. The request fields
+    # are deliberately ignored — do NOT trust client-supplied role/tenant.
+    forced_role = Role.VIEWER.value
+    forced_tenant_id = "default"
 
     hashed_password = get_password_hash(request.password)
     user_id = await _save_user(
         email=request.email,
         hashed_password=hashed_password,
-        tenant_id=request.tenant_id,
-        role=request.role,
+        tenant_id=forced_tenant_id,
+        role=forced_role,
     )
 
     # Audit log
@@ -286,13 +281,13 @@ async def register(request: RegisterRequest):
         category=AuditCategory.AUTHENTICATION,
         severity=AuditSeverity.INFO,
         actor={"email": request.email, "user_id": user_id},
-        context={"tenant_id": request.tenant_id, "role": request.role},
+        context={"tenant_id": forced_tenant_id, "role": forced_role},
         description=f"User registered: {request.email}",
     )
 
     logger.info(
         "Registered user: %s (role=%s, tenant=%s)",
-        request.email, request.role, request.tenant_id,
+        request.email, forced_role, forced_tenant_id,
     )
     return {"message": "User registered", "user_id": user_id}
 

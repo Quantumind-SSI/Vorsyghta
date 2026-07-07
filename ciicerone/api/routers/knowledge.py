@@ -479,7 +479,7 @@ async def create_knowledge_entry(entry: KnowledgeEntryCreate):
         try:
             from ciicerone.rag.vectorstore import get_vectorstore
 
-            vectorstore = get_vectorstore()
+            vectorstore = await get_vectorstore()
             await vectorstore.add_document(
                 doc_id=entry_id,
                 content=f"{entry.title}\n\n{entry.content}",

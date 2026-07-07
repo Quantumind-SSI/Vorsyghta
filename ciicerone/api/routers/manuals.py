@@ -303,8 +303,14 @@ async def generate_manual(request: ManualGenerationRequest):
             try:
                 from ciicerone.rag.retriever import HybridRetriever
                 from ciicerone.rag.config import RetrieverConfig
+                from ciicerone.rag.vectorstore import get_vectorstore
 
-                retriever = HybridRetriever(RetrieverConfig())
+                vector_store_manager = await get_vectorstore()
+                retriever = HybridRetriever(
+                    RetrieverConfig(),
+                    vector_store_manager,
+                )
+                await retriever.initialize()
                 rag_context = await retriever.retrieve(
                     query=f"{request.threat_type.value} {request.team.value} playbook",
                     top_k=10
