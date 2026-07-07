@@ -42,6 +42,11 @@ class ExerciseResult:
     blue_team_alerts: List[Dict[str, Any]] = field(default_factory=list)
     aar: Optional[Dict[str, Any]] = None
     score: Optional[Dict[str, Any]] = None
+    # Extended color teams
+    white_team_report: Optional[Dict[str, Any]] = None
+    yellow_team_report: Optional[Dict[str, Any]] = None
+    green_team_report: Optional[Dict[str, Any]] = None
+    orange_team_report: Optional[Dict[str, Any]] = None
     errors: List[str] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -56,6 +61,10 @@ class ExerciseResult:
             "blue_team_alerts": self.blue_team_alerts,
             "aar": self.aar,
             "score": self.score,
+            "white_team_report": self.white_team_report,
+            "yellow_team_report": self.yellow_team_report,
+            "green_team_report": self.green_team_report,
+            "orange_team_report": self.orange_team_report,
             "errors": self.errors,
         }
 
@@ -105,7 +114,7 @@ class ExerciseOrchestrator:
         Returns:
             ExerciseResult with all team outputs
         """
-        teams = teams or ["red", "blue", "purple", "black"]
+        teams = teams or ["yellow", "white", "red", "blue", "purple", "black", "green", "orange"]
         exercise_id = exercise_id or str(uuid4())
 
         result = ExerciseResult(
@@ -136,6 +145,14 @@ class ExerciseOrchestrator:
         )
 
         try:
+            # Yellow team provisions infrastructure first
+            if "yellow" in teams:
+                await self._run_yellow_team(scenario, result)
+
+            # White team approves scope and sets ROE before red team runs
+            if "white" in teams:
+                await self._run_white_team(scenario, result)
+
             if "red" in teams:
                 await self._run_red_team(scenario, result)
 
@@ -147,6 +164,14 @@ class ExerciseOrchestrator:
 
             if "black" in teams:
                 await self._run_black_team(result)
+
+            # Green team generates training plans from AAR findings
+            if "green" in teams:
+                await self._run_green_team(result)
+
+            # Orange team maps findings to compliance frameworks
+            if "orange" in teams:
+                await self._run_orange_team(result)
 
             result.status = "completed"
             result.end_time = datetime.now(timezone.utc)
@@ -195,9 +220,14 @@ class ExerciseOrchestrator:
                 content=getattr(stage, "content", ""),
                 exercise_id=result.exercise_id,
                 simulation_id=sim_result.result_id,
+                llm_info=meta.get("llm_info") or {},
             )
             result.red_team_stages.append(stage_event.to_dict())
-            await self.event_bus.publish(stage_event)
+            try:
+                await self.event_bus.publish(stage_event)
+            except Exception as e:
+                logger.warning(f"Failed to publish red team stage event: {e}")
+                result.errors.append(f"Event publish failed: {e}")
 
         logger.info(
             "Exercise %s: red team phase complete (%d stages)",
@@ -232,7 +262,10 @@ class ExerciseOrchestrator:
             exercise_id=exercise_id,
         )
         result.blue_team_alerts.append(alert.to_dict())
-        await self.event_bus.publish(alert)
+        try:
+            await self.event_bus.publish(alert)
+        except Exception as e:
+            logger.warning(f"Failed to publish blue team alert event: {e}")
 
     def _detect_technique(self, technique_id: str) -> bool:
         """Deterministic ~70% detection rate based on technique ID hash."""
@@ -283,3 +316,130 @@ class ExerciseOrchestrator:
     def get_active_exercises(self) -> Dict[str, ExerciseResult]:
         """Return currently running exercises."""
         return dict(self._active_exercises)
+
+    # -----------------------------------------------------------------------
+    # Extended color teams
+    # -----------------------------------------------------------------------
+
+    async def _run_yellow_team(self, scenario: ThreatScenario, result: ExerciseResult) -> None:
+        """Provision and validate the exercise infrastructure."""
+        logger.info("Exercise %s: starting yellow team phase", result.exercise_id)
+
+        from ciicerone.core.yellow_team import InfrastructureManager
+        manager = InfrastructureManager(tenant_id=self.tenant_id)
+        env_report = await manager.provision_environment(
+            scenario=scenario,
+            tenant_id=self.tenant_id,
+        )
+        result.yellow_team_report = env_report
+
+        logger.info(
+            "Exercise %s: yellow team phase complete (env_id=%s, ready=%s)",
+            result.exercise_id,
+            env_report.get("env_id"),
+            env_report.get("ready"),
+        )
+
+    async def _run_white_team(self, scenario: ThreatScenario, result: ExerciseResult) -> None:
+        """Set rules of engagement and approve scope before red team runs."""
+        logger.info("Exercise %s: starting white team phase", result.exercise_id)
+
+        from ciicerone.core.white_team import WhiteTeamCoordinator
+        coordinator = WhiteTeamCoordinator()
+
+        scenario_dict = {
+            "name": scenario.name,
+            "target_systems": getattr(scenario, "target_systems", []),
+        }
+        scope_approval = coordinator.approve_scope(
+            scenario=scenario_dict,
+            target_systems=getattr(scenario, "target_systems", []),
+        )
+
+        result.white_team_report = {
+            "scope_approval": scope_approval,
+            "roe_rules": [
+                {"rule_id": r.rule_id, "description": r.description, "severity": r.severity}
+                for r in coordinator.roe_rules
+            ],
+            "risk_pause_threshold": coordinator.risk_pause_threshold,
+            "risk_abort_threshold": coordinator.risk_abort_threshold,
+        }
+
+        logger.info(
+            "Exercise %s: white team phase complete (scope_approved=%s, roe_rules=%d)",
+            result.exercise_id,
+            scope_approval.get("approved"),
+            len(coordinator.roe_rules),
+        )
+
+    async def _run_green_team(self, result: ExerciseResult) -> None:
+        """Generate training plans from AAR findings."""
+        logger.info("Exercise %s: starting green team phase", result.exercise_id)
+
+        from ciicerone.core.green_team import TrainingAwarenessEngine
+        engine = TrainingAwarenessEngine(llm_provider=self.llm_provider)
+
+        training_needs = engine.analyze_training_needs(
+            aar=result.aar,
+            score=result.score,
+            red_team_stages=result.red_team_stages,
+            blue_team_alerts=result.blue_team_alerts,
+        )
+
+        training_plan = engine.generate_training_plan(
+            training_needs=training_needs,
+            tenant_id=self.tenant_id,
+        )
+
+        awareness = engine.assess_awareness_level(
+            blue_team_alerts=result.blue_team_alerts,
+            red_team_stages=result.red_team_stages,
+        )
+
+        result.green_team_report = {
+            "training_needs": training_needs,
+            "training_plan": training_plan,
+            "awareness_assessment": awareness,
+        }
+
+        logger.info(
+            "Exercise %s: green team phase complete (modules=%d, awareness=%s)",
+            result.exercise_id,
+            len(training_plan.get("modules", [])),
+            awareness.get("level"),
+        )
+
+    async def _run_orange_team(self, result: ExerciseResult) -> None:
+        """Map findings to compliance frameworks and identify gaps."""
+        logger.info("Exercise %s: starting orange team phase", result.exercise_id)
+
+        from ciicerone.core.orange_team import ComplianceGovernanceEngine
+        engine = ComplianceGovernanceEngine(tenant_id=self.tenant_id)
+
+        framework_mapping = engine.map_to_frameworks(
+            red_team_stages=result.red_team_stages,
+            blue_team_alerts=result.blue_team_alerts,
+            aar=result.aar,
+        )
+
+        compliance_gaps = engine.analyze_compliance_gaps(framework_mapping)
+
+        compliance_report = engine.generate_compliance_report(
+            exercise_id=result.exercise_id,
+            framework_mapping=framework_mapping,
+            compliance_gaps=compliance_gaps,
+        )
+
+        result.orange_team_report = {
+            "framework_mapping": framework_mapping,
+            "compliance_gaps": compliance_gaps,
+            "compliance_report": compliance_report,
+        }
+
+        logger.info(
+            "Exercise %s: orange team phase complete (frameworks=%d, gaps=%d)",
+            result.exercise_id,
+            len(framework_mapping),
+            len(compliance_gaps),
+        )

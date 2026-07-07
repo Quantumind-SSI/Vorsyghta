@@ -37,7 +37,21 @@ class EventType(str, Enum):
     # Purple / White / Black teams
     PURPLE_TEAM_AAR = "purple_team.aar"
     WHITE_TEAM_ROE_VIOLATION = "white_team.roe_violation"
+    WHITE_TEAM_ROE_CHECK = "white_team.roe_check"
+    WHITE_TEAM_SCOPE_APPROVAL = "white_team.scope_approval"
     BLACK_TEAM_SCORE = "black_team.score"
+
+    # Yellow team (infrastructure)
+    YELLOW_TEAM_ENV_READY = "yellow_team.env_ready"
+    YELLOW_TEAM_ENV_TEARDOWN = "yellow_team.env_teardown"
+
+    # Green team (training & awareness)
+    GREEN_TEAM_TRAINING_ASSIGNED = "green_team.training_assigned"
+    GREEN_TEAM_AWARENESS_ASSESSMENT = "green_team.awareness_assessment"
+
+    # Orange team (compliance & governance)
+    ORANGE_TEAM_COMPLIANCE_GAP = "orange_team.compliance_gap"
+    ORANGE_TEAM_REGULATORY_MAPPING = "orange_team.regulatory_mapping"
 
 
 @dataclass
@@ -114,6 +128,7 @@ class RedTeamAttackStageEvent(BusEvent):
         iocs: Optional[List[str]] = None,
         exercise_id: Optional[str] = None,
         simulation_id: Optional[str] = None,
+        llm_info: Optional[Dict[str, Any]] = None,
     ):
         super().__init__(
             event_type=EventType.RED_TEAM_ATTACK_STAGE,
@@ -128,6 +143,7 @@ class RedTeamAttackStageEvent(BusEvent):
                 "content": content,
                 "target_system": target_system,
                 "iocs": iocs or [],
+                "llm_info": llm_info or {},
             },
         )
 
@@ -257,5 +273,216 @@ class BlueTeamIncidentCreatedEvent(BusEvent):
                 "severity": severity,
                 "category": category,
                 "mitre_techniques": mitre_techniques or [],
+            },
+        )
+
+
+# ---------------------------------------------------------------------------
+# White Team events — rules of engagement, scope, risk
+# ---------------------------------------------------------------------------
+
+@dataclass
+class WhiteTeamROECheckEvent(BusEvent):
+    """White team rules-of-engagement check event.
+
+    Payload fields:
+        check_id: Unique check identifier.
+        rule_id: The ROE rule being checked.
+        rule_description: Human-readable rule description.
+        passed: Whether the check passed.
+        violation_severity: Severity if violated (critical, high, medium, low).
+        details: Additional context about the check.
+    """
+
+    def __init__(
+        self,
+        tenant_id: str,
+        check_id: str,
+        rule_id: str,
+        rule_description: str,
+        passed: bool,
+        violation_severity: Optional[str] = None,
+        details: Optional[str] = None,
+        exercise_id: Optional[str] = None,
+    ):
+        super().__init__(
+            event_type=EventType.WHITE_TEAM_ROE_CHECK,
+            tenant_id=tenant_id,
+            exercise_id=exercise_id,
+            payload={
+                "check_id": check_id,
+                "rule_id": rule_id,
+                "rule_description": rule_description,
+                "passed": passed,
+                "violation_severity": violation_severity,
+                "details": details,
+            },
+        )
+
+
+@dataclass
+class WhiteTeamROEViolationEvent(BusEvent):
+    """White team rules-of-engagement violation event.
+
+    Payload fields:
+        violation_id: Unique violation identifier.
+        rule_id: The ROE rule that was violated.
+        severity: Violation severity (critical, high, medium, low).
+        description: What happened.
+        red_team_stage_id: The red team stage that triggered the violation.
+        action_taken: Action taken (warn, pause, abort).
+    """
+
+    def __init__(
+        self,
+        tenant_id: str,
+        violation_id: str,
+        rule_id: str,
+        severity: str,
+        description: str,
+        red_team_stage_id: Optional[str] = None,
+        action_taken: str = "warn",
+        exercise_id: Optional[str] = None,
+    ):
+        super().__init__(
+            event_type=EventType.WHITE_TEAM_ROE_VIOLATION,
+            tenant_id=tenant_id,
+            exercise_id=exercise_id,
+            payload={
+                "violation_id": violation_id,
+                "rule_id": rule_id,
+                "severity": severity,
+                "description": description,
+                "red_team_stage_id": red_team_stage_id,
+                "action_taken": action_taken,
+            },
+        )
+
+
+# ---------------------------------------------------------------------------
+# Yellow Team events — infrastructure readiness
+# ---------------------------------------------------------------------------
+
+@dataclass
+class YellowTeamEnvReadyEvent(BusEvent):
+    """Yellow team environment readiness event.
+
+    Payload fields:
+        env_id: Environment identifier.
+        components: List of components that were provisioned.
+        vm_ids: List of VM identifiers.
+        network_config: Network configuration summary.
+        ready: Whether the environment is fully ready.
+        issues: List of issues encountered during provisioning.
+    """
+
+    def __init__(
+        self,
+        tenant_id: str,
+        env_id: str,
+        components: List[str],
+        vm_ids: Optional[List[str]] = None,
+        network_config: Optional[Dict[str, Any]] = None,
+        ready: bool = True,
+        issues: Optional[List[str]] = None,
+        exercise_id: Optional[str] = None,
+    ):
+        super().__init__(
+            event_type=EventType.YELLOW_TEAM_ENV_READY,
+            tenant_id=tenant_id,
+            exercise_id=exercise_id,
+            payload={
+                "env_id": env_id,
+                "components": components,
+                "vm_ids": vm_ids or [],
+                "network_config": network_config or {},
+                "ready": ready,
+                "issues": issues or [],
+            },
+        )
+
+
+# ---------------------------------------------------------------------------
+# Green Team events — training and awareness
+# ---------------------------------------------------------------------------
+
+@dataclass
+class GreenTeamTrainingAssignedEvent(BusEvent):
+    """Green team training assignment event.
+
+    Payload fields:
+        assignment_id: Unique assignment identifier.
+        training_module: Module name (phishing_awareness, password_security, etc.).
+        target_roles: Roles that need the training.
+        priority: Priority level (high, medium, low).
+        based_on_findings: AAR findings that triggered the training.
+    """
+
+    def __init__(
+        self,
+        tenant_id: str,
+        assignment_id: str,
+        training_module: str,
+        target_roles: List[str],
+        priority: str = "medium",
+        based_on_findings: Optional[List[str]] = None,
+        exercise_id: Optional[str] = None,
+    ):
+        super().__init__(
+            event_type=EventType.GREEN_TEAM_TRAINING_ASSIGNED,
+            tenant_id=tenant_id,
+            exercise_id=exercise_id,
+            payload={
+                "assignment_id": assignment_id,
+                "training_module": training_module,
+                "target_roles": target_roles,
+                "priority": priority,
+                "based_on_findings": based_on_findings or [],
+            },
+        )
+
+
+# ---------------------------------------------------------------------------
+# Orange Team events — compliance and governance
+# ---------------------------------------------------------------------------
+
+@dataclass
+class OrangeTeamComplianceGapEvent(BusEvent):
+    """Orange team compliance gap event.
+
+    Payload fields:
+        gap_id: Unique gap identifier.
+        framework: Regulatory framework (PCI-DSS, SOX, GDPR, NIST, ISO27001).
+        control_id: Specific control identifier within the framework.
+        gap_description: Description of the compliance gap.
+        severity: Gap severity (critical, high, medium, low).
+        remediation: Recommended remediation action.
+        related_technique_id: MITRE technique that exposed the gap.
+    """
+
+    def __init__(
+        self,
+        tenant_id: str,
+        gap_id: str,
+        framework: str,
+        control_id: str,
+        gap_description: str,
+        severity: str = "medium",
+        remediation: Optional[str] = None,
+        related_technique_id: Optional[str] = None,
+        exercise_id: Optional[str] = None,
+    ):
+        super().__init__(
+            event_type=EventType.ORANGE_TEAM_COMPLIANCE_GAP,
+            tenant_id=tenant_id,
+            exercise_id=exercise_id,
+            payload={
+                "gap_id": gap_id,
+                "framework": framework,
+                "control_id": control_id,
+                "gap_description": gap_description,
+                "severity": severity,
+                "remediation": remediation,
+                "related_technique_id": related_technique_id,
             },
         )
