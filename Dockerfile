@@ -40,7 +40,8 @@ LABEL version="1.0.0"
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PATH="/opt/venv/bin:$PATH" \
-    PYTHONPATH="/app:$PYTHONPATH"
+    PYTHONPATH="/app:$PYTHONPATH" \
+    HOME="/app"
 
 # Create app user
 RUN groupadd -r ciicerone && useradd -r -g ciicerone ciicerone
