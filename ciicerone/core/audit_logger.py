@@ -123,16 +123,51 @@ class AuditEvent(BaseModel):
 
 
 class AuditSink:
-    """Abstract base for audit event sinks."""
+    """Abstract base for audit event sinks.
+
+    Subclasses must override :meth:`write`. The default implementation raises
+    ``NotImplementedError`` to make omissions obvious at runtime.
+    """
 
     def write(self, event: AuditEvent) -> None:
-        raise NotImplementedError
+        """Persist or forward a single audit event.
+
+        Args:
+            event: The :class:`AuditEvent` to write.
+
+        Raises:
+            NotImplementedError: Always — subclasses must override this method.
+        """
+        raise NotImplementedError(
+            f"{type(self).__name__} must implement write(). "
+            "Use MemoryAuditSink, FileAuditSink, StdoutAuditSink, or a custom subclass."
+        )
 
     def flush(self) -> None:
-        pass
+        """Flush any buffered events to the underlying store (no-op by default)."""
 
     def close(self) -> None:
-        pass
+        """Release resources held by this sink (no-op by default)."""
+
+
+class StdoutAuditSink(AuditSink):
+    """Writes audit events as JSON lines to stdout.
+
+    Useful for containerised deployments where log aggregators (Fluentd,
+    Logstash, CloudWatch) read from stdout / stderr.
+    """
+
+    def __init__(self, *, pretty: bool = False) -> None:
+        self._pretty = pretty
+        self._lock = threading.Lock()
+
+    def write(self, event: AuditEvent) -> None:
+        if self._pretty:
+            line = json.dumps(event.to_dict(), indent=2, default=str)
+        else:
+            line = event.to_json()
+        with self._lock:
+            print(line, flush=True)
 
 
 class MemoryAuditSink(AuditSink):
@@ -402,11 +437,15 @@ def get_audit_logger() -> AuditLogger:
         if _global_logger is not None:
             return _global_logger
 
-        sinks: List[AuditSink] = [MemoryAuditSink()]
+        sinks: List[AuditSink] = [MemoryAuditSink(max_size=50_000)]
 
         env_path = os.environ.get("CIICERONE_AUDIT_LOG_PATH")
         if env_path:
             sinks.append(FileAuditSink(env_path))
+
+        # In production, wrap all sinks with HashChainAuditSink for tamper-evidence
+        if os.getenv("ENVIRONMENT", "").lower() in ("production", "prod"):
+            sinks = [HashChainAuditSink(s) for s in sinks]
 
         _global_logger = AuditLogger(sinks=sinks)
         return _global_logger

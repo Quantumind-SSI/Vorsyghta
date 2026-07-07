@@ -429,26 +429,38 @@ class EventStore:
             return
 
         try:
-            # TODO: Implement actual PostgreSQL write
-            # async with self.connection_pool.acquire() as conn:
-            #     # Check version for optimistic concurrency
-            #     current_version = await self._get_aggregate_version(conn, event.aggregate_id)
-            #     if current_version != event.version - 1:
-            #         raise ConcurrencyError(event.aggregate_id, event.version - 1, current_version)
-            #
-            #     # Insert event
-            #     await conn.execute("""
-            #         INSERT INTO events (
-            #             event_id, aggregate_id, aggregate_type, event_type,
-            #             event_data, metadata, sequence_number, timestamp, version
-            #         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-            #     """, ...)
-            
+            async with self.connection_pool.acquire() as conn:
+                # Check version for optimistic concurrency
+                current_version = await self._get_aggregate_version_conn(conn, event.aggregate_id)
+                expected_previous = event.version - 1
+                if current_version != expected_previous:
+                    raise ConcurrencyError(event.aggregate_id, expected_previous, current_version)
+
+                await conn.execute(
+                    """
+                    INSERT INTO events (
+                        event_id, aggregate_id, aggregate_type, event_type,
+                        event_data, metadata, sequence_number, timestamp, version
+                    ) VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb, $7, $8, $9)
+                    """,
+                    event.event_id,
+                    event.aggregate_id,
+                    event.aggregate_type.value,
+                    event.event_type,
+                    json.dumps(event.event_data),
+                    json.dumps(event.metadata),
+                    event.sequence_number,
+                    event.timestamp,
+                    event.version,
+                )
+
             logger.debug(
                 f"Event appended: {event.event_type} for {event.aggregate_type}:"
                 f"{event.aggregate_id} (v{event.version}, seq={event.sequence_number})"
             )
-            
+
+        except ConcurrencyError:
+            raise
         except Exception as e:
             logger.error(f"Failed to append event: {e}")
             raise EventStoreError(f"Event append failed: {e}") from e
@@ -469,9 +481,38 @@ class EventStore:
         Returns:
             List of events ordered by version
         """
-        # TODO: Implement PostgreSQL query
+        if self.connection_pool is None:
+            return []
+
         logger.debug(f"Fetching events for {aggregate_id} from v{from_version}")
-        return []
+        try:
+            async with self.connection_pool.acquire() as conn:
+                if to_version is not None:
+                    rows = await conn.fetch(
+                        """
+                        SELECT event_id, aggregate_id, aggregate_type, event_type,
+                               event_data, metadata, sequence_number, timestamp, version
+                        FROM events
+                        WHERE aggregate_id = $1 AND version >= $2 AND version <= $3
+                        ORDER BY version ASC
+                        """,
+                        aggregate_id, from_version, to_version,
+                    )
+                else:
+                    rows = await conn.fetch(
+                        """
+                        SELECT event_id, aggregate_id, aggregate_type, event_type,
+                               event_data, metadata, sequence_number, timestamp, version
+                        FROM events
+                        WHERE aggregate_id = $1 AND version >= $2
+                        ORDER BY version ASC
+                        """,
+                        aggregate_id, from_version,
+                    )
+            return [self._row_to_event(row) for row in rows]
+        except Exception as e:
+            logger.error(f"Failed to fetch events for aggregate {aggregate_id}: {e}")
+            raise EventStoreError(f"Event fetch failed: {e}") from e
 
     async def get_events_by_type(
         self,
@@ -491,9 +532,27 @@ class EventStore:
         Returns:
             List of events ordered by timestamp
         """
-        # TODO: Implement PostgreSQL query
+        if self.connection_pool is None:
+            return []
+
         logger.debug(f"Querying events of type {event_type} from {from_timestamp} to {to_timestamp}")
-        return []
+        try:
+            async with self.connection_pool.acquire() as conn:
+                rows = await conn.fetch(
+                    """
+                    SELECT event_id, aggregate_id, aggregate_type, event_type,
+                           event_data, metadata, sequence_number, timestamp, version
+                    FROM events
+                    WHERE event_type = $1 AND timestamp >= $2 AND timestamp <= $3
+                    ORDER BY timestamp ASC
+                    LIMIT $4
+                    """,
+                    event_type, from_timestamp, to_timestamp, limit,
+                )
+            return [self._row_to_event(row) for row in rows]
+        except Exception as e:
+            logger.error(f"Failed to fetch events by type {event_type}: {e}")
+            raise EventStoreError(f"Event type query failed: {e}") from e
 
     async def replay_aggregate(self, aggregate_id: UUID) -> Optional[Any]:
         """Rebuild aggregate state from all its events (event replay).
@@ -513,10 +572,18 @@ class EventStore:
         if not events:
             return None
 
-        # TODO: Implement aggregate reconstruction
-        # This will dispatch to appropriate aggregate class based on aggregate_type
         logger.debug(f"Replaying {len(events)} events for aggregate {aggregate_id}")
-        return None
+        # Build a simple dict-based state by merging event_data in version order.
+        # Domain-specific aggregates should subclass EventSourcedAggregate and
+        # override apply_event() for richer reconstruction.
+        state: Dict[str, Any] = {
+            "aggregate_id": str(aggregate_id),
+            "aggregate_type": events[0].aggregate_type.value,
+            "version": events[-1].version,
+            "event_count": len(events),
+            "events": [e.to_dict() for e in events],
+        }
+        return state
 
     async def get_aggregate_version(self, aggregate_id: UUID) -> int:
         """Get current version of an aggregate.
@@ -527,8 +594,45 @@ class EventStore:
         Returns:
             Current version number (0 if aggregate doesn't exist)
         """
-        # TODO: Implement version query
-        return 0
+        if self.connection_pool is None:
+            return 0
+
+        try:
+            async with self.connection_pool.acquire() as conn:
+                return await self._get_aggregate_version_conn(conn, aggregate_id)
+        except Exception as e:
+            logger.error(f"Failed to get version for aggregate {aggregate_id}: {e}")
+            raise EventStoreError(f"Version query failed: {e}") from e
+
+    async def _get_aggregate_version_conn(self, conn: Any, aggregate_id: UUID) -> int:
+        """Get current version using an existing connection (avoids pool re-acquire)."""
+        row = await conn.fetchrow(
+            "SELECT COALESCE(MAX(version), 0) AS ver FROM events WHERE aggregate_id = $1",
+            aggregate_id,
+        )
+        return int(row["ver"]) if row else 0
+
+    @staticmethod
+    def _row_to_event(row: Any) -> Event:
+        """Convert an asyncpg Record to an Event dataclass."""
+        event_data = row["event_data"]
+        metadata = row["metadata"]
+        # asyncpg returns JSONB columns as dicts already; handle plain strings too
+        if isinstance(event_data, str):
+            event_data = json.loads(event_data)
+        if isinstance(metadata, str):
+            metadata = json.loads(metadata)
+        return Event(
+            event_id=UUID(str(row["event_id"])),
+            aggregate_id=UUID(str(row["aggregate_id"])),
+            aggregate_type=AggregateType(row["aggregate_type"]),
+            event_type=row["event_type"],
+            event_data=event_data or {},
+            metadata=metadata or {},
+            sequence_number=int(row["sequence_number"]),
+            timestamp=row["timestamp"],
+            version=int(row["version"]),
+        )
 
 
 # ============================================================================

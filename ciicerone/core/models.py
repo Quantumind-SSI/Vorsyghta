@@ -136,6 +136,11 @@ class SimulationResult:
             successful_stages = sum(1 for s in self.stages if s.success)
             self.success_rate = successful_stages / len(self.stages)
 
+    @property
+    def success(self) -> bool:
+        """True when the simulation completed without failure."""
+        return self.status == SimulationStatus.COMPLETED and self.error_message is None
+
     def mark_completed(self, success: bool = True, error_message: Optional[str] = None) -> None:
         """Mark the simulation as completed."""
         self.end_time = datetime.utcnow()

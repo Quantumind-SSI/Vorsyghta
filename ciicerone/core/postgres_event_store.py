@@ -23,6 +23,7 @@ try:
     ASYNCPG_AVAILABLE = True
 except ImportError:
     ASYNCPG_AVAILABLE = False
+    asyncpg = None
     Pool = Any
     Connection = Any
 
@@ -580,7 +581,7 @@ class PostgresEventStore:
     # Helpers
     # =========================================================================
 
-    def _row_to_event(self, row: asyncpg.Record) -> Event:
+    def _row_to_event(self, row: Any) -> Event:
         """Convert database row to Event object."""
         return Event(
             event_id=row['event_id'],

@@ -115,7 +115,8 @@ class AzureOpenAIProvider(BaseLLMProvider):
                 "api_version": self.api_version,
                 "endpoint": self.endpoint,
                 "prompt_tokens": response.usage.prompt_tokens if response.usage else 0,
-                "completion_tokens": response.usage.completion_tokens if response.usage else 0
+                "completion_tokens": response.usage.completion_tokens if response.usage else 0,
+                "total_tokens": response.usage.total_tokens if response.usage else 0,
             }
             llm_response.is_real_ai = True
 

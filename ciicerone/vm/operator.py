@@ -819,52 +819,440 @@ class DockerHypervisor(BaseHypervisor):
 
 
 class ProxmoxHypervisor(BaseHypervisor):
-    """Proxmox VE hypervisor implementation."""
+    """Proxmox VE hypervisor via the Proxmox REST API (proxmoxer).
+
+    Requires ``proxmoxer`` to be installed::
+
+        pip install proxmoxer requests
+
+    Configure via ``InfrastructureConfig``:
+        - ``hypervisor_host``: Proxmox host FQDN / IP
+        - ``hypervisor_port``: API port (default 8006)
+        - ``hypervisor_user``: API user, e.g. ``root@pam``
+        - ``hypervisor_password``: Password or API token secret
+        - ``api_token``: ``TOKENID=SECRET`` if using API tokens
+
+    VM IDs in Proxmox are integers; this class returns them as strings
+    (e.g. ``"101"``) for API consistency.
+    """
+
+    _DEFAULT_NODE = "pve"
+
+    def _get_client(self):
+        try:
+            from proxmoxer import ProxmoxAPI
+        except ImportError:
+            raise ImportError(
+                "proxmoxer is required for Proxmox support: pip install proxmoxer requests"
+            )
+
+        kwargs: Dict[str, Any] = {
+            "host": self.config.hypervisor_host,
+            "port": self.config.hypervisor_port,
+            "verify_ssl": False,
+        }
+        if self.config.api_token:
+            # token format: "USER@REALM!TOKENID=SECRET"
+            parts = self.config.api_token.split("=", 1)
+            if len(parts) == 2:
+                kwargs["user"] = parts[0].rsplit("!", 1)[0]
+                kwargs["token_name"] = parts[0].rsplit("!", 1)[-1]
+                kwargs["token_value"] = parts[1]
+        else:
+            kwargs["user"] = self.config.hypervisor_user
+            kwargs["password"] = self.config.hypervisor_password
+
+        return ProxmoxAPI(**kwargs)
+
+    def _next_vm_id(self, proxmox) -> int:
+        """Ask Proxmox for the next available VM ID."""
+        return int(proxmox.cluster.nextid.get())
+
+    def _node(self, proxmox) -> str:
+        """Return the first node name from the cluster, defaulting to 'pve'."""
+        try:
+            nodes = proxmox.nodes.get()
+            return nodes[0]["node"] if nodes else self._DEFAULT_NODE
+        except Exception:
+            return self._DEFAULT_NODE
 
     async def create_vm(self, vm_config: VMConfig) -> str:
-        """Clone VM from template in Proxmox."""
-        # Implementation would use Proxmox API
-        raise NotImplementedError("Proxmox integration coming soon")
+        """Clone a VM from a named template in Proxmox.
+
+        The template must exist on the node with a name matching
+        ``vm_config.template``. The clone is created with the VM name
+        set to ``vm_config.name``.
+        """
+        loop = asyncio.get_event_loop()
+
+        def _clone():
+            proxmox = self._get_client()
+            node = self._node(proxmox)
+
+            # Find template VM ID by name
+            vms = proxmox.nodes(node).qemu.get()
+            template_id = None
+            for vm in vms:
+                if vm.get("name") == vm_config.template:
+                    template_id = vm["vmid"]
+                    break
+            if template_id is None:
+                raise ValueError(
+                    f"Proxmox template '{vm_config.template}' not found on node '{node}'"
+                )
+
+            new_id = self._next_vm_id(proxmox)
+            proxmox.nodes(node).qemu(template_id).clone.post(
+                newid=new_id,
+                name=vm_config.name,
+                full=1,
+            )
+            logger.info("Proxmox: cloned %s → VM %s (%s)", template_id, new_id, vm_config.name)
+            return str(new_id)
+
+        return await loop.run_in_executor(None, _clone)
 
     async def start_vm(self, vm_id: str) -> bool:
-        raise NotImplementedError("Proxmox integration coming soon")
+        """Start a Proxmox VM by ID."""
+        loop = asyncio.get_event_loop()
+
+        def _start():
+            proxmox = self._get_client()
+            node = self._node(proxmox)
+            try:
+                proxmox.nodes(node).qemu(int(vm_id)).status.start.post()
+                logger.info("Proxmox: started VM %s", vm_id)
+                return True
+            except Exception as exc:
+                logger.error("Proxmox: failed to start VM %s: %s", vm_id, exc)
+                return False
+
+        return await loop.run_in_executor(None, _start)
 
     async def stop_vm(self, vm_id: str) -> bool:
-        raise NotImplementedError("Proxmox integration coming soon")
+        """Gracefully stop a Proxmox VM (ACPI shutdown)."""
+        loop = asyncio.get_event_loop()
+
+        def _stop():
+            proxmox = self._get_client()
+            node = self._node(proxmox)
+            try:
+                proxmox.nodes(node).qemu(int(vm_id)).status.shutdown.post()
+                logger.info("Proxmox: shutdown VM %s", vm_id)
+                return True
+            except Exception as exc:
+                logger.error("Proxmox: failed to stop VM %s: %s", vm_id, exc)
+                return False
+
+        return await loop.run_in_executor(None, _stop)
 
     async def destroy_vm(self, vm_id: str) -> bool:
-        raise NotImplementedError("Proxmox integration coming soon")
+        """Stop and delete a Proxmox VM."""
+        loop = asyncio.get_event_loop()
+
+        def _destroy():
+            proxmox = self._get_client()
+            node = self._node(proxmox)
+            try:
+                # Force-stop first
+                proxmox.nodes(node).qemu(int(vm_id)).status.stop.post()
+                import time as _time
+                _time.sleep(3)
+                proxmox.nodes(node).qemu(int(vm_id)).delete()
+                logger.info("Proxmox: destroyed VM %s", vm_id)
+                return True
+            except Exception as exc:
+                logger.error("Proxmox: failed to destroy VM %s: %s", vm_id, exc)
+                return False
+
+        return await loop.run_in_executor(None, _destroy)
 
     async def get_vm_ip(self, vm_id: str) -> Optional[str]:
-        raise NotImplementedError("Proxmox integration coming soon")
+        """Return the first non-loopback IPv4 address via QEMU guest agent."""
+        loop = asyncio.get_event_loop()
+
+        def _get_ip():
+            proxmox = self._get_client()
+            node = self._node(proxmox)
+            try:
+                ifaces = proxmox.nodes(node).qemu(int(vm_id)).agent("network-get-interfaces").get()
+                for iface in ifaces.get("result", []):
+                    if iface.get("name") in ("lo", "loopback"):
+                        continue
+                    for addr in iface.get("ip-addresses", []):
+                        if addr.get("ip-address-type") == "ipv4":
+                            ip = addr.get("ip-address", "")
+                            if not ip.startswith("127."):
+                                return ip
+            except Exception as exc:
+                logger.warning("Proxmox: could not get IP for VM %s: %s", vm_id, exc)
+            return None
+
+        return await loop.run_in_executor(None, _get_ip)
 
     async def create_snapshot(self, vm_id: str, name: str) -> str:
-        raise NotImplementedError("Proxmox integration coming soon")
+        """Create a Proxmox VM snapshot."""
+        loop = asyncio.get_event_loop()
+
+        def _snap():
+            proxmox = self._get_client()
+            node = self._node(proxmox)
+            proxmox.nodes(node).qemu(int(vm_id)).snapshot.post(
+                snapname=name,
+                description=f"Ciicerone snapshot: {name}",
+            )
+            logger.info("Proxmox: snapshot '%s' created for VM %s", name, vm_id)
+            return name
+
+        return await loop.run_in_executor(None, _snap)
 
     async def restore_snapshot(self, vm_id: str, snapshot_id: str) -> bool:
-        raise NotImplementedError("Proxmox integration coming soon")
+        """Rollback a Proxmox VM to a named snapshot."""
+        loop = asyncio.get_event_loop()
+
+        def _restore():
+            proxmox = self._get_client()
+            node = self._node(proxmox)
+            try:
+                proxmox.nodes(node).qemu(int(vm_id)).snapshot(snapshot_id).rollback.post()
+                logger.info("Proxmox: rolled back VM %s to snapshot '%s'", vm_id, snapshot_id)
+                return True
+            except Exception as exc:
+                logger.error("Proxmox: rollback failed for VM %s: %s", vm_id, exc)
+                return False
+
+        return await loop.run_in_executor(None, _restore)
 
 
 class LibvirtHypervisor(BaseHypervisor):
-    """Libvirt/KVM hypervisor implementation."""
+    """Libvirt/KVM hypervisor via the libvirt-python binding.
+
+    Requires ``libvirt-python`` to be installed::
+
+        pip install libvirt-python
+
+    The connection URI is constructed from ``InfrastructureConfig``:
+        - Local QEMU/KVM: set ``hypervisor_host = "localhost"``
+          → uses ``qemu:///system``
+        - Remote KVM via SSH: set ``hypervisor_host`` to the remote host
+          → uses ``qemu+ssh://root@HOST/system``
+
+    VM names (not UUIDs) are used as ``vm_id`` throughout this class.
+    """
+
+    def _connect(self):
+        """Open a libvirt connection, raising ImportError if not available."""
+        try:
+            import libvirt  # type: ignore
+        except ImportError:
+            raise ImportError(
+                "libvirt-python is required for KVM support: pip install libvirt-python"
+            )
+
+        host = self.config.hypervisor_host
+        if host in ("localhost", "127.0.0.1"):
+            uri = "qemu:///system"
+        else:
+            user = self.config.hypervisor_user or "root"
+            uri = f"qemu+ssh://{user}@{host}/system"
+
+        conn = libvirt.open(uri)
+        if conn is None:
+            raise RuntimeError(f"Failed to open libvirt connection to {uri}")
+        return conn, libvirt
 
     async def create_vm(self, vm_config: VMConfig) -> str:
-        raise NotImplementedError("Libvirt integration coming soon")
+        """Define and start a KVM domain from an XML template.
+
+        A minimal libvirt XML domain is generated from ``vm_config``.
+        For production usage, provide a full domain XML template via
+        the ``template`` field (resolved from ``/etc/libvirt/ciicerone/``).
+        """
+        loop = asyncio.get_event_loop()
+
+        def _define():
+            conn, libvirt = self._connect()
+            try:
+                xml = _build_domain_xml(vm_config)
+                domain = conn.defineXML(xml)
+                domain.create()
+                logger.info("Libvirt: defined and started domain '%s'", vm_config.name)
+                return vm_config.name
+            finally:
+                conn.close()
+
+        return await loop.run_in_executor(None, _define)
 
     async def start_vm(self, vm_id: str) -> bool:
-        raise NotImplementedError("Libvirt integration coming soon")
+        loop = asyncio.get_event_loop()
+
+        def _start():
+            conn, libvirt = self._connect()
+            try:
+                domain = conn.lookupByName(vm_id)
+                domain.create()
+                logger.info("Libvirt: started domain '%s'", vm_id)
+                return True
+            except Exception as exc:
+                logger.error("Libvirt: failed to start domain '%s': %s", vm_id, exc)
+                return False
+            finally:
+                conn.close()
+
+        return await loop.run_in_executor(None, _start)
 
     async def stop_vm(self, vm_id: str) -> bool:
-        raise NotImplementedError("Libvirt integration coming soon")
+        """Send ACPI shutdown to the KVM domain (graceful)."""
+        loop = asyncio.get_event_loop()
+
+        def _stop():
+            conn, libvirt = self._connect()
+            try:
+                domain = conn.lookupByName(vm_id)
+                domain.shutdown()
+                logger.info("Libvirt: shutdown domain '%s'", vm_id)
+                return True
+            except Exception as exc:
+                logger.error("Libvirt: failed to stop domain '%s': %s", vm_id, exc)
+                return False
+            finally:
+                conn.close()
+
+        return await loop.run_in_executor(None, _stop)
 
     async def destroy_vm(self, vm_id: str) -> bool:
-        raise NotImplementedError("Libvirt integration coming soon")
+        """Forcibly stop and undefine a KVM domain (removes disk too)."""
+        loop = asyncio.get_event_loop()
+
+        def _destroy():
+            conn, libvirt = self._connect()
+            try:
+                domain = conn.lookupByName(vm_id)
+                if domain.isActive():
+                    domain.destroy()  # force kill
+                domain.undefineFlags(
+                    libvirt.VIR_DOMAIN_UNDEFINE_MANAGED_SAVE
+                    | libvirt.VIR_DOMAIN_UNDEFINE_SNAPSHOTS_METADATA
+                )
+                logger.info("Libvirt: destroyed domain '%s'", vm_id)
+                return True
+            except Exception as exc:
+                logger.error("Libvirt: failed to destroy domain '%s': %s", vm_id, exc)
+                return False
+            finally:
+                conn.close()
+
+        return await loop.run_in_executor(None, _destroy)
 
     async def get_vm_ip(self, vm_id: str) -> Optional[str]:
-        raise NotImplementedError("Libvirt integration coming soon")
+        """Return the first non-loopback IPv4 via QEMU guest agent."""
+        loop = asyncio.get_event_loop()
+
+        def _get_ip():
+            conn, libvirt = self._connect()
+            try:
+                domain = conn.lookupByName(vm_id)
+                ifaces = domain.interfaceAddresses(
+                    libvirt.VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_AGENT
+                )
+                for iface_name, iface_data in ifaces.items():
+                    if iface_name == "lo":
+                        continue
+                    for addr in iface_data.get("addrs", []):
+                        if addr.get("type") == libvirt.VIR_IP_ADDR_TYPE_IPV4:
+                            ip = addr.get("addr", "")
+                            if not ip.startswith("127."):
+                                return ip
+            except Exception as exc:
+                logger.warning("Libvirt: could not get IP for '%s': %s", vm_id, exc)
+            finally:
+                conn.close()
+            return None
+
+        return await loop.run_in_executor(None, _get_ip)
 
     async def create_snapshot(self, vm_id: str, name: str) -> str:
-        raise NotImplementedError("Libvirt integration coming soon")
+        """Create an internal libvirt snapshot for the KVM domain."""
+        loop = asyncio.get_event_loop()
+
+        def _snap():
+            conn, libvirt = self._connect()
+            try:
+                domain = conn.lookupByName(vm_id)
+                xml = f"""
+                <domainsnapshot>
+                  <name>{name}</name>
+                  <description>Ciicerone snapshot: {name}</description>
+                </domainsnapshot>"""
+                domain.snapshotCreateXML(xml, 0)
+                logger.info("Libvirt: snapshot '%s' created for domain '%s'", name, vm_id)
+                return name
+            finally:
+                conn.close()
+
+        return await loop.run_in_executor(None, _snap)
 
     async def restore_snapshot(self, vm_id: str, snapshot_id: str) -> bool:
-        raise NotImplementedError("Libvirt integration coming soon")
+        """Revert the KVM domain to a named snapshot."""
+        loop = asyncio.get_event_loop()
+
+        def _restore():
+            conn, libvirt = self._connect()
+            try:
+                domain = conn.lookupByName(vm_id)
+                snap = domain.snapshotLookupByName(snapshot_id)
+                domain.revertToSnapshot(snap)
+                logger.info("Libvirt: reverted domain '%s' to snapshot '%s'", vm_id, snapshot_id)
+                return True
+            except Exception as exc:
+                logger.error("Libvirt: revert failed for '%s': %s", vm_id, exc)
+                return False
+            finally:
+                conn.close()
+
+        return await loop.run_in_executor(None, _restore)
+
+
+def _build_domain_xml(vm_config: "VMConfig") -> str:  # noqa: F821  (forward ref)
+    """Build a minimal libvirt domain XML string from a VMConfig.
+
+    This generates a KVM/QEMU domain suitable for CI/development.
+    For production, replace with Jinja2-rendered templates.
+    """
+    memory_kb = vm_config.memory_gb * 1024 * 1024
+    return f"""
+<domain type='kvm'>
+  <name>{vm_config.name}</name>
+  <memory unit='KiB'>{memory_kb}</memory>
+  <currentMemory unit='KiB'>{memory_kb}</currentMemory>
+  <vcpu placement='static'>{vm_config.cpu_cores}</vcpu>
+  <os>
+    <type arch='x86_64' machine='pc-i440fx-2.9'>hvm</type>
+    <boot dev='hd'/>
+  </os>
+  <features>
+    <acpi/>
+    <apic/>
+  </features>
+  <cpu mode='host-model' check='partial'/>
+  <clock offset='utc'/>
+  <devices>
+    <emulator>/usr/bin/kvm</emulator>
+    <disk type='file' device='disk'>
+      <driver name='qemu' type='qcow2'/>
+      <source file='/var/lib/libvirt/images/{vm_config.name}.qcow2'/>
+      <target dev='vda' bus='virtio'/>
+    </disk>
+    <interface type='network'>
+      <source network='default'/>
+      <model type='virtio'/>
+    </interface>
+    <channel type='unix'>
+      <target type='virtio' name='org.qemu.guest_agent.0'/>
+    </channel>
+    <graphics type='vnc' port='-1' autoport='yes'/>
+    <video>
+      <model type='vga' vram='16384' heads='1'/>
+    </video>
+  </devices>
+</domain>"""

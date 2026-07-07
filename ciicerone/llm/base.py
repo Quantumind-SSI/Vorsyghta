@@ -19,6 +19,7 @@ class LLMResponse:
         self.error: Optional[str] = None
         self.metadata: Dict[str, Any] = {}
         self.is_real_ai: bool = False  # Track if this is real AI or simulated content
+        self.tokens_used: int = 0  # Total tokens consumed (prompt + completion)
 
     def __str__(self) -> str:
         ai_type = "Real AI" if self.is_real_ai else "Mock/Simulated"

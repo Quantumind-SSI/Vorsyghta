@@ -92,7 +92,9 @@ def _resolve_url(database_url: Optional[str] = None) -> str:
         3. ``postgresql://localhost/ciicerone`` (development default)
 
     The URL is normalised to the ``postgresql+asyncpg`` dialect so that
-    SQLAlchemy's async engine can use it directly.
+    SQLAlchemy's async engine can use it directly.  Query parameters
+    incompatible with asyncpg (e.g. ``sslmode``) are converted to their
+    asyncpg equivalents (e.g. ``ssl``).
     """
     url = database_url or os.getenv("DATABASE_URL", "postgresql://localhost/ciicerone")
 
@@ -101,6 +103,13 @@ def _resolve_url(database_url: Optional[str] = None) -> str:
         url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
     elif url.startswith("postgres://"):
         url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+
+    # asyncpg uses 'ssl' instead of 'sslmode' — convert if present
+    # Common sslmode values: disable, allow, prefer, require, verify-ca, verify-full
+    # asyncpg accepts: none, disable, allow, prefer, require, verify-ca, verify-full
+    if "sslmode=" in url:
+        # Replace sslmode= with ssl= for asyncpg compatibility
+        url = url.replace("sslmode=", "ssl=")
 
     return url
 

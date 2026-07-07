@@ -15,6 +15,7 @@ from .providers.openai_provider import OpenAIProvider
 from .providers.anthropic_provider import AnthropicProvider
 from .providers.openrouter_provider import OpenRouterProvider
 from .providers.ollama_provider import OllamaProvider
+from .providers.azure_provider import AzureOpenAIProvider
 
 # Local model providers (with optional imports)
 try:
@@ -73,21 +74,42 @@ class LLMManager:
     def _initialize_providers(self) -> None:
         """Initialize available LLM providers."""
         try:
+            # Initialize Azure OpenAI if configured (via config or env vars)
+            azure_config = self.config.get('azure', {})
+            azure_api_key = azure_config.get('api_key') or os.getenv('AZURE_OPENAI_API_KEY')
+            azure_endpoint = azure_config.get('endpoint') or os.getenv('AZURE_OPENAI_ENDPOINT')
+            azure_deployment = azure_config.get('deployment') or os.getenv('AZURE_OPENAI_DEPLOYMENT')
+            azure_api_version = azure_config.get('api_version') or os.getenv('AZURE_OPENAI_API_VERSION', '2024-10-21')
+            if azure_api_key and azure_endpoint and azure_deployment:
+                self._providers['azure'] = AzureOpenAIProvider({
+                    'api_key': azure_api_key,
+                    'endpoint': azure_endpoint,
+                    'deployment': azure_deployment,
+                    'api_version': azure_api_version,
+                })
+                logger.info("Azure OpenAI provider initialized")
+
             # Initialize OpenAI if configured
             openai_config = self.config.get('openai', {})
-            if openai_config.get('api_key'):
+            openai_api_key = openai_config.get('api_key') or os.getenv('OPENAI_API_KEY')
+            if openai_api_key:
+                openai_config['api_key'] = openai_api_key
                 self._providers['openai'] = OpenAIProvider(openai_config)
                 logger.info("OpenAI provider initialized")
 
             # Initialize Anthropic if configured
             anthropic_config = self.config.get('anthropic', {})
-            if anthropic_config.get('api_key'):
+            anthropic_api_key = anthropic_config.get('api_key') or os.getenv('ANTHROPIC_API_KEY')
+            if anthropic_api_key:
+                anthropic_config['api_key'] = anthropic_api_key
                 self._providers['anthropic'] = AnthropicProvider(anthropic_config)
                 logger.info("Anthropic provider initialized")
 
             # Initialize OpenRouter if configured
             openrouter_config = self.config.get('openrouter', {})
-            if openrouter_config.get('api_key'):
+            openrouter_api_key = openrouter_config.get('api_key') or os.getenv('OPENROUTER_API_KEY')
+            if openrouter_api_key:
+                openrouter_config['api_key'] = openrouter_api_key
                 self._providers['openrouter'] = OpenRouterProvider(openrouter_config)
                 logger.info("OpenRouter provider initialized")
 

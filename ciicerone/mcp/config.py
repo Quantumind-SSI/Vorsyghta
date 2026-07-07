@@ -191,6 +191,22 @@ class TemplateConfig:
             "default_user": "admin",
             "default_password": "vulnerable123",  # nosec B105 - intentional lab credential
         },
+        "ubuntu-researcher": {
+            "vmid": 9003,
+            "description": "Ubuntu 24.04 with zero-day research toolchain (AFL++, radare2, Ghidra, semgrep, CodeQL)",
+            "cpu_cores": 8,
+            "memory_mb": 16384,
+            "default_user": "researcher",
+            "default_password": "ciicerone",  # nosec B105 - intentional lab credential
+            "tools": [
+                "afl-fuzz", "libfuzzer", "honggfuzz", "radamsa",
+                "radare2", "ghidra", "gdb", "pwndbg",
+                "semgrep", "codeql", "bandit",
+                "ffuf", "schemathesis", "nuclei",
+                "nmap", "hydra", "sqlmap", "gobuster",
+                "binwalk", "strings",
+            ],
+        },
     })
 
     def get_template(self, name: str) -> dict:

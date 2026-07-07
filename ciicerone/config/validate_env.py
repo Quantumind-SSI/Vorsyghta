@@ -59,7 +59,7 @@ class EnvVar:
 # Required environment variables
 REQUIRED_VARS = [
     EnvVar(
-        name="SECRET_KEY",
+        name="CIICERONE_SECRET_KEY",
         required_in_production=True,
         pattern=r"^[a-f0-9]{32,}$|^.{32,}$",  # At least 32 chars
         description="Application secret key for session security"

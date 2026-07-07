@@ -48,6 +48,7 @@ VM_LIFECYCLE_TOOLS: List[Tool] = [
 
 Available templates:
 - ubuntu-attacker: Ubuntu 24.04 with security tools (nmap, metasploit, gobuster, nuclei, hydra)
+- ubuntu-researcher: Ubuntu 24.04 with zero-day research toolchain (AFL++, radare2, Ghidra, semgrep, CodeQL)
 - ubuntu-target: Ubuntu 24.04 as vulnerable target
 - windows-target: Windows 11 as vulnerable target
 
@@ -58,7 +59,7 @@ This typically takes 30-90 seconds.""",
             "properties": {
                 "template": {
                     "type": "string",
-                    "enum": ["ubuntu-attacker", "ubuntu-target", "windows-target"],
+                    "enum": ["ubuntu-attacker", "ubuntu-researcher", "ubuntu-target", "windows-target"],
                     "description": "VM template to use"
                 },
                 "name": {

@@ -179,24 +179,32 @@ class SigmaRuleGenerator(BaseRuleGenerator):
         return logsource
     
     def _dump_yaml(self, data: Dict[str, Any]) -> str:
-        """Dump dictionary to properly formatted YAML.
-        
-        Args:
-            data: Dictionary to serialize
-            
-        Returns:
-            YAML string
+        """Dump dictionary to properly formatted Sigma YAML.
+
+        Uses a custom Dumper so that:
+        - str/Enum values are emitted as plain YAML strings (not Python object tags)
+        - Multiline strings use the literal block style (|)
         """
-        # Custom representer for multiline strings
-        def str_representer(dumper, data):
-            if '\n' in data:
-                return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='|')
-            return dumper.represent_scalar('tag:yaml.org,2002:str', data)
-        
-        yaml.add_representer(str, str_representer)
-        
+        from enum import Enum
+
+        class _SigmaDumper(yaml.Dumper):
+            pass
+
+        def _str_representer(dumper, value):
+            if "\n" in value:
+                return dumper.represent_scalar("tag:yaml.org,2002:str", value, style="|")
+            return dumper.represent_scalar("tag:yaml.org,2002:str", value)
+
+        def _enum_representer(dumper, value):
+            # Emit enum as its plain string .value
+            return dumper.represent_scalar("tag:yaml.org,2002:str", str(value.value))
+
+        _SigmaDumper.add_representer(str, _str_representer)
+        _SigmaDumper.add_multi_representer(Enum, _enum_representer)
+
         return yaml.dump(
             data,
+            Dumper=_SigmaDumper,
             default_flow_style=False,
             allow_unicode=True,
             sort_keys=False,

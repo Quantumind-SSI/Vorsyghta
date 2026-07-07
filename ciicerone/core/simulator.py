@@ -83,6 +83,75 @@ class Simulator:
 
         return result
 
+    # MITRE ATT&CK technique mapping: (threat_type, stage_type) → (technique_id, tactic)
+    # Used to annotate simulation stages with real MITRE data so blue-team alerts
+    # carry actionable technique IDs for detection-rule correlation.
+    _MITRE_MAP: Dict[str, Dict[str, tuple]] = {
+        "phishing": {
+            "reconnaissance":  ("T1598.003", "reconnaissance"),
+            "attack_planning": ("T1566.002", "initial_access"),
+            "execution":       ("T1566.001", "initial_access"),
+            "persistence":     ("T1547.001", "persistence"),
+            "data_collection": ("T1114.001", "collection"),
+            "exfiltration":    ("T1041",     "exfiltration"),
+            "cleanup":         ("T1070.004", "defense_evasion"),
+        },
+        "malware": {
+            "reconnaissance":  ("T1082",     "discovery"),
+            "attack_planning": ("T1203",     "execution"),
+            "execution":       ("T1059.001", "execution"),
+            "persistence":     ("T1053.005", "persistence"),
+            "data_collection": ("T1005",     "collection"),
+            "exfiltration":    ("T1048",     "exfiltration"),
+            "cleanup":         ("T1070.001", "defense_evasion"),
+        },
+        "social_engineering": {
+            "reconnaissance":  ("T1591",     "reconnaissance"),
+            "attack_planning": ("T1598",     "reconnaissance"),
+            "execution":       ("T1534",     "lateral_movement"),
+            "persistence":     ("T1078",     "persistence"),
+            "data_collection": ("T1213",     "collection"),
+            "exfiltration":    ("T1567",     "exfiltration"),
+            "cleanup":         ("T1070",     "defense_evasion"),
+        },
+        "network_intrusion": {
+            "reconnaissance":  ("T1595.001", "reconnaissance"),
+            "attack_planning": ("T1190",     "initial_access"),
+            "execution":       ("T1059.004", "execution"),
+            "persistence":     ("T1505.003", "persistence"),
+            "data_collection": ("T1018",     "discovery"),
+            "exfiltration":    ("T1041",     "exfiltration"),
+            "cleanup":         ("T1485",     "impact"),
+        },
+        "data_breach": {
+            "reconnaissance":  ("T1590",     "reconnaissance"),
+            "attack_planning": ("T1078.002", "initial_access"),
+            "execution":       ("T1003.001", "credential_access"),
+            "persistence":     ("T1136.001", "persistence"),
+            "data_collection": ("T1074.001", "collection"),
+            "exfiltration":    ("T1537",     "exfiltration"),
+            "cleanup":         ("T1070.002", "defense_evasion"),
+        },
+        "insider_threat": {
+            "reconnaissance":  ("T1087.001", "discovery"),
+            "attack_planning": ("T1078.003", "initial_access"),
+            "execution":       ("T1039",     "collection"),
+            "persistence":     ("T1547",     "persistence"),
+            "data_collection": ("T1056.001", "collection"),
+            "exfiltration":    ("T1052.001", "exfiltration"),
+            "cleanup":         ("T1489",     "impact"),
+        },
+    }
+    _DEFAULT_MITRE: Dict[str, tuple] = {
+        "reconnaissance":  ("T1595",     "reconnaissance"),
+        "attack_planning": ("T1190",     "initial_access"),
+        "execution":       ("T1059",     "execution"),
+        "persistence":     ("T1547",     "persistence"),
+        "data_collection": ("T1005",     "collection"),
+        "exfiltration":    ("T1041",     "exfiltration"),
+        "cleanup":         ("T1070",     "defense_evasion"),
+    }
+
     async def _execute_stages(self, scenario: ThreatScenario, result: SimulationResult) -> None:
         """Execute the individual stages of a simulation.
 
@@ -101,27 +170,38 @@ class Simulator:
             {"type": "cleanup", "description": "Clean up simulation artifacts"}
         ]
 
+        # Resolve MITRE lookup table for this threat type
+        threat_key = scenario.threat_type.value if hasattr(scenario.threat_type, "value") else str(scenario.threat_type)
+        mitre_table = self._MITRE_MAP.get(threat_key, self._DEFAULT_MITRE)
+
         for i, stage_config in enumerate(stages_config[:self.max_stages]):
             stage_start = datetime.utcnow()
+            stage_type = stage_config["type"]
+            technique_id, tactic = mitre_table.get(stage_type, self._DEFAULT_MITRE.get(stage_type, ("T0000", "unknown")))
 
             try:
                 # Generate stage content using LLM
-                stage_content = await self._generate_stage_content(
+                stage_content, llm_info = await self._generate_stage_content(
                     scenario,
-                    stage_config["type"],
+                    stage_type,
                     stage_config["description"]
                 )
 
-                # Create simulation stage
+                # Create simulation stage — carry MITRE data in metadata so the
+                # exercise orchestrator can use it for blue-team alert correlation.
                 stage = SimulationStage(
-                    stage_type=stage_config["type"],
+                    stage_type=stage_type,
                     content=stage_content,
                     timestamp=stage_start,
                     success=True,
                     metadata={
                         "stage_number": i + 1,
                         "total_stages": len(stages_config),
-                        "scenario_name": scenario.name
+                        "scenario_name": scenario.name,
+                        "stage_name": stage_type,
+                        "technique_id": technique_id,
+                        "tactic": tactic,
+                        "llm_info": llm_info,
                     }
                 )
 
@@ -132,20 +212,26 @@ class Simulator:
                 # Add stage to result
                 result.add_stage(stage)
 
-                logger.debug(f"Completed stage {i+1}: {stage_config['type']}")
+                logger.debug(f"Completed stage {i+1}: {stage_type} ({technique_id}/{tactic})")
 
                 # Small delay between stages for realism
                 await asyncio.sleep(0.1)
 
             except Exception as e:
-                # Create failed stage
+                # Create failed stage (still carry MITRE data for correlation)
                 stage = SimulationStage(
-                    stage_type=stage_config["type"],
+                    stage_type=stage_type,
                     content="Stage execution failed",
                     timestamp=stage_start,
                     success=False,
                     error_message=str(e),
-                    metadata={"stage_number": i + 1, "error": str(e)}
+                    metadata={
+                        "stage_number": i + 1,
+                        "error": str(e),
+                        "stage_name": stage_type,
+                        "technique_id": technique_id,
+                        "tactic": tactic,
+                    }
                 )
 
                 result.add_stage(stage)
@@ -155,7 +241,7 @@ class Simulator:
                 if "critical" in str(e).lower():
                     break
 
-    async def _generate_stage_content(self, scenario: ThreatScenario, stage_type: str, description: str) -> str:
+    async def _generate_stage_content(self, scenario: ThreatScenario, stage_type: str, description: str) -> tuple:
         """Generate content for a simulation stage using LLM.
 
         Args:
@@ -164,13 +250,13 @@ class Simulator:
             description: Description of the stage
 
         Returns:
-            Generated content for the stage
+            Tuple of (generated content string, LLM info dict with tokens_used, is_real_ai, model, provider)
         """
         try:
             # Check if LLM provider is available
             if not self.llm_provider or not self.llm_provider.is_available():
                 logger.warning("No LLM provider available, using fallback content")
-                return self._generate_fallback_content(scenario, stage_type, description)
+                return self._generate_fallback_content(scenario, stage_type, description), self._empty_llm_info()
 
             # Create detailed prompt for actual scenario sample generation
             prompt = self._create_scenario_generation_prompt(scenario, stage_type, description)
@@ -236,20 +322,47 @@ class Simulator:
                             logger.warning("Content still truncated after retry, but using it")
                         else:
                             logger.info("Retry successful - content complete")
-                        return retry_response.content
+                        return retry_response.content, self._extract_llm_info(retry_response)
                     else:
                         logger.warning("Retry failed, using original truncated content")
-                        return response.content
+                        return response.content, self._extract_llm_info(response)
 
                 logger.debug(f"Generated {len(response.content)} characters for stage {stage_type}")
-                return response.content
+                return response.content, self._extract_llm_info(response)
             else:
                 logger.warning(f"Empty response from LLM for stage {stage_type}")
-                return self._generate_fallback_content(scenario, stage_type, description)
+                return self._generate_fallback_content(scenario, stage_type, description), self._empty_llm_info()
 
         except Exception as e:
             logger.error(f"LLM content generation failed for stage {stage_type}: {str(e)}")
-            return self._generate_fallback_content(scenario, stage_type, description)
+            return self._generate_fallback_content(scenario, stage_type, description), self._empty_llm_info()
+
+    @staticmethod
+    def _extract_llm_info(response) -> Dict[str, Any]:
+        """Extract LLM usage metadata from an LLMResponse for propagation to the API."""
+        meta = getattr(response, 'metadata', {}) or {}
+        return {
+            "tokens_used": getattr(response, 'tokens_used', 0) or meta.get('total_tokens', 0),
+            "prompt_tokens": meta.get('prompt_tokens', 0),
+            "completion_tokens": meta.get('completion_tokens', 0),
+            "total_tokens": meta.get('total_tokens', 0) or getattr(response, 'tokens_used', 0),
+            "is_real_ai": getattr(response, 'is_real_ai', False),
+            "model": getattr(response, 'model', 'unknown'),
+            "provider": getattr(response, 'provider', 'unknown'),
+        }
+
+    @staticmethod
+    def _empty_llm_info() -> Dict[str, Any]:
+        """Return an empty LLM info dict for fallback/mock content."""
+        return {
+            "tokens_used": 0,
+            "prompt_tokens": 0,
+            "completion_tokens": 0,
+            "total_tokens": 0,
+            "is_real_ai": False,
+            "model": "fallback",
+            "provider": "fallback",
+        }
 
     def _create_scenario_generation_prompt(self, scenario: ThreatScenario, stage_type: str, description: str) -> str:
         """Create stage-specific prompts for generating actual threat scenario samples.

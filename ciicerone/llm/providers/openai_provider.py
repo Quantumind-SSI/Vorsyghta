@@ -89,7 +89,6 @@ class OpenAIProvider(BaseLLMProvider):
                 content=content,
                 provider="openai",
                 model=self.model,
-                tokens_used=response.usage.total_tokens if response.usage else 0,
                 timestamp=datetime.utcnow(),
                 metadata={
                     "temperature": temperature,
@@ -101,6 +100,7 @@ class OpenAIProvider(BaseLLMProvider):
                 }
             )
             llm_response.is_real_ai = True
+            llm_response.tokens_used = response.usage.total_tokens if response.usage else 0
 
             logger.info(f"OpenAI API response received: {len(content)} chars, {llm_response.tokens_used} tokens")
             return llm_response

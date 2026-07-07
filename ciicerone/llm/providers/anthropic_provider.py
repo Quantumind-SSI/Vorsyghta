@@ -82,7 +82,6 @@ class AnthropicProvider(BaseLLMProvider):
                 content=content,
                 provider="anthropic",
                 model=self.model,
-                tokens_used=response.usage.input_tokens + response.usage.output_tokens,
                 timestamp=datetime.utcnow(),
                 metadata={
                     "temperature": temperature,
@@ -94,10 +93,7 @@ class AnthropicProvider(BaseLLMProvider):
                 }
             )
             llm_response.is_real_ai = True
-            llm_response.usage = {
-                "input_tokens": response.usage.input_tokens,
-                "output_tokens": response.usage.output_tokens
-            }
+            llm_response.tokens_used = response.usage.input_tokens + response.usage.output_tokens
 
             logger.info(f"Anthropic API response received: {len(content)} chars")
             return llm_response

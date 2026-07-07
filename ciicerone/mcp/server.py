@@ -31,6 +31,7 @@ from .tools.vm_execute import VM_EXECUTE_TOOLS, handle_vm_execute
 from .tools.vm_snapshot import VM_SNAPSHOT_TOOLS, handle_vm_snapshot
 from .tools.computer_use import COMPUTER_USE_TOOLS, handle_computer_use
 from .tools.attack_tools import ATTACK_TOOLS, handle_attack_tools
+from .tools.discovery_tools import DISCOVERY_TOOLS, handle_discovery_tools
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +77,7 @@ class CiiceroneMCPServer:
         self.tools.extend(VM_SNAPSHOT_TOOLS)
         self.tools.extend(COMPUTER_USE_TOOLS)
         self.tools.extend(ATTACK_TOOLS)
+        self.tools.extend(DISCOVERY_TOOLS)
 
         # Track active simulations
         self.active_vms: Dict[int, dict] = {}
@@ -177,6 +179,18 @@ class CiiceroneMCPServer:
             elif name in ["attack_nmap_scan", "attack_port_check", "attack_gobuster",
                          "attack_nuclei", "attack_hydra", "attack_curl"]:
                 return await handle_attack_tools(
+                    name, arguments, self.proxmox, self.config, self.safety
+                )
+
+            # Discovery tools (zero-day research)
+            elif name in ["discovery_afl_fuzz", "discovery_libfuzzer",
+                         "discovery_honggfuzz", "discovery_network_fuzz",
+                         "discovery_ffuf", "discovery_api_fuzz",
+                         "discovery_semgrep", "discovery_codeql", "discovery_bandit",
+                         "discovery_ghidra_headless", "discovery_radare2",
+                         "discovery_binary_diff",
+                         "discovery_crash_collect", "discovery_crash_triage"]:
+                return await handle_discovery_tools(
                     name, arguments, self.proxmox, self.config, self.safety
                 )
 
