@@ -568,29 +568,240 @@ cli.add_command(templates)
 @cli.command()
 @click.option(
     "--simulation-id",
-    required=True,
-    help="Simulation ID to generate report for",
+    default=None,
+    help="Exercise/simulation ID (defaults to the ID in the input file)",
+)
+@click.option(
+    "--input-file",
+    "-i",
+    type=click.Path(exists=True),
+    default=None,
+    help="Path to exercise result JSON (from 'ciicerone exercise run --output-file')",
 )
 @click.option(
     "--format",
-    type=click.Choice(["pdf", "html", "json", "csv"]),
-    default="html",
+    "output_format",
+    type=click.Choice(["json", "html", "csv"]),
+    default="json",
     help="Report format",
 )
 @click.option(
     "--output-file",
     "-o",
-    help="Output file path",
+    default=None,
+    help="Output file path (defaults to stdout for JSON, aar_<id>.<ext> otherwise)",
 )
-def report(simulation_id: str, format: str, output_file: Optional[str]) -> None:
-    """Generate simulation reports."""
-    console.print(f"[blue]Generating {format} report for simulation:[/blue] {simulation_id}")
+def report(
+    simulation_id: Optional[str],
+    input_file: Optional[str],
+    output_format: str,
+    output_file: Optional[str],
+) -> None:
+    """Generate an After-Action Report (AAR) from exercise results.
 
+    Loads a completed exercise result (saved via 'ciicerone exercise run
+    --output-file') and generates a structured AAR using the Purple Team
+    AARGenerator. The AAR includes detection coverage, MITRE technique gap
+    analysis, prioritized remediation recommendations, and response time
+    metrics.
+
+    \b
+    Examples:
+        ciicerone report -i exercise_result.json
+        ciicerone report -i exercise_result.json --format html -o aar.html
+        ciicerone report -i exercise_result.json --format csv -o aar.csv
+        ciicerone report --simulation-id abc123 -i exercise_result.json
+    """
+    import asyncio
+    import json as _json
+
+    if not input_file:
+        console.print("[red]Error: --input-file is required. Provide an exercise result JSON file.[/red]")
+        console.print("[dim]Generate one with: ciicerone exercise run --output-file result.json[/dim]")
+        sys.exit(1)
+
+    # Load exercise result
+    try:
+        with open(input_file, "r") as f:
+            exercise_data = _json.load(f)
+    except Exception as e:
+        console.print(f"[red]Failed to load input file: {e}[/red]")
+        sys.exit(1)
+
+    exercise_id = simulation_id or exercise_data.get("exercise_id", "unknown")
+    red_team_stages = exercise_data.get("red_team_stages", [])
+    blue_team_alerts = exercise_data.get("blue_team_alerts", [])
+    tenant_id = exercise_data.get("tenant_id", "default")
+
+    if not red_team_stages:
+        console.print("[yellow]Warning: No red team stages found in the exercise result.[/yellow]")
+
+    console.print(f"[blue]Generating AAR for exercise:[/blue] {exercise_id}")
+    console.print(f"[dim]  Red team stages: {len(red_team_stages)}[/dim]")
+    console.print(f"[dim]  Blue team alerts: {len(blue_team_alerts)}[/dim]")
+
+    # Generate AAR
+    try:
+        from ciicerone.core.aar_generator import AARGenerator
+
+        generator = AARGenerator()
+        aar = asyncio.run(generator.generate_aar(
+            exercise_id=exercise_id,
+            red_team_stages=red_team_stages,
+            blue_team_alerts=blue_team_alerts,
+            tenant_id=tenant_id,
+        ))
+    except Exception as e:
+        console.print(f"[red]Failed to generate AAR: {e}[/red]")
+        sys.exit(1)
+
+    # Render output
+    if output_format == "json":
+        output_content = _json.dumps(aar, indent=2, default=str)
+    elif output_format == "html":
+        output_content = _render_aar_html(aar)
+    elif output_format == "csv":
+        output_content = _render_aar_csv(aar)
+    else:
+        console.print(f"[red]Unsupported format: {output_format}[/red]")
+        sys.exit(1)
+
+    # Write output
     if output_file:
-        console.print(f"[dim]Output file: {output_file}[/dim]")
+        Path(output_file).parent.mkdir(parents=True, exist_ok=True)
+        Path(output_file).write_text(output_content, encoding="utf-8")
+        console.print(f"[green]AAR saved to: {output_file}[/green]")
+    else:
+        if output_format == "json":
+            console.print(output_content)
+        else:
+            # For HTML/CSV without -o, write to a default filename
+            default_name = f"aar_{exercise_id}.{output_format}"
+            Path(default_name).write_text(output_content, encoding="utf-8")
+            console.print(f"[green]AAR saved to: {default_name}[/green]")
 
-    # Report generation pending
-    console.print("[yellow]Report generation feature coming soon![/yellow]")
+    # Print summary to console
+    summary = aar.get("summary", "")
+    if summary:
+        console.print(f"\n[bold]Summary:[/bold] {summary}")
+
+    metrics = aar.get("detection_metrics", {})
+    if metrics:
+        console.print(
+            f"[blue]Detection:[/blue] {metrics.get('detected', 0)}/"
+            f"{metrics.get('total_attacks', 0)} "
+            f"({metrics.get('detection_rate_pct', 0)}%)"
+        )
+
+    gaps = aar.get("coverage_gaps", [])
+    if gaps:
+        console.print(f"[yellow]Coverage gaps:[/yellow] {len(gaps)}")
+
+    rems = aar.get("remediation_recommendations", [])
+    if rems:
+        console.print(f"[green]Remediation recommendations:[/green] {len(rems)}")
+
+
+def _render_aar_html(aar: dict) -> str:
+    """Render an AAR dict as a self-contained HTML document."""
+    summary = aar.get("summary", "No summary available.")
+    metrics = aar.get("detection_metrics", {})
+    gaps = aar.get("coverage_gaps", [])
+    remediations = aar.get("remediation_recommendations", [])
+    mitre = aar.get("mitre_coverage", {})
+    response = aar.get("response_time_metrics", {})
+
+    gap_rows = "".join(
+        f"<tr><td>{g.get('technique_id', '')}</td><td>{g.get('tactic', '')}</td>"
+        f"<td>{g.get('stage_name', '')}</td><td>{g.get('severity', '')}</td></tr>"
+        for g in gaps
+    )
+
+    rem_rows = "".join(
+        f"<tr><td>{r.get('priority', '')}</td><td>{r.get('technique_id', '')}</td>"
+        f"<td>{r.get('finding', '')}</td><td>{r.get('recommendation', '')}</td>"
+        f"<td>{r.get('effort', '')}</td><td>{r.get('impact', '')}</td></tr>"
+        for r in remediations
+    )
+
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>AAR — {aar.get('exercise_id', 'Unknown')}</title>
+<style>
+  body {{ font-family: -apple-system, system-ui, sans-serif; margin: 2rem; color: #1f1633; }}
+  h1, h2 {{ color: #150f23; }}
+  table {{ border-collapse: collapse; width: 100%; margin: 1rem 0; }}
+  th, td {{ border: 1px solid #e5e7eb; padding: 8px 12px; text-align: left; }}
+  th {{ background: #150f23; color: #fff; }}
+  .metric {{ display: inline-block; margin-right: 2rem; }}
+  .metric .value {{ font-size: 1.5rem; font-weight: 700; }}
+  .summary {{ background: #f0f0f0; padding: 1rem; border-radius: 8px; margin: 1rem 0; }}
+</style>
+</head>
+<body>
+<h1>After-Action Report</h1>
+<p><strong>Exercise:</strong> {aar.get('exercise_id', '')} &nbsp;
+   <strong>Tenant:</strong> {aar.get('tenant_id', '')} &nbsp;
+   <strong>Generated:</strong> {aar.get('generated_at', '')}</p>
+
+<div class="summary"><strong>Summary:</strong> {summary}</div>
+
+<h2>Detection Metrics</h2>
+<div class="metric">Total Attacks: <span class="value">{metrics.get('total_attacks', 0)}</span></div>
+<div class="metric">Detected: <span class="value">{metrics.get('detected', 0)}</span></div>
+<div class="metric">Missed: <span class="value">{metrics.get('missed', 0)}</span></div>
+<div class="metric">Detection Rate: <span class="value">{metrics.get('detection_rate_pct', 0)}%</span></div>
+
+<h2>MITRE Coverage</h2>
+<p>Techniques attacked: {mitre.get('total_techniques', 0)} &nbsp;
+   Techniques detected: {mitre.get('techniques_detected', 0)}</p>
+
+<h2>Response Times</h2>
+<p>Mean: {response.get('mean_response_time_ms', 'N/A')} ms &nbsp;
+   Max: {response.get('max_response_time_ms', 'N/A')} ms &nbsp;
+   Samples: {response.get('samples', 0)}</p>
+
+<h2>Coverage Gaps ({len(gaps)})</h2>
+<table><thead><tr><th>Technique</th><th>Tactic</th><th>Stage</th><th>Severity</th></tr></thead>
+<tbody>{gap_rows or '<tr><td colspan="4">No gaps detected.</td></tr>'}</tbody></table>
+
+<h2>Remediation Recommendations ({len(remediations)})</h2>
+<table><thead><tr><th>#</th><th>Technique</th><th>Finding</th><th>Recommendation</th><th>Effort</th><th>Impact</th></tr></thead>
+<tbody>{rem_rows or '<tr><td colspan="6">No recommendations.</td></tr>'}</tbody></table>
+</body>
+</html>"""
+
+
+def _render_aar_csv(aar: dict) -> str:
+    """Render an AAR dict as CSV (remediation recommendations as rows)."""
+    import csv
+    import io
+
+    remediations = aar.get("remediation_recommendations", [])
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    # Header
+    writer.writerow([
+        "exercise_id", "priority", "technique_id", "tactic",
+        "finding", "recommendation", "effort", "impact",
+    ])
+
+    for r in remediations:
+        writer.writerow([
+            aar.get("exercise_id", ""),
+            r.get("priority", ""),
+            r.get("technique_id", ""),
+            r.get("tactic", ""),
+            r.get("finding", ""),
+            r.get("recommendation", ""),
+            r.get("effort", ""),
+            r.get("impact", ""),
+        ])
+
+    return output.getvalue()
 
 
 @cli.command()
@@ -693,17 +904,24 @@ cli.add_command(detect_group, name="detect")
 from .exercise import exercise_group
 cli.add_command(exercise_group, name="exercise")
 
-# TODO: Implement agent module and re-enable
-# from .agent import agent_group
-# cli.add_command(agent_group, name="agent")
+from .agent import agent_group
+cli.add_command(agent_group, name="agent")
 
-# TODO: Implement hunt module and re-enable
-# from .hunt import hunt_group
-# cli.add_command(hunt_group, name="hunt")
+from .hunt import hunt_group
+cli.add_command(hunt_group, name="hunt")
 
-# TODO: Implement audit CLI module and re-enable
-# from .audit import audit_group
-# cli.add_command(audit_group, name="audit")
+from .audit import audit_group
+cli.add_command(audit_group, name="audit")
+
+from .red_team import red_team
+cli.add_command(red_team, name="red-team")
+
+from .research import research
+cli.add_command(research, name="research")
+
+# Add enterprise integrations commands
+from .integrations import integrations_group
+cli.add_command(integrations_group, name="integrations")
 
 
 def main() -> int:

@@ -1,7 +1,10 @@
-"""Red Team CLI commands for Ciicerone Attack integration.
+"""Red Team CLI commands for Ciicerone.
 
-Provides commands for launching and monitoring autonomous
-penetration testing flows via Ciicerone Attack.
+Provides commands for launching and monitoring autonomous penetration
+testing flows. By default, attacks run standalone via the
+AttackOrchestrator and the local tool server — no external API is
+required. Use --legacy to fall back to the external Ciicerone Attack
+API (requires CIICERONE_ATTACK_API_URL and CIICERONE_ATTACK_API_TOKEN).
 """
 
 import asyncio
@@ -90,18 +93,23 @@ async def _auto_generate_payloads(
     providers_configured = 0
 
     if azure_key and azure_endpoint:
-        config = LLMProviderConfig(
-            provider=LLMProvider.AZURE,
-            api_key=azure_key,
-            default_model=LLMModel.GPT_4,
-            azure_endpoint=azure_endpoint,
-            azure_deployment=azure_deployment,
-            azure_api_version=azure_api_version or "2024-10-21",
-        )
-        provider_manager.add_provider(config, set_as_default=True)
-        providers_configured += 1
+        try:
+            from ..llm.providers.azure_provider import AzureOpenAIProvider
+            azure_provider = AzureOpenAIProvider({
+                "api_key": azure_key,
+                "endpoint": azure_endpoint,
+                "deployment": azure_deployment or "gpt-4o",
+                "api_version": azure_api_version or "2024-10-21",
+                "model": azure_deployment or "gpt-4o",
+            })
+            # Inject directly into manager since LLMProvider enum has no AZURE value
+            provider_manager.providers[LLMProvider.OPENAI] = azure_provider
+            provider_manager.default_provider = LLMProvider.OPENAI
+            providers_configured += 1
+        except Exception as e:
+            console.print(f"[yellow]Azure OpenAI setup failed: {e}. Trying other providers.[/yellow]")
 
-    if openai_key:
+    if openai_key and providers_configured == 0:
         config = LLMProviderConfig(
             provider=LLMProvider.OPENAI,
             api_key=openai_key,
@@ -182,9 +190,28 @@ async def _auto_generate_payloads(
 
 @click.group()
 def red_team():
-    """Red team operations using Ciicerone Attack autonomous penetration testing.
+    """Red team operations — autonomous penetration testing.
 
-    Launch, monitor, and manage AI-driven attack simulations.
+    By default, attacks run standalone via the AttackOrchestrator and
+    the local tool server. Commands that require the external Ciicerone
+    Attack API (status, report, steer, stop, list, search) are legacy
+    and require CIICERONE_ATTACK_API_URL to be set.
+
+    \b
+    Standalone commands:
+        attack             Launch an attack via the local tool server
+        sequences          List attack sequences from the database
+        sequence-status    Get detailed status of an attack sequence
+        health             Check tool server health
+
+    \b
+    Legacy commands (external API):
+        status             Get flow status (requires --legacy context)
+        report             Get vulnerability report
+        steer              Send steering instruction
+        stop               Stop a running flow
+        list               List flows
+        search             Search past attacks
     """
     pass
 
@@ -198,6 +225,10 @@ def red_team():
 @click.option("--auto-generate", is_flag=True, help="Auto-generate threat content payloads via LLM before launching attack")
 @click.option("--content-type", "-ct", default="email_phishing", help="Content type for auto-generate (email_phishing, sms, phone_script, web_page, social_post, document)")
 @click.option("--variants", "-v", type=int, default=1, help="Number of payload variants to auto-generate")
+@click.option("--legacy", is_flag=True, default=False, help="Use external Ciicerone Attack API instead of standalone AttackOrchestrator")
+@click.option("--tenant", default="default", help="Tenant ID (standalone mode only)")
+@click.option("--techniques", help="Comma-separated MITRE technique IDs to execute (standalone mode, overrides scenario)")
+@click.option("--timeout", type=int, default=300, help="Timeout per step in seconds (standalone mode)")
 def attack(
     scenario: str,
     target: str,
@@ -207,24 +238,162 @@ def attack(
     auto_generate: bool,
     content_type: str,
     variants: int,
+    legacy: bool,
+    tenant: str,
+    techniques: Optional[str],
+    timeout: int,
 ):
-    """Launch an autonomous penetration test via Ciicerone Attack.
+    """Launch an autonomous penetration test.
 
-    Creates a Ciicerone Attack flow from a Ciicerone scenario and optionally
-    monitors it until completion, generating an After Action Review.
+    By default, uses the standalone AttackOrchestrator which executes
+    security tools via the local tool server — no external API required.
+    Use --legacy to use the external Ciicerone Attack API.
 
-    Payloads can be provided via --payloads (JSON file from 'llm generate --output')
-    or auto-generated with --auto-generate using the configured LLM provider.
+    \b
+    Standalone examples:
+        ciicerone red-team attack -s scenarios/web_pentest.yaml -t 10.0.100.10
+        ciicerone red-team attack -s scenarios/recon.yaml -t 10.0.100.10 --techniques T1595,T1046,T1190
+        ciicerone red-team attack -s scenarios/web_pentest.yaml -t 10.0.100.10 --tenant bank-abc
 
-    Examples:
-        ciicerone red-team attack -s scenarios/web_pentest.yaml -t http://10.0.100.10
-        ciicerone red-team attack -s scenarios/phishing.yaml -t http://10.0.100.10 --payloads generated_content.json
-        ciicerone red-team attack -s scenarios/phishing.yaml -t http://10.0.100.10 --auto-generate --content-type email_phishing --variants 3
+    \b
+    Legacy (external API) examples:
+        ciicerone red-team attack -s scenarios/web_pentest.yaml -t http://10.0.100.10 --legacy
+        ciicerone red-team attack -s scenarios/phishing.yaml -t http://10.0.100.10 --legacy --auto-generate
     """
-    asyncio.run(_attack_async(scenario, target, monitor, output, payloads, auto_generate, content_type, variants))
+    if legacy:
+        asyncio.run(_attack_legacy_async(scenario, target, monitor, output, payloads, auto_generate, content_type, variants))
+    else:
+        asyncio.run(_attack_standalone_async(scenario, target, output, tenant, techniques, timeout))
 
 
-async def _attack_async(
+async def _attack_standalone_async(
+    scenario_path: str,
+    target: str,
+    output: Optional[str],
+    tenant: str,
+    techniques_override: Optional[str],
+    timeout: int,
+):
+    """Standalone attack using AttackOrchestrator — no external API needed."""
+    from ciicerone.core.attack_orchestrator import AttackOrchestrator
+
+    # Load scenario
+    try:
+        scenario = _load_scenario(scenario_path)
+        console.print(f"Loaded scenario: [bold]{scenario.get('name', 'Unknown')}[/bold]")
+    except Exception as e:
+        console.print(f"[red]Failed to load scenario: {e}[/red]")
+        return
+
+    # Determine MITRE techniques
+    if techniques_override:
+        mitre_techniques = [t.strip().upper() for t in techniques_override.split(",") if t.strip()]
+    else:
+        # Extract from scenario — look for mitre_techniques or attack_vectors
+        mitre_techniques = scenario.get("mitre_techniques", [])
+        if not mitre_techniques:
+            # Fall back to common web pentest techniques
+            mitre_techniques = ["T1595", "T1046", "T1190"]
+            console.print(f"[yellow]No MITRE techniques in scenario. Using defaults: {', '.join(mitre_techniques)}[/yellow]")
+
+    if not mitre_techniques:
+        console.print("[red]No MITRE techniques to execute. Provide --techniques or add mitre_techniques to the scenario.[/red]")
+        return
+
+    console.print(f"[dim]Techniques: {', '.join(mitre_techniques)}[/dim]")
+    console.print(f"[dim]Target: {target}[/dim]")
+
+    # Create orchestrator
+    try:
+        orchestrator = AttackOrchestrator(tenant_id=tenant)
+    except Exception as e:
+        console.print(f"[red]Failed to initialize AttackOrchestrator: {e}[/red]")
+        console.print("[yellow]Ensure the tool server is running (ciicerone mcp start)[/yellow]")
+        return
+
+    # Create attack sequence
+    console.print("\n[bold cyan]Creating attack sequence...[/bold cyan]")
+    try:
+        seq_result = await orchestrator.create_attack_sequence_from_scenario(
+            scenario_name=scenario.get("name", "Custom Scenario"),
+            target=target,
+            mitre_techniques=mitre_techniques,
+        )
+    except Exception as e:
+        console.print(f"[red]Failed to create attack sequence: {e}[/red]")
+        return
+
+    console.print(Panel(
+        f"Sequence ID:  [bold]{seq_result['sequence_id']}[/bold]\n"
+        f"Total steps:  {seq_result['total_steps']}\n"
+        f"Executable:   {seq_result['executable_steps']}\n"
+        f"Skipped:      {seq_result['skipped_steps']}",
+        title="Attack Sequence Created",
+        border_style="green",
+    ))
+
+    # Execute sequence
+    console.print("\n[bold cyan]Executing attack sequence...[/bold cyan]")
+    try:
+        exec_result = await orchestrator.execute_sequence(
+            seq_result["sequence_id"],
+            timeout_per_step=timeout,
+        )
+    except Exception as e:
+        console.print(f"[red]Failed to execute sequence: {e}[/red]")
+        return
+
+    # Display results
+    status = exec_result.get("status", "unknown")
+    status_color = "green" if status == "completed" else "red"
+    console.print(f"\nSequence completed with status: [{status_color}]{status}[/{status_color}]")
+
+    console.print(Panel(
+        f"Overall success:    {exec_result.get('overall_success', False)}\n"
+        f"Completed steps:    {exec_result.get('completed_steps', 0)}/{exec_result.get('total_steps', 0)}\n"
+        f"Successful steps:   {exec_result.get('successful_steps', 0)}\n"
+        f"Failed steps:       {exec_result.get('failed_steps', 0)}\n"
+        f"Duration:           {exec_result.get('total_duration_seconds', 0):.1f}s\n"
+        f"Findings:           {exec_result.get('findings_count', 0)}",
+        title="Execution Summary",
+        border_style="cyan",
+    ))
+
+    # Show step results
+    step_results = exec_result.get("step_results", [])
+    if step_results:
+        step_table = Table(title="Step Results")
+        step_table.add_column("Step", style="bold")
+        step_table.add_column("Tool")
+        step_table.add_column("MITRE")
+        step_table.add_column("Success")
+        step_table.add_column("Duration", justify="right")
+        step_table.add_column("Findings", justify="right")
+
+        for sr in step_results:
+            success = sr.get("success", False)
+            success_str = f"[green]✓[/green]" if success else f"[red]✗[/red]"
+            step_table.add_row(
+                sr.get("step_name", "Unknown"),
+                sr.get("tool", "—"),
+                sr.get("technique", "—"),
+                success_str,
+                f"{sr.get('duration_seconds', 0):.1f}s",
+                str(sr.get("findings_count", 0)),
+            )
+        console.print(step_table)
+
+    # Save results
+    if output:
+        with open(output, "w") as f:
+            json.dump(exec_result, f, indent=2, default=str)
+        console.print(f"\n[green]Results saved to: {output}[/green]")
+    else:
+        console.print(f"\n[dim]Use --output to save full results to a file[/dim]")
+        console.print(f"[dim]Sequence ID for later reference: {seq_result['sequence_id']}[/dim]")
+
+
+async def _attack_legacy_async(
     scenario_path: str,
     target: str,
     monitor: bool,
@@ -234,7 +403,7 @@ async def _attack_async(
     content_type: str = "email_phishing",
     variants: int = 1,
 ):
-    """Async implementation of attack command."""
+    """Legacy attack using external Ciicerone Attack API."""
     try:
         integration = _get_integration()
     except Exception as e:
@@ -648,16 +817,42 @@ async def _search_async(query: str, limit: int):
 
 
 @red_team.command()
-def health():
-    """Check if Ciicerone Attack is reachable and healthy.
+@click.option("--legacy", is_flag=True, default=False, help="Check external Ciicerone Attack API instead of local tool server")
+def health(legacy: bool):
+    """Check if the attack infrastructure is reachable and healthy.
+
+    By default, checks the local tool server (standalone mode).
+    Use --legacy to check the external Ciicerone Attack API.
 
     Example:
         ciicerone red-team health
+        ciicerone red-team health --legacy
     """
-    asyncio.run(_health_async())
+    if legacy:
+        asyncio.run(_health_legacy_async())
+    else:
+        asyncio.run(_health_standalone_async())
 
 
-async def _health_async():
+async def _health_standalone_async():
+    """Check tool server health for standalone mode."""
+    from ciicerone.core.tool_server_client import get_tool_server_client
+
+    try:
+        client = get_tool_server_client()
+        healthy = await client.health_check()
+        if healthy:
+            console.print("[green]Tool server is healthy and reachable[/green]")
+            console.print(f"  URL: {client.url}")
+        else:
+            console.print(f"[red]Tool server is not reachable at {client.url}[/red]")
+            console.print("[yellow]Start it with: ciicerone mcp start[/yellow]")
+    except Exception as e:
+        console.print(f"[red]Failed to check tool server: {e}[/red]")
+        console.print("[yellow]Start it with: ciicerone mcp start[/yellow]")
+
+
+async def _health_legacy_async():
     try:
         integration = _get_integration()
     except Exception as e:
@@ -672,3 +867,165 @@ async def _health_async():
     else:
         console.print(f"[red]Ciicerone Attack health check failed: {result}[/red]")
         console.print("[yellow]Ensure Ciicerone Attack is running and CIICERONE_ATTACK_API_URL is set[/yellow]")
+
+
+# ---------------------------------------------------------------------------
+# Standalone commands — query attack sequences from the database
+# ---------------------------------------------------------------------------
+
+@red_team.command()
+@click.option("--limit", "-l", default=20, help="Maximum number of sequences to list")
+@click.option("--tenant", default="default", help="Filter by tenant ID")
+def sequences(limit: int, tenant: str):
+    """List attack sequences from the database (standalone mode).
+
+    Example:
+        ciicerone red-team sequences --limit 10
+    """
+    asyncio.run(_sequences_async(limit, tenant))
+
+
+async def _sequences_async(limit: int, tenant: str):
+    from sqlalchemy import select, desc
+    from ciicerone.db.models.tool_tracking import AttackSequenceRecord
+
+    try:
+        from ciicerone.db.session import get_session
+    except ImportError:
+        console.print("[red]Database session module not available.[/red]")
+        return
+
+    try:
+        async with get_session() as session:
+            result = await session.execute(
+                select(AttackSequenceRecord)
+                .where(AttackSequenceRecord.tenant_id == tenant)
+                .order_by(desc(AttackSequenceRecord.created_at))
+                .limit(limit)
+            )
+            seqs = result.scalars().all()
+    except Exception as e:
+        console.print(f"[red]Failed to query sequences: {e}[/red]")
+        return
+
+    if not seqs:
+        console.print("[yellow]No attack sequences found.[/yellow]")
+        return
+
+    table = Table(title=f"Attack Sequences ({len(seqs)})")
+    table.add_column("Sequence ID", style="bold")
+    table.add_column("Name")
+    table.add_column("Status")
+    table.add_column("Target")
+    table.add_column("Steps", justify="right")
+    table.add_column("Success", justify="right")
+    table.add_column("Created")
+
+    for seq in seqs:
+        status = seq.sequence_status
+        color = "green" if status == "completed" else "yellow" if status == "running" else "red" if status == "failed" else "dim"
+        table.add_row(
+            seq.sequence_id,
+            seq.name,
+            f"[{color}]{status}[/{color}]",
+            seq.target_system or "—",
+            str(seq.completed_steps + seq.failed_steps),
+            str(seq.successful_steps),
+            str(seq.created_at) if seq.created_at else "N/A",
+        )
+
+    console.print(table)
+
+
+@red_team.command(name="sequence-status")
+@click.option("--sequence-id", "-s", required=True, help="Attack sequence ID")
+def sequence_status(sequence_id: str):
+    """Get detailed status of an attack sequence (standalone mode).
+
+    Example:
+        ciicerone red-team sequence-status -s seq_abc123
+    """
+    asyncio.run(_sequence_status_async(sequence_id))
+
+
+async def _sequence_status_async(sequence_id: str):
+    from sqlalchemy import select
+    from ciicerone.db.models.tool_tracking import AttackSequenceRecord, AttackSequenceStepRecord
+
+    try:
+        from ciicerone.db.session import get_session
+    except ImportError:
+        console.print("[red]Database session module not available.[/red]")
+        return
+
+    try:
+        async with get_session() as session:
+            seq_result = await session.execute(
+                select(AttackSequenceRecord).where(AttackSequenceRecord.sequence_id == sequence_id)
+            )
+            seq = seq_result.scalar_one_or_none()
+
+            if not seq:
+                console.print(f"[red]Sequence not found: {sequence_id}[/red]")
+                return
+
+            steps_result = await session.execute(
+                select(AttackSequenceStepRecord)
+                .where(AttackSequenceStepRecord.sequence_id == sequence_id)
+                .order_by(AttackSequenceStepRecord.step_order)
+            )
+            steps = steps_result.scalars().all()
+    except Exception as e:
+        console.print(f"[red]Failed to query sequence: {e}[/red]")
+        return
+
+    status = seq.sequence_status
+    status_color = "green" if status == "completed" else "yellow" if status == "running" else "red" if status == "failed" else "dim"
+
+    console.print(Panel(
+        f"Sequence ID:    [bold]{seq.sequence_id}[/bold]\n"
+        f"Name:           {seq.name}\n"
+        f"Status:         [{status_color}]{status}[/{status_color}]\n"
+        f"Target:         {seq.target_system or 'N/A'}\n"
+        f"Scenario:       {seq.scenario_name or 'N/A'}\n"
+        f"Total steps:    {seq.total_steps}\n"
+        f"Completed:      {seq.completed_steps}\n"
+        f"Successful:     {seq.successful_steps}\n"
+        f"Failed:         {seq.failed_steps}\n"
+        f"Duration:       {seq.total_duration_seconds or 0:.1f}s\n"
+        f"Overall success: {seq.overall_success}\n"
+        f"Created:        {seq.created_at or 'N/A'}",
+        title="Attack Sequence Status",
+        border_style="cyan",
+    ))
+
+    if steps:
+        step_table = Table(title="Steps")
+        step_table.add_column("#", justify="right")
+        step_table.add_column("Step", style="bold")
+        step_table.add_column("Tool")
+        step_table.add_column("MITRE")
+        step_table.add_column("Status")
+        step_table.add_column("Duration", justify="right")
+
+        for step in steps:
+            s_status = step.step_status
+            s_color = "green" if s_status == "completed" else "yellow" if s_status == "running" else "red" if s_status == "failed" else "dim"
+            step_table.add_row(
+                str(step.step_order),
+                step.step_name,
+                step.tool_name or "—",
+                step.mitre_technique_id or "—",
+                f"[{s_color}]{s_status}[/{s_color}]",
+                f"{step.duration_seconds or 0:.1f}s" if step.duration_seconds else "—",
+            )
+        console.print(step_table)
+
+    if seq.key_findings:
+        try:
+            findings = json.loads(seq.key_findings) if isinstance(seq.key_findings, str) else seq.key_findings
+            console.print(f"\n[bold]Key Findings ({len(findings)}):[/bold]")
+            for f in findings[:10]:
+                console.print(f"  • {f}")
+        except Exception:
+            pass
