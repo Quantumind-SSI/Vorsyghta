@@ -289,6 +289,8 @@ class KnowledgeBaseStorage:
 
     def get_entry(self, entry_id: str) -> Optional[Dict[str, Any]]:
         """Get a knowledge entry by ID."""
+        # Reload index to see entries created by other workers
+        self._load_index()
         entry_file = self.base_path / f"{entry_id}.json"
         if entry_file.exists():
             return json.loads(entry_file.read_text())
@@ -360,6 +362,9 @@ class KnowledgeBaseStorage:
         min_confidence: float = 0.0,
     ) -> List[Dict[str, Any]]:
         """Search knowledge entries."""
+        # Reload index from disk to ensure we see entries created by other workers
+        self._load_index()
+
         results = []
         query_lower = query.lower()
 
@@ -397,6 +402,8 @@ class KnowledgeBaseStorage:
 
     def get_stats(self) -> Dict[str, Any]:
         """Get knowledge base statistics."""
+        # Reload index to see entries created by other workers
+        self._load_index()
         entries_by_category = {
             cat: len(ids) for cat, ids in self._index["categories"].items()
         }

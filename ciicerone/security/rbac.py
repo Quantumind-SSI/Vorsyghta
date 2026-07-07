@@ -15,7 +15,7 @@ from typing import List, Optional
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
-from passlib.context import CryptContext
+import bcrypt
 from pydantic import BaseModel
 
 # ---- Config ---------------------------------------------------------------
@@ -24,7 +24,6 @@ SECRET_KEY = os.getenv("CIICERONE_SECRET_KEY", "changeme-replace-in-production-w
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "480"))
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token", auto_error=False)
 
 
@@ -47,6 +46,7 @@ class TokenPayload(BaseModel):
     sub: str  # user_id
     tenant_id: str
     role: str
+    email: Optional[str] = None
     exp: Optional[int] = None
 
 
@@ -58,17 +58,28 @@ class CurrentUser(BaseModel):
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    """Verify a plaintext password against a bcrypt hash."""
+    try:
+        return bcrypt.checkpw(
+            plain_password.encode("utf-8"),
+            hashed_password.encode("utf-8"),
+        )
+    except (ValueError, TypeError):
+        return False
 
 
 def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
+    """Hash a password using bcrypt with a generated salt."""
+    # bcrypt has a 72-byte limit; truncate to avoid ValueError
+    pw_bytes = password.encode("utf-8")[:72]
+    return bcrypt.hashpw(pw_bytes, bcrypt.gensalt()).decode("utf-8")
 
 
 def create_access_token(
     user_id: str,
     tenant_id: str,
     role: str,
+    email: Optional[str] = None,
     expires_delta: Optional[timedelta] = None,
 ) -> str:
     expire = datetime.now(timezone.utc) + (
@@ -78,6 +89,7 @@ def create_access_token(
         "sub": user_id,
         "tenant_id": tenant_id,
         "role": role,
+        "email": email,
         "exp": expire,
     }
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
@@ -108,6 +120,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> CurrentUser:
         user_id=payload.sub,
         tenant_id=payload.tenant_id,
         role=Role(payload.role),
+        email=payload.email,
     )
 
 

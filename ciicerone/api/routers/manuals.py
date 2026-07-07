@@ -336,7 +336,7 @@ async def generate_manual(request: ManualGenerationRequest):
         # Save to storage
         output_dir = Path("generated_content/field_manuals") / request.team.value
         output_dir.mkdir(parents=True, exist_ok=True)
-        filename = f"{request.team.value}_{request.threat_type.value}_{manual_id[:8]}.md"
+        filename = f"{request.team.value}_{request.threat_type.value}_{manual_id}.md"
         file_path = output_dir / filename
         file_path.write_text(manual_content)
 
@@ -397,7 +397,7 @@ async def update_manual(request: ManualUpdateRequest):
         for team_dir in manuals_dir.iterdir():
             if team_dir.is_dir():
                 for file in team_dir.glob("*.md"):
-                    if request.manual_id[:8] in file.stem:
+                    if request.manual_id in file.stem:
                         manual_path = file
                         break
 
@@ -540,6 +540,33 @@ async def list_manuals(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to list manuals: {str(e)}"
         )
+
+
+@router.get("/teams", response_model=List[Dict[str, str]])
+async def list_teams():
+    """
+    List all available security teams for manual generation.
+    """
+    team_info = {
+        SecurityTeam.BLUE_TEAM: ("Defense, detection, monitoring, hardening", "🛡️"),
+        SecurityTeam.RED_TEAM: ("Offensive security, penetration testing", "⚔️"),
+        SecurityTeam.PURPLE_TEAM: ("Collaborative testing, gap analysis", "🟣"),
+        SecurityTeam.SOC: ("Security operations, alert triage", "🖥️"),
+        SecurityTeam.THREAT_INTEL: ("Threat analysis, IOC management", "🔍"),
+        SecurityTeam.GRC: ("Governance, risk, compliance", "📋"),
+        SecurityTeam.INCIDENT_RESPONSE: ("IR procedures, forensics, recovery", "🚨"),
+        SecurityTeam.SECURITY_AWARENESS: ("Training, phishing simulations", "📚"),
+    }
+
+    return [
+        {
+            "id": team.value,
+            "name": team.value.replace("_", " ").title(),
+            "description": info[0],
+            "icon": info[1],
+        }
+        for team, info in team_info.items()
+    ]
 
 
 @router.get("/{manual_id}", response_model=ManualResponse)
@@ -696,33 +723,6 @@ async def get_team_status(team: SecurityTeam):
         )
 
 
-@router.get("/teams", response_model=List[Dict[str, str]])
-async def list_teams():
-    """
-    List all available security teams for manual generation.
-    """
-    team_info = {
-        SecurityTeam.BLUE_TEAM: ("Defense, detection, monitoring, hardening", "🛡️"),
-        SecurityTeam.RED_TEAM: ("Offensive security, penetration testing", "⚔️"),
-        SecurityTeam.PURPLE_TEAM: ("Collaborative testing, gap analysis", "🟣"),
-        SecurityTeam.SOC: ("Security operations, alert triage", "🖥️"),
-        SecurityTeam.THREAT_INTEL: ("Threat analysis, IOC management", "🔍"),
-        SecurityTeam.GRC: ("Governance, risk, compliance", "📋"),
-        SecurityTeam.INCIDENT_RESPONSE: ("IR procedures, forensics, recovery", "🚨"),
-        SecurityTeam.SECURITY_AWARENESS: ("Training, phishing simulations", "📚"),
-    }
-
-    return [
-        {
-            "id": team.value,
-            "name": team.value.replace("_", " ").title(),
-            "description": info[0],
-            "icon": info[1],
-        }
-        for team, info in team_info.items()
-    ]
-
-
 # =============================================================================
 # Helper Functions
 # =============================================================================
@@ -788,7 +788,7 @@ async def _background_bulk_generate(
             # Save
             output_dir = Path("generated_content/field_manuals") / team.value
             output_dir.mkdir(parents=True, exist_ok=True)
-            filename = f"{team.value}_{threat_type.value}_bulk_{task_id[:8]}.md"
+            filename = f"{team.value}_{threat_type.value}_bulk_{task_id}.md"
             (output_dir / filename).write_text(manual_content)
 
             logger.info(f"Generated manual for {team.value}")
