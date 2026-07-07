@@ -24,9 +24,9 @@ COPY requirements.txt requirements-dev.txt ./
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Install Python packages
+# Install Python packages (including dev dependencies for demo/test runs)
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir -r requirements.txt
+    pip install --no-cache-dir -r requirements-dev.txt
 
 # Stage 2: Runtime
 FROM python:3.11-slim
@@ -62,6 +62,10 @@ COPY --chown=ciicerone:ciicerone ciicerone/ /app/ciicerone/
 COPY --chown=ciicerone:ciicerone templates/ /app/templates/
 COPY --chown=ciicerone:ciicerone config.yaml /app/
 COPY --chown=ciicerone:ciicerone pyproject.toml /app/
+COPY --chown=ciicerone:ciicerone migrations/ /app/migrations/
+COPY --chown=ciicerone:ciicerone demos/ /app/demos/
+COPY --chown=ciicerone:ciicerone tests/ /app/tests/
+COPY --chown=ciicerone:ciicerone alembic.ini /app/
 
 # Create necessary directories
 RUN mkdir -p /app/data /app/logs /app/generated_content /app/reports /app/output && \
