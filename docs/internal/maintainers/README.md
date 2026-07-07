@@ -17,7 +17,7 @@ This directory contains one-page internal briefs for each Ciicerone maintainer, 
 
 ## Source of Truth
 
-The authoritative plan remains `docs/plans/maintainer-timelines-bank-pilot-readiness.md`. These briefs are a simplified internal view for day-to-day execution.
+The authoritative readiness reference is `docs/plans/maintainer-timelines-bank-pilot-readiness.md`, which as of 2026-07-07 reflects the live-verified state of the Azure deployment (all blockers resolved, 16/16 acceptance gate checks passed). These briefs are preserved as a historical record of maintainer task assignments from the 2026-07-03 plan.
 
 ## Consolidated View
 

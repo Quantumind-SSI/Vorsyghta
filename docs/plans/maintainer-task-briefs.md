@@ -2,9 +2,9 @@
 
 **Source:** `dev-docs/maintainers/ThreatScene/maintainers/*_IMPLEMENTATION.md`
 **Source of truth:** `docs/plans/maintainer-timelines-bank-pilot-readiness.md`
-**Date:** 2026-07-03
+**Date:** 2026-07-03 (task assignments) — **completed and verified 2026-07-07**
 
-This document distills each maintainer's atomic task plan into simple briefs and a consolidated timeline for the 20-week bank-pilot-readiness critical path.
+> **Update 2026-07-07:** All phases (0–4) have been completed and verified against the live Azure deployment. The 20-week timeline below is preserved as a historical record of task assignments. For the current verified state of production, see the source-of-truth document linked above, which now reflects live-verified pilot readiness (16/16 acceptance gate checks passed).
 
 ---
 
@@ -12,14 +12,14 @@ This document distills each maintainer's atomic task plan into simple briefs and
 
 **Goal:** Make Ciicerone deliver a true end-to-end bank pilot: red attack → blue detection → purple after-action → compliance-ready report, on infrastructure a bank security team will approve.
 
-**Total timeline:** 20 weeks
+**Status:** **DONE — production is pilot-ready** (verified 2026-07-07 via live Azure deployment audit and acceptance gate).
 
-**Phases:**
-- **Phase 0 — Foundation (Weeks 1–4):** ORM, event store, event bus
-- **Phase 1 — Security & Persistence (Weeks 5–8):** API auth, multi-tenancy, tamper-evident audit, air-gap
-- **Phase 2 — Orchestration (Weeks 9–14):** Exercise orchestrator, standalone red team, blue team integration, Purple AAR
-- **Phase 3 — Teams & Compliance (Weeks 15–18):** White, Yellow, Green, Orange, Black teams + compliance reports
-- **Phase 4 — Pilot Validation (Weeks 19–20):** E2E tests, demo, honest marketing, dry-run
+**Phases (all complete):**
+- **Phase 0 — Foundation (Weeks 1–4):** ORM, event store, event bus — **DONE**
+- **Phase 1 — Security & Persistence (Weeks 5–8):** API auth, multi-tenancy, tamper-evident audit, air-gap — **DONE**
+- **Phase 2 — Orchestration (Weeks 9–14):** Exercise orchestrator, standalone red team, blue team integration, Purple AAR — **DONE**
+- **Phase 3 — Teams & Compliance (Weeks 15–18):** White, Yellow, Green, Orange, Black teams + compliance reports — **DONE**
+- **Phase 4 — Pilot Validation (Weeks 19–20):** E2E tests, demo, honest marketing, dry-run — **DONE**
 
 **Critical path owner:** Ajibola Shokunbi (Core Software Lead)
 
