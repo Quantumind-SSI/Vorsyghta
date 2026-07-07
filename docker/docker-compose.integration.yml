@@ -1,0 +1,105 @@
+# =============================================================================
+# Ciicerone — Docker Integration Test Override (Ollama path)
+# =============================================================================
+# Layered on top of docker-compose.yml. Brings up the FULL stack from the base
+# compose (PostgreSQL, Redis, Ollama, ciicerone-api, Prometheus, Grafana) and
+# additionally:
+#
+#   * runs Alembic migrations via a one-shot `migrate` service BEFORE the API
+#     starts — this fixes the DB health check (audit.events table only comes
+#     from migration 001, not from Base.metadata.create_all) and avoids the
+#     DuplicateTable error (create_all runs after migrations and is then a
+#     no-op because checkfirst=True)
+#   * sets DEFAULT_LLM_PROVIDER=ollama so the API uses the Ollama container
+#     on the Docker network for REAL LLM output (no cloud API keys needed,
+#     everything stays in your network)
+#   * passes OLLAMA_BASE_URL + OLLAMA_MODEL through to the API container
+#     (the manager reads these env vars to point at http://ollama:11434)
+#   * sets CIICERONE_SECRET_KEY explicitly (the JWT signer reads
+#     CIICERONE_SECRET_KEY, not SECRET_KEY)
+#   * exposes only the API on the host (port 8001) — auxiliary host ports are
+#     cleared so the harness runs on shared hosts
+#
+# Usage:
+#   docker compose \
+#     -f docker-compose.yml \
+#     -f docker/docker-compose.integration.yml \
+#     up -d --build
+#
+# Required .env entries:
+#   CIICERONE_SECRET_KEY=<openssl rand -hex 32>
+#   POSTGRES_PASSWORD=...
+#   GRAFANA_ADMIN_PASSWORD=...
+#   PGADMIN_PASSWORD=...
+#
+# Optional .env entries:
+#   OLLAMA_MODEL=llama3.1:8b   (default; pulled into the Ollama volume)
+#   API_PORT=8001              (host port for the API)
+# =============================================================================
+services:
+  # ---- One-shot migration runner -----------------------------------------
+  # Runs `alembic upgrade head` against the fresh Postgres before the API
+  # starts. The API's _init_database does Base.metadata.create_all which would
+  # create ORM tables first, causing migration 003 to fail with DuplicateTable.
+  # By running migrations first, create_all becomes a no-op.
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ciicerone-migrate
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-ciicerone}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-ciicerone}
+    working_dir: /app
+    # Run migrations then exit; the API waits for this to complete.
+    command: ["python", "-m", "alembic", "upgrade", "head"]
+    networks:
+      - ciicerone-network
+    restart: "no"
+
+  ciicerone-api:
+    environment:
+      # ---- Ollama as the real LLM provider (in-network, no cloud keys) ----
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3.1:8b}
+      - DEFAULT_LLM_PROVIDER=ollama
+      # ---- Stable JWT secret (rbac.py reads CIICERONE_SECRET_KEY) ----
+      - CIICERONE_SECRET_KEY=${CIICERONE_SECRET_KEY:?Set CIICERONE_SECRET_KEY in .env}
+      # ---- Seed control for the integration analyst ----
+      - SEED_ANALYST_EMAIL=${SEED_ANALYST_EMAIL:-analyst@ciicerone.local}
+      - SEED_ANALYST_PASSWORD=${SEED_ANALYST_PASSWORD:-Analyst123!}
+      - SEED_TENANT_ID=${SEED_TENANT_ID:-default}
+      - SEED_ANALYST_ROLE=${SEED_ANALYST_ROLE:-analyst}
+      # ---- Make it clear this is an integration run ----
+      - ENVIRONMENT=integration
+    # Wait for migrations to complete before starting the API.
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ollama:
+        condition: service_started
+      migrate:
+        condition: service_completed_successfully
+    # Keep the host bind so the acceptance gate on the host can reach the API.
+    ports:
+      - "${API_PORT:-8001}:8000"
+
+  # ---- Neutralize auxiliary host port mappings ---------------------------
+  # The acceptance gate only needs the API on the host; postgres/redis/ollama/
+  # prometheus/grafana are reached over the internal Docker network. Clearing
+  # their host ports lets the harness run on shared hosts where those ports
+  # may already be taken by unrelated containers.
+  postgres:
+    ports: !reset []
+  redis:
+    ports: !reset []
+  ollama:
+    ports: !reset []
+  prometheus:
+    ports: !reset []
+  grafana:
+    ports: !reset []

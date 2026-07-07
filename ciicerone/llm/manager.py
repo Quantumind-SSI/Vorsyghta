@@ -151,11 +151,26 @@ class LLMManager:
         try:
             # Initialize Ollama if available and configured
             if OLLAMA_AVAILABLE:
-                ollama_config = self.config.get('ollama', {})
+                ollama_config = dict(self.config.get('ollama', {}))
+                # Honor OLLAMA_BASE_URL / OLLAMA_MODEL env vars (set by
+                # docker-compose when Ollama runs as a separate container on
+                # the Docker network, e.g. http://ollama:11434). Without this
+                # the provider defaults to http://localhost:11434 which is
+                # wrong inside a container.
+                env_base_url = os.getenv('OLLAMA_BASE_URL')
+                if env_base_url and not ollama_config.get('base_url'):
+                    ollama_config['base_url'] = env_base_url
+                env_model = os.getenv('OLLAMA_MODEL')
+                if env_model and not ollama_config.get('model'):
+                    ollama_config['model'] = env_model
                 if ollama_config or self._auto_detect_ollama():
                     try:
                         self._providers['ollama'] = OllamaProvider(ollama_config)
-                        logger.info("Ollama provider initialized")
+                        logger.info(
+                            "Ollama provider initialized (base_url=%s, model=%s)",
+                            ollama_config.get('base_url', 'http://localhost:11434'),
+                            ollama_config.get('model', 'llama2'),
+                        )
                     except Exception as e:
                         logger.warning(f"Failed to initialize Ollama provider: {e}")
 
@@ -194,7 +209,8 @@ class LLMManager:
                     if session is None:
                         return False
                     timeout = aiohttp.ClientTimeout(total=2)
-                    async with session.get('http://localhost:11434/api/tags', timeout=timeout) as response:
+                    base = os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')
+                    async with session.get(f'{base}/api/tags', timeout=timeout) as response:
                         return response.status == 200
                 except:
                     return False
