@@ -242,6 +242,43 @@ async def zero_day_campaign():
 asyncio.run(zero_day_campaign())
 ```
 
+### Sanctioned Target Pentest (Discovery Pipeline Validation)
+
+To validate the red-team attack + discovery toolchain against a target with
+**known ground truth**, Ciicerone ships a compose fragment for OWASP Juice
+Shop — a sanctioned, intentionally-vulnerable training target with ~100
+documented challenges and a scoreboard. This lets you prove the agent actually
+finds vulnerabilities (compare `vuln_report.py` output against the challenge
+list) rather than hallucinating.
+
+> **Caveat:** Juice Shop has *known, intentional* vulnerabilities. It validates
+> the *discovery pipeline* (find -> triage -> structured CWE/CVSS report) — it
+> is **not** zero-day research. Genuine zero-day work targets real software in
+> a sanctioned engagement scope and uses `disclosure.py` for responsible
+> disclosure / CVE assignment.
+
+```bash
+# 1. Bring up the Ciicerone stack + Juice Shop target (dry-run, prints the attack command)
+bash scripts/run_sanctioned_target.sh --target juice-shop --keep
+
+# 2. Launch the attack directly (requires a reachable tool server)
+bash scripts/run_sanctioned_target.sh --target juice-shop --attack --keep
+
+# Or run the red-team CLI manually against the host-mapped target:
+ciicerone red-team attack \
+  -s templates/sanctioned_targets/juice_shop_web_pentest.yaml \
+  -t http://localhost:3000 \
+  -o juice_shop_findings.json
+
+# Tear down when done:
+bash scripts/run_sanctioned_target.sh --down
+```
+
+Files:
+- `docker/targets/juice-shop.yml` — compose fragment (Juice Shop on `ciicerone-network`)
+- `templates/sanctioned_targets/juice_shop_web_pentest.yaml` — scenario template
+- `scripts/run_sanctioned_target.sh` — harness (bring-up + health-wait + attack)
+
 ---
 
 ## Template System

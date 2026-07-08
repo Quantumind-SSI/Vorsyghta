@@ -1,0 +1,73 @@
+# =============================================================================
+# Ciicerone — Sanctioned Pentest Target: OWASP Juice Shop
+# =============================================================================
+# OPTIONAL layer, applied on top of the integration stack:
+#   docker-compose.yml
+#   docker/docker-compose.integration.yml
+#   docker/docker-compose.client-image.yml   (optional)
+#   docker/targets/juice-shop.yml            <-- THIS FILE
+#
+# Brings up OWASP Juice Shop (bkimminich/juice-shop) as a SANCTIONED,
+# intentionally-vulnerable target on the Ciicerone internal Docker network so
+# the red-team attack agent + discovery toolchain can exercise the full
+# pentest pipeline (recon -> web fuzz -> API grammar fuzz -> SQLi triage ->
+# structured CWE/CVSS report) against a target with KNOWN ground truth.
+#
+# Why Juice Shop as the primary sanctioned target:
+#   * ~100 documented challenges with a scoreboard -> measurable discovery
+#     signal (compare vuln_report.py output against the challenge list).
+#   * Real Node HTTP surface + REST-ish API -> exercises ffuf (content/param
+#     fuzzing), schemathesis (API grammar fuzzing), nmap/nuclei/sqlmap from
+#     the offensive tool set in discovery_tools.py.
+#   * Published explicitly for authorized security training — no authorization
+#     ambiguity, consistent with SECURITY.md and mcp/safety/ controls.
+#   * Single container -> slots into the existing docker-compose harness with
+#     no new hypervisor backend.
+#
+# IMPORTANT — "zero-day" framing caveat:
+#   Juice Shop has KNOWN, INTENTIONAL vulnerabilities. It validates the
+#   DISCOVERY PIPELINE (does the agent find vulns, triage, emit a structured
+#   report?) — it is NOT zero-day research. Genuine zero-day work targets real
+#   software in a sanctioned engagement scope and uses disclosure.py for
+#   responsible disclosure / CVE assignment, not an off-the-shelf image.
+#
+# Network reachability:
+#   * Internal:  http://juice-shop:3000  (from any container on
+#                ciicerone-network — e.g. ciicerone-api, or a tool server
+#                container joined to the same network)
+#   * Host:      http://localhost:${JUICE_SHOP_PORT:-3000}  (for the red-team
+#                CLI / acceptance gate running on the host)
+#
+# Usage:
+#   docker compose \
+#     -f docker-compose.yml \
+#     -f docker/docker-compose.integration.yml \
+#     -f docker/targets/juice-shop.yml \
+#     up -d
+#
+# Or via the sanctioned-target harness:
+#   bash scripts/run_sanctioned_target.sh --target juice-shop
+#
+# Optional .env entries:
+#   JUICE_SHOP_PORT=3000        (host port for Juice Shop)
+#   JUICE_SHOP_IMAGE_TAG=latest (image tag to pull)
+# =============================================================================
+services:
+  juice-shop:
+    image: bkimminich/juice-shop:${JUICE_SHOP_IMAGE_TAG:-latest}
+    pull_policy: always
+    container_name: ciicerone-target-juice-shop
+    # Juice Shop is a SANCTIONED training target — label it so the safety /
+    # audit layer can distinguish it from production surfaces.
+    labels:
+      com.ciicerone.role: "sanctioned-target"
+      com.ciicerone.target: "juice-shop"
+      com.ciicerone.authorization: "training-use-only"
+    environment:
+      # Quiet the startup banner noise in CI logs.
+      - NODE_ENV=production
+    ports:
+      - "${JUICE_SHOP_PORT:-3000}:3000"
+    networks:
+      - ciicerone-network
+    restart: "no"
