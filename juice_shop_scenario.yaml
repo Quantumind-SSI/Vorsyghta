@@ -1,0 +1,92 @@
+---
+name: "OWASP Juice Shop Vulnerability Assessment"
+description: "Comprehensive security assessment and red team exercise against OWASP Juice Shop vulnerable web application to test detection and response capabilities"
+threat_type: "custom"
+severity: "high"
+
+# Target information
+target_systems:
+  - name: "OWASP Juice Shop"
+    url: "http://ciicerone-target-juice-shop:3000"
+    type: "web_application"
+    os: "nodejs"
+
+# Attack vectors and OWASP Top 10 mapping
+attack_vectors:
+  - sql_injection
+  - cross_site_scripting
+  - broken_access_control
+  - brute_force_authentication
+  - csrf
+  - insecure_deserialization
+  - sensitive_data_exposure
+  - xxe_injection
+
+# MITRE ATT&CK techniques
+mitre_techniques:
+  - T1190  # Exploit Public-Facing Application
+  - T1110  # Brute Force
+  - T1078  # Valid Accounts
+  - T1098  # Account Manipulation
+  - T1185  # Traffic Signaling
+  - T1040  # Traffic Capture or Redirection
+  - T1071  # Application Layer Protocol
+
+# Exercise metadata
+metadata:
+  target_app: "owasp_juice_shop"
+  assessment_type: "comprehensive_vulnerability"
+  frameworks:
+    - "OWASP Top 10"
+    - "MITRE ATT&CK"
+  scope: "Full application security assessment"
+  max_duration_minutes: 60
+
+# Objectives
+objectives:
+  - "Identify and exploit OWASP Top 10 vulnerabilities"
+  - "Test authentication and authorization controls"
+  - "Evaluate data protection mechanisms"
+  - "Assess detection and response capabilities"
+  - "Generate realistic attack patterns"
+
+# Red team configuration
+red_team:
+  phases:
+    - name: "Reconnaissance"
+      description: "Gather information about the target application"
+      techniques: ["T1592", "T1589", "T1590"]
+    
+    - name: "Scanning & Enumeration"
+      description: "Identify vulnerabilities and entry points"
+      techniques: ["T1592", "T1592.004"]
+    
+    - name: "Exploitation"
+      description: "Exploit identified vulnerabilities"
+      techniques: ["T1190", "T1110"]
+    
+    - name: "Post-Exploitation"
+      description: "Maintain access and extract data"
+      techniques: ["T1041", "T1537"]
+
+# Blue team detection config
+blue_team:
+  detection_rules:
+    - name: "SQL Injection Detection"
+      pattern: "(?i)(union|select|drop|insert|update|delete).*(from|where)"
+      severity: "critical"
+    
+    - name: "XSS Detection"
+      pattern: "(?i)(<script|javascript:|onerror=|onload=)"
+      severity: "high"
+    
+    - name: "Authentication Brute Force"
+      pattern: "multiple_failed_logins"
+      severity: "high"
+      threshold: "5 attempts in 1 minute"
+
+  alerting:
+    enabled: true
+    channels:
+      - "console"
+      - "log"

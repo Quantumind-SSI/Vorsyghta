@@ -1,0 +1,60 @@
+# ================================
+# Ciicerone Sandbox Tool Server
+# ================================
+# Containerized edition of the Phantom Kali tool server. Bundles the
+# offensive tools that the AttackOrchestrator drives (nmap, nikto, sqlmap,
+# dirb, hydra, ffuf, nuclei, whatweb, gobuster) plus the FastAPI tool
+# server from docker/targets/tool_server.py.
+#
+# This image is ONLY for sanctioned pentest targets inside an isolated
+# Docker network. It shells out to offensive tools on HTTP request and
+# must never be published to an untrusted network.
+#
+# Build:
+#   docker build -t ciicerone-tool-server -f docker/targets/Dockerfile.tool-server docker/targets/
+#
+# Run (internal network only — no host port by default):
+#   docker run -d --name ciicerone-tool-server ciicerone-tool-server
+
+FROM python:3.11-slim
+
+LABEL maintainer="Ciicerone Team"
+LABEL description="Ciicerone sandbox tool server — offensive tool execution surface (sanctioned targets only)"
+
+# ---- Offensive tools ------------------------------------------------------
+# nikto, dirb, whatweb, gobuster, hydra, sqlmap, ffuf, nuclei are available
+# in Debian apt. nmap is pulled separately. Keep the layer lean with
+# --no-install-recommends.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        nmap \
+        nikto \
+        dirb \
+        whatweb \
+        gobuster \
+        hydra \
+        sqlmap \
+        ffuf \
+        nuclei \
+        whois \
+        dnsutils \
+        iputils-ping \
+        traceroute \
+        curl \
+        wget \
+        gcc \
+        libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# ---- Python tool server runtime ------------------------------------------
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir fastapi uvicorn pydantic
+
+WORKDIR /opt/tool-server
+
+COPY tool_server.py /opt/tool-server/tool_server.py
+
+EXPOSE 9090
+
+# Single worker — the tool server runs long-lived subprocesses (nmap/sqlmap
+# can take minutes) and we want predictable resource use on the sandbox.
+CMD ["python", "-m", "uvicorn", "tool_server:app", "--host", "0.0.0.0", "--port", "9090", "--workers", "1"]

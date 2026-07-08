@@ -81,8 +81,11 @@ err()   { echo -e "${RED}!!${NC} $1" >&2; }
 die()   { err "$1"; exit 1; }
 
 # ---- Arg parsing ----------------------------------------------------------
-for arg in "$@"; do
-    case "$arg" in
+# Use a while loop so `shift` actually advances the positional params — a
+# `for arg in "$@"` loop snapshots $@ at start and ignores shifts, causing
+# `--target juice-shop` to re-process `juice-shop` as an unknown arg.
+while [ $# -gt 0 ]; do
+    case "$1" in
         --target)        shift; TARGET="${1:-juice-shop}" ;;
         --keep)          KEEP=1 ;;
         --attack)        ATTACK=1 ;;
@@ -92,7 +95,7 @@ for arg in "$@"; do
             sed -n '2,55p' "$0"
             exit 0
             ;;
-        *) die "Unknown arg: $arg (try --help)" ;;
+        *) die "Unknown arg: $1 (try --help)" ;;
     esac
     shift || true
 done

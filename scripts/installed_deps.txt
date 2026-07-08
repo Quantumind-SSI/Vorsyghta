@@ -1,0 +1,10 @@
+git: present
+curl: present
+docker: present
+qemu-system-x86_64: missing
+virsh: missing
+gh: present
+python3: present
+pip3: present
+qemu-system-x86_64: installed
+virsh: installed

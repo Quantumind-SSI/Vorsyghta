@@ -1,0 +1,476 @@
+{
+  "exercise_id": "78817010-efd0-4dba-b47e-98ab7553e976",
+  "tenant_id": "juice-shop-assessment",
+  "scenario_name": "OWASP Juice Shop Vulnerability Assessment",
+  "start_time": "2026-07-08T08:59:37.051945+00:00",
+  "end_time": "2026-07-08T08:59:53.432914+00:00",
+  "status": "completed",
+  "red_team_stages": [
+    {
+      "event_id": "d5ab45a0-4709-480f-9037-1a7964a3ea1e",
+      "event_type": "red_team.attack_stage",
+      "tenant_id": "juice-shop-assessment",
+      "exercise_id": "78817010-efd0-4dba-b47e-98ab7553e976",
+      "simulation_id": "59a2dabe-2bb1-42c9-8d74-7bb87ca58740",
+      "timestamp": "2026-07-08T08:59:53.429361+00:00",
+      "payload": {
+        "stage_id": "2d22fb64-4c2b-4677-b5b3-88358320bb4d",
+        "stage_name": "reconnaissance",
+        "technique_id": "T1595",
+        "tactic": "reconnaissance",
+        "content": "[FALLBACK CONTENT] Unable to generate real AI content for threat_simulation_reconnaissance scenario. Error: Connection error.",
+        "target_system": null,
+        "iocs": [],
+        "llm_info": {
+          "tokens_used": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "total_tokens": 0,
+          "is_real_ai": false,
+          "model": "none",
+          "provider": "fallback"
+        }
+      }
+    },
+    {
+      "event_id": "77650421-553c-464d-88a8-c0c5e67aec90",
+      "event_type": "red_team.attack_stage",
+      "tenant_id": "juice-shop-assessment",
+      "exercise_id": "78817010-efd0-4dba-b47e-98ab7553e976",
+      "simulation_id": "59a2dabe-2bb1-42c9-8d74-7bb87ca58740",
+      "timestamp": "2026-07-08T08:59:53.429653+00:00",
+      "payload": {
+        "stage_id": "81638520-f906-497b-9787-a9f4d4c703e0",
+        "stage_name": "attack_planning",
+        "technique_id": "T1190",
+        "tactic": "initial_access",
+        "content": "[FALLBACK CONTENT] Unable to generate real AI content for threat_simulation_attack_planning scenario. Error: Connection error.",
+        "target_system": null,
+        "iocs": [],
+        "llm_info": {
+          "tokens_used": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "total_tokens": 0,
+          "is_real_ai": false,
+          "model": "none",
+          "provider": "fallback"
+        }
+      }
+    },
+    {
+      "event_id": "761bf24a-15a1-448d-91b5-9db6e98c2d2d",
+      "event_type": "red_team.attack_stage",
+      "tenant_id": "juice-shop-assessment",
+      "exercise_id": "78817010-efd0-4dba-b47e-98ab7553e976",
+      "simulation_id": "59a2dabe-2bb1-42c9-8d74-7bb87ca58740",
+      "timestamp": "2026-07-08T08:59:53.429788+00:00",
+      "payload": {
+        "stage_id": "1b986404-887c-4e3c-b342-00390104a741",
+        "stage_name": "execution",
+        "technique_id": "T1059",
+        "tactic": "execution",
+        "content": "[FALLBACK CONTENT] Unable to generate real AI content for threat_simulation_execution scenario. Error: Connection error.",
+        "target_system": null,
+        "iocs": [],
+        "llm_info": {
+          "tokens_used": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "total_tokens": 0,
+          "is_real_ai": false,
+          "model": "none",
+          "provider": "fallback"
+        }
+      }
+    },
+    {
+      "event_id": "477573b1-a65c-4c81-bcd0-8f11f438ab8c",
+      "event_type": "red_team.attack_stage",
+      "tenant_id": "juice-shop-assessment",
+      "exercise_id": "78817010-efd0-4dba-b47e-98ab7553e976",
+      "simulation_id": "59a2dabe-2bb1-42c9-8d74-7bb87ca58740",
+      "timestamp": "2026-07-08T08:59:53.429905+00:00",
+      "payload": {
+        "stage_id": "f127038e-c970-49ca-997f-5887dbbb7e36",
+        "stage_name": "persistence",
+        "technique_id": "T1547",
+        "tactic": "persistence",
+        "content": "[FALLBACK CONTENT] Unable to generate real AI content for threat_simulation_persistence scenario. Error: Connection error.",
+        "target_system": null,
+        "iocs": [],
+        "llm_info": {
+          "tokens_used": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "total_tokens": 0,
+          "is_real_ai": false,
+          "model": "none",
+          "provider": "fallback"
+        }
+      }
+    },
+    {
+      "event_id": "b1737038-3e6d-4534-a068-ec615b639758",
+      "event_type": "red_team.attack_stage",
+      "tenant_id": "juice-shop-assessment",
+      "exercise_id": "78817010-efd0-4dba-b47e-98ab7553e976",
+      "simulation_id": "59a2dabe-2bb1-42c9-8d74-7bb87ca58740",
+      "timestamp": "2026-07-08T08:59:53.430610+00:00",
+      "payload": {
+        "stage_id": "3303c728-4d6b-44ef-ba43-7ead7975b2f9",
+        "stage_name": "data_collection",
+        "technique_id": "T1005",
+        "tactic": "collection",
+        "content": "[FALLBACK CONTENT] Unable to generate real AI content for threat_simulation_data_collection scenario. Error: Connection error.",
+        "target_system": null,
+        "iocs": [],
+        "llm_info": {
+          "tokens_used": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "total_tokens": 0,
+          "is_real_ai": false,
+          "model": "none",
+          "provider": "fallback"
+        }
+      }
+    },
+    {
+      "event_id": "674c4ddf-6351-4c19-8a8b-85870c3e905a",
+      "event_type": "red_team.attack_stage",
+      "tenant_id": "juice-shop-assessment",
+      "exercise_id": "78817010-efd0-4dba-b47e-98ab7553e976",
+      "simulation_id": "59a2dabe-2bb1-42c9-8d74-7bb87ca58740",
+      "timestamp": "2026-07-08T08:59:53.430738+00:00",
+      "payload": {
+        "stage_id": "d590d6de-7ceb-4844-a25c-906696eba6a4",
+        "stage_name": "exfiltration",
+        "technique_id": "T1041",
+        "tactic": "exfiltration",
+        "content": "[FALLBACK CONTENT] Unable to generate real AI content for threat_simulation_exfiltration scenario. Error: Connection error.",
+        "target_system": null,
+        "iocs": [],
+        "llm_info": {
+          "tokens_used": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "total_tokens": 0,
+          "is_real_ai": false,
+          "model": "none",
+          "provider": "fallback"
+        }
+      }
+    },
+    {
+      "event_id": "4227963f-f8cf-4f18-a501-321666d968e8",
+      "event_type": "red_team.attack_stage",
+      "tenant_id": "juice-shop-assessment",
+      "exercise_id": "78817010-efd0-4dba-b47e-98ab7553e976",
+      "simulation_id": "59a2dabe-2bb1-42c9-8d74-7bb87ca58740",
+      "timestamp": "2026-07-08T08:59:53.430846+00:00",
+      "payload": {
+        "stage_id": "4534ea5d-9845-4cc1-99e7-c3320e234930",
+        "stage_name": "cleanup",
+        "technique_id": "T1070",
+        "tactic": "defense_evasion",
+        "content": "[FALLBACK CONTENT] Unable to generate real AI content for threat_simulation_cleanup scenario. Error: Connection error.",
+        "target_system": null,
+        "iocs": [],
+        "llm_info": {
+          "tokens_used": 0,
+          "prompt_tokens": 0,
+          "completion_tokens": 0,
+          "total_tokens": 0,
+          "is_real_ai": false,
+          "model": "none",
+          "provider": "fallback"
+        }
+      }
+    }
+  ],
+  "blue_team_alerts": [
+    {
+      "event_id": "25fb8103-dbcc-4b1a-a21d-030169304e81",
+      "event_type": "blue_team.alert",
+      "tenant_id": "juice-shop-assessment",
+      "exercise_id": "78817010-efd0-4dba-b47e-98ab7553e976",
+      "simulation_id": null,
+      "timestamp": "2026-07-08T08:59:53.429574+00:00",
+      "payload": {
+        "alert_id": "8d01e4ee-3b3f-4388-a962-d85094ebb63e",
+        "source_module": "siem",
+        "technique_id": "T1595",
+        "severity": "high",
+        "description": "Detected: T1595 in stage 'reconnaissance'",
+        "detected": true,
+        "response_time_ms": null,
+        "stage_id": "2d22fb64-4c2b-4677-b5b3-88358320bb4d",
+        "iocs": [],
+        "raw_data": {}
+      }
+    },
+    {
+      "event_id": "6a1346b6-f322-4211-9017-57d226baabbd",
+      "event_type": "blue_team.alert",
+      "tenant_id": "juice-shop-assessment",
+      "exercise_id": "78817010-efd0-4dba-b47e-98ab7553e976",
+      "simulation_id": null,
+      "timestamp": "2026-07-08T08:59:53.429731+00:00",
+      "payload": {
+        "alert_id": "0d19d01c-0aab-48ce-81c2-360bef2d05e9",
+        "source_module": "siem",
+        "technique_id": "T1190",
+        "severity": "high",
+        "description": "Detected: T1190 in stage 'attack_planning'",
+        "detected": true,
+        "response_time_ms": null,
+        "stage_id": "81638520-f906-497b-9787-a9f4d4c703e0",
+        "iocs": [],
+        "raw_data": {}
+      }
+    },
+    {
+      "event_id": "66a4c3d2-7f72-411d-8724-0793f0f882db",
+      "event_type": "blue_team.alert",
+      "tenant_id": "juice-shop-assessment",
+      "exercise_id": "78817010-efd0-4dba-b47e-98ab7553e976",
+      "simulation_id": null,
+      "timestamp": "2026-07-08T08:59:53.429852+00:00",
+      "payload": {
+        "alert_id": "c43c3b78-d047-45f6-ba36-157f833ebb28",
+        "source_module": "siem",
+        "technique_id": "T1059",
+        "severity": "info",
+        "description": "Missed: T1059 in stage 'execution'",
+        "detected": false,
+        "response_time_ms": null,
+        "stage_id": "1b986404-887c-4e3c-b342-00390104a741",
+        "iocs": [],
+        "raw_data": {}
+      }
+    },
+    {
+      "event_id": "7e766434-83d9-4e1c-80ba-dae5ae0109d3",
+      "event_type": "blue_team.alert",
+      "tenant_id": "juice-shop-assessment",
+      "exercise_id": "78817010-efd0-4dba-b47e-98ab7553e976",
+      "simulation_id": null,
+      "timestamp": "2026-07-08T08:59:53.430513+00:00",
+      "payload": {
+        "alert_id": "2a2f04c8-8409-40d7-9688-8531d9d2afee",
+        "source_module": "siem",
+        "technique_id": "T1547",
+        "severity": "high",
+        "description": "Detected: T1547 in stage 'persistence'",
+        "detected": true,
+        "response_time_ms": null,
+        "stage_id": "f127038e-c970-49ca-997f-5887dbbb7e36",
+        "iocs": [],
+        "raw_data": {}
+      }
+    },
+    {
+      "event_id": "9cebe662-ca68-461b-bd4a-801f11ce5abc",
+      "event_type": "blue_team.alert",
+      "tenant_id": "juice-shop-assessment",
+      "exercise_id": "78817010-efd0-4dba-b47e-98ab7553e976",
+      "simulation_id": null,
+      "timestamp": "2026-07-08T08:59:53.430685+00:00",
+      "payload": {
+        "alert_id": "6e026f86-c4f0-4346-8535-2507640f9a5f",
+        "source_module": "siem",
+        "technique_id": "T1005",
+        "severity": "high",
+        "description": "Detected: T1005 in stage 'data_collection'",
+        "detected": true,
+        "response_time_ms": null,
+        "stage_id": "3303c728-4d6b-44ef-ba43-7ead7975b2f9",
+        "iocs": [],
+        "raw_data": {}
+      }
+    },
+    {
+      "event_id": "8c730960-489f-46f6-b79c-b1381bb0f08a",
+      "event_type": "blue_team.alert",
+      "tenant_id": "juice-shop-assessment",
+      "exercise_id": "78817010-efd0-4dba-b47e-98ab7553e976",
+      "simulation_id": null,
+      "timestamp": "2026-07-08T08:59:53.430798+00:00",
+      "payload": {
+        "alert_id": "1171b8af-c5a5-4300-af91-7f02a04e01a4",
+        "source_module": "siem",
+        "technique_id": "T1041",
+        "severity": "info",
+        "description": "Missed: T1041 in stage 'exfiltration'",
+        "detected": false,
+        "response_time_ms": null,
+        "stage_id": "d590d6de-7ceb-4844-a25c-906696eba6a4",
+        "iocs": [],
+        "raw_data": {}
+      }
+    },
+    {
+      "event_id": "eff31bfa-3ae2-4b67-bfa1-639c7b03ab92",
+      "event_type": "blue_team.alert",
+      "tenant_id": "juice-shop-assessment",
+      "exercise_id": "78817010-efd0-4dba-b47e-98ab7553e976",
+      "simulation_id": null,
+      "timestamp": "2026-07-08T08:59:53.430901+00:00",
+      "payload": {
+        "alert_id": "35acc507-18da-4dbd-9d1f-a7a5a3b4c19f",
+        "source_module": "siem",
+        "technique_id": "T1070",
+        "severity": "info",
+        "description": "Missed: T1070 in stage 'cleanup'",
+        "detected": false,
+        "response_time_ms": null,
+        "stage_id": "4534ea5d-9845-4cc1-99e7-c3320e234930",
+        "iocs": [],
+        "raw_data": {}
+      }
+    }
+  ],
+  "aar": {
+    "aar_id": "2aab6ffc-1b11-4ac9-b7d2-0ff2830b95cb",
+    "exercise_id": "78817010-efd0-4dba-b47e-98ab7553e976",
+    "tenant_id": "default",
+    "generated_at": "2026-07-08T08:59:53.432025+00:00",
+    "summary": "The exercise simulated 7 attack stage(s). The blue team detected 4 (57.1%), missing 3. Overall detection posture is moderate. There are 3 MITRE technique coverage gap(s) requiring remediation.",
+    "detection_metrics": {
+      "total_attacks": 7,
+      "detected": 4,
+      "missed": 3,
+      "detection_rate_pct": 57.1,
+      "missed_rate_pct": 42.9,
+      "total_alerts_generated": 7
+    },
+    "coverage_gaps": [
+      {
+        "technique_id": "T1059",
+        "tactic": "execution",
+        "stage_name": "execution",
+        "severity": "high"
+      },
+      {
+        "technique_id": "T1041",
+        "tactic": "exfiltration",
+        "stage_name": "exfiltration",
+        "severity": "high"
+      },
+      {
+        "technique_id": "T1070",
+        "tactic": "defense_evasion",
+        "stage_name": "cleanup",
+        "severity": "high"
+      }
+    ],
+    "remediation_recommendations": [
+      {
+        "priority": 1,
+        "technique_id": "T1059",
+        "tactic": "execution",
+        "finding": "No detection coverage for T1059 (execution)",
+        "recommendation": "Enable PowerShell script block logging; deploy EDR with command-line monitoring.",
+        "effort": "medium",
+        "impact": "high"
+      },
+      {
+        "priority": 2,
+        "technique_id": "T1041",
+        "tactic": "exfiltration",
+        "finding": "No detection coverage for T1041 (exfiltration)",
+        "recommendation": "Implement detection rules for T1041; review SIEM/IDS/EDR coverage.",
+        "effort": "medium",
+        "impact": "high"
+      },
+      {
+        "priority": 3,
+        "technique_id": "T1070",
+        "tactic": "defense_evasion",
+        "finding": "No detection coverage for T1070 (cleanup)",
+        "recommendation": "Implement detection rules for T1070; review SIEM/IDS/EDR coverage.",
+        "effort": "medium",
+        "impact": "high"
+      }
+    ],
+    "response_time_metrics": {
+      "mean_response_time_ms": null,
+      "max_response_time_ms": null,
+      "samples": 0
+    },
+    "mitre_coverage": {
+      "techniques_attacked": [
+        {
+          "technique_id": "T1595",
+          "tactic": "reconnaissance",
+          "detected": true
+        },
+        {
+          "technique_id": "T1190",
+          "tactic": "initial_access",
+          "detected": true
+        },
+        {
+          "technique_id": "T1059",
+          "tactic": "execution",
+          "detected": false
+        },
+        {
+          "technique_id": "T1547",
+          "tactic": "persistence",
+          "detected": true
+        },
+        {
+          "technique_id": "T1005",
+          "tactic": "collection",
+          "detected": true
+        },
+        {
+          "technique_id": "T1041",
+          "tactic": "exfiltration",
+          "detected": false
+        },
+        {
+          "technique_id": "T1070",
+          "tactic": "defense_evasion",
+          "detected": false
+        }
+      ],
+      "total_techniques": 7,
+      "techniques_detected": 4
+    }
+  },
+  "score": {
+    "overall_score": 0.7857,
+    "component_scores": {
+      "red_team_execution": 1.0,
+      "blue_team_detection": 0.5714,
+      "purple_team_aar": 1.0,
+      "operational_security": 0.5714
+    },
+    "weights": {
+      "red_team_execution": 0.25,
+      "blue_team_detection": 0.35,
+      "purple_team_aar": 0.25,
+      "operational_security": 0.15
+    },
+    "metrics": {
+      "red_team_stages": 7,
+      "blue_team_alerts": 7,
+      "detected": 4,
+      "missed": 3,
+      "detection_rate": 0.5714
+    },
+    "rating": "C",
+    "recommendations": [
+      "Improve Blue Team detection coverage and reduce missed alerts.",
+      "Reduce operational friction and false negatives during exercise execution."
+    ]
+  },
+  "white_team_report": null,
+  "yellow_team_report": null,
+  "green_team_report": null,
+  "orange_team_report": null,
+  "errors": []
+}
