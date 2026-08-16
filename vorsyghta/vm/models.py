@@ -189,6 +189,12 @@ class AgentState:
     command_history: List[CommandResult] = field(default_factory=list)
     errors: List[str] = field(default_factory=list)
 
+    # Integrity: set True when the LLM reasoning/analysis could not be obtained
+    # (e.g. provider failure) and the agent had to proceed on degraded/unverified
+    # information. Surfaced on AttackResult so results are never silently
+    # presented as fully measured.
+    degraded: bool = False
+
     # Session info
     session_start: datetime = field(default_factory=datetime.utcnow)
     last_action: Optional[datetime] = None
@@ -226,6 +232,15 @@ class AttackResult(BaseModel):
     executive_summary: str = Field("")
     recommendations: List[str] = Field(default_factory=list)
     mitre_techniques_used: List[str] = Field(default_factory=list)
+
+    # Integrity flag: True when one or more LLM reasoning calls failed and the
+    # agent proceeded on degraded/unverified information. When True, success and
+    # success_rate are NOT fully measured and must not be treated as ground
+    # truth (constitution: no fabrication — degraded output is labeled).
+    degraded: bool = Field(
+        False,
+        description="True if LLM reasoning failed and results are unverified",
+    )
 
     # Detection
     alerts_generated: List[Dict[str, Any]] = Field(default_factory=list)

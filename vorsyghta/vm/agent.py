@@ -24,6 +24,16 @@ from .safety import VMSafetyController
 logger = logging.getLogger(__name__)
 
 
+class LLMUnavailableError(RuntimeError):
+    """Raised when an LLM reasoning call cannot be completed.
+
+    Surfacing this instead of returning a synthetic empty response prevents the
+    agent from silently continuing on fabricated/degraded information (B-4). The
+    constitution's no-fabrication rule requires that a failed reasoning call be
+    an explicit, handled condition — never disguised as a valid ``{}`` reply.
+    """
+
+
 # System prompt for attack planning
 ATTACK_PLANNING_PROMPT = """You are an expert red team operator and penetration tester.
 Your task is to create detailed, realistic attack plans for security testing.
@@ -252,7 +262,9 @@ Create a detailed attack plan with the following JSON structure:
 Include 5-10 steps covering reconnaissance through objectives.
 """
 
-        # Generate plan using LLM
+        # Generate plan using LLM. Fail-closed: a planning failure must not be
+        # swallowed into an empty ("{}") plan that would run zero steps yet be
+        # reported as a completed attack (B-4). Propagate so the caller sees it.
         response = await self._generate_llm_response(planning_prompt)
 
         # Parse response
@@ -524,7 +536,14 @@ Include 5-10 steps covering reconnaissance through objectives.
             command=command,
         )
 
-        response = await self._generate_llm_response(prompt)
+        # If refinement is unavailable, fall back to the original command. This
+        # is safe: the original is re-validated at the execution boundary. We do
+        # not fabricate a refined command.
+        try:
+            response = await self._generate_llm_response(prompt)
+        except LLMUnavailableError as exc:
+            logger.warning("Command refinement unavailable, using original: %s", exc)
+            return command
         refined = response.strip()
 
         # Basic validation - should still look like a command
@@ -552,7 +571,17 @@ Include 5-10 steps covering reconnaissance through objectives.
             objective=self.state.current_objective,
         )
 
-        response = await self._generate_llm_response(prompt)
+        # Fail-closed: if the LLM analysis cannot be obtained, do NOT default to
+        # continuing the attack on unverified state. Mark the run degraded and
+        # stop this iteration (B-4). Previously a failed call returned "{}" and
+        # continue_attack silently defaulted to True.
+        try:
+            response = await self._generate_llm_response(prompt)
+        except LLMUnavailableError as exc:
+            logger.error("Analysis LLM call failed; stopping (degraded): %s", exc)
+            self.state.degraded = True
+            self.state.errors.append(f"LLM analysis unavailable: {exc}")
+            return False
 
         try:
             analysis = json.loads(response)
@@ -659,16 +688,47 @@ Include 5-10 steps covering reconnaissance through objectives.
             errors=self.state.errors,
             action_log=self.attack_log,
             mitre_techniques_used=[s.technique_id for s in plan.steps if s.executed],
+            # Carry the degraded flag set during analysis so the report is never
+            # silently presented as fully measured (B-4).
+            degraded=self.state.degraded,
         )
 
-        # Generate executive summary using LLM
-        result.executive_summary = await self._generate_summary(result)
-
-        # Generate recommendations
-        result.recommendations = await self._generate_recommendations(result)
+        # Enrich the report with LLM narrative, degrading honestly on failure.
+        await self._attach_narrative(result)
 
         logger.info(f"Attack completed: {result.success_rate*100:.0f}% objectives achieved")
         return result
+
+    async def _attach_narrative(self, result: AttackResult) -> None:
+        """Attach executive summary + recommendations, degrading honestly.
+
+        If an LLM call fails, the corresponding field is set to a clearly-labeled
+        degraded placeholder and ``result.degraded`` is set True — never
+        fabricated (B-4).
+        """
+        try:
+            result.executive_summary = await self._generate_summary(result)
+        except LLMUnavailableError as exc:
+            logger.warning("Executive summary unavailable: %s", exc)
+            result.executive_summary = (
+                "[DEGRADED] Executive summary unavailable: LLM reasoning failed "
+                "during report generation. Metrics above are from measured "
+                "execution only."
+            )
+            result.degraded = True
+
+        try:
+            result.recommendations = await self._generate_recommendations(result)
+        except LLMUnavailableError as exc:
+            logger.warning("Recommendations unavailable: %s", exc)
+            result.recommendations = []
+            result.degraded = True
+
+        if result.degraded:
+            logger.warning(
+                "Attack report is DEGRADED (LLM reasoning failed at least once); "
+                "success_rate is not fully verified."
+            )
 
     async def _generate_summary(self, result: AttackResult) -> str:
         """Generate executive summary of attack."""
@@ -703,10 +763,18 @@ Return as JSON array of strings: ["recommendation 1", "recommendation 2", ...]
         response = await self._generate_llm_response(prompt)
 
         try:
-            return json.loads(response)
+            parsed = json.loads(response)
         except json.JSONDecodeError:
             # Parse as newline-separated
             return [line.strip("- ").strip() for line in response.split("\n") if line.strip()]
+
+        # Guarantee a List[str] return type regardless of what the model emitted
+        # (e.g. a JSON object instead of an array must not leak through).
+        if isinstance(parsed, list):
+            return [str(item) for item in parsed]
+        if isinstance(parsed, dict):
+            return [str(v) for v in parsed.values()]
+        return [str(parsed)]
 
     def _log_action(self, step: AttackStep, result: Dict[str, Any]) -> None:
         """Log action to attack log."""
@@ -733,7 +801,15 @@ Return as JSON array of strings: ["recommendation 1", "recommendation 2", ...]
         self.state.last_action = datetime.utcnow()
 
     async def _generate_llm_response(self, prompt: str) -> str:
-        """Generate LLM response, handling different manager interfaces."""
+        """Generate an LLM response, handling different manager interfaces.
+
+        Raises:
+            LLMUnavailableError: if no usable generate method exists or the
+                provider call fails. This is fail-closed: callers must decide
+                explicitly how to degrade (e.g. stop the attack, mark the result
+                degraded) rather than receiving a fabricated empty ``{}`` reply
+                that masquerades as a valid analysis.
+        """
         try:
             # Try async generate method
             if hasattr(self.llm, "generate"):
@@ -747,11 +823,13 @@ Return as JSON array of strings: ["recommendation 1", "recommendation 2", ...]
                 result = await self.llm.generate_content(prompt)
                 return result.content if hasattr(result, "content") else str(result)
 
-            raise AttributeError("LLM manager has no generate method")
+            raise LLMUnavailableError("LLM manager has no generate method")
 
+        except LLMUnavailableError:
+            raise
         except Exception as e:
             logger.error(f"LLM generation failed: {e}")
-            return "{}"
+            raise LLMUnavailableError(str(e)) from e
 
     def _extract_json(self, text: str) -> Dict[str, Any]:
         """Extract JSON from text that may contain other content."""

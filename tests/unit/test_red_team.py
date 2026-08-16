@@ -533,6 +533,77 @@ class TestSafetyControllerCore:
 
 
 # --------------------------------------------------------------------------- #
+# 5. Agent fail-closed / no-fabrication on LLM failure (B-4)
+# --------------------------------------------------------------------------- #
+class _RaisingLLM:
+    """LLM stub whose generate() always fails."""
+
+    async def generate(self, prompt: str) -> str:
+        raise RuntimeError("provider down")
+
+
+class _OkLLM:
+    """LLM stub returning a fixed non-array JSON object for recommendations."""
+
+    def __init__(self, payload: str) -> None:
+        self._payload = payload
+
+    async def generate(self, prompt: str) -> str:
+        return self._payload
+
+
+class TestAgentFailClosed:
+    def _agent(self, llm: Any):
+        from vorsyghta.vm.agent import AIAttackAgent
+        return AIAttackAgent(
+            llm_manager=llm,
+            vm_operator=_FakeVM(),
+            safety_controller=VMSafetyController(),
+        )
+
+    async def test_generate_llm_response_raises_not_returns_empty(self):
+        from vorsyghta.vm.agent import LLMUnavailableError
+        agent = self._agent(_RaisingLLM())
+        with pytest.raises(LLMUnavailableError):
+            await agent._generate_llm_response("hi")
+
+    async def test_analyze_and_adapt_stops_and_marks_degraded(self):
+        from vorsyghta.vm.models import AgentState, AttackStep, AttackPhase
+        agent = self._agent(_RaisingLLM())
+        agent.state = AgentState(current_vm="vm1")
+        step = AttackStep(phase=AttackPhase.RECONNAISSANCE, technique_id="T1595",
+                          technique_name="scan", description="d", commands=["nmap"])
+        cont = await agent._analyze_and_adapt(step, {"outputs": [], "commands_executed": []})
+        # Fail-closed: must STOP (not default to continue) and flag degraded.
+        assert cont is False
+        assert agent.state.degraded is True
+        assert any("LLM analysis unavailable" in e for e in agent.state.errors)
+
+    async def test_refine_command_falls_back_to_original(self):
+        agent = self._agent(_RaisingLLM())
+        from vorsyghta.vm.models import AgentState
+        agent.state = AgentState(current_vm="vm1")
+        original = "nmap -sV TARGET"
+        out = await agent._refine_command(original)
+        assert out == original  # graceful fallback, no fabricated command
+
+    async def test_recommendations_always_return_list_of_str(self):
+        # Model returns a JSON OBJECT, not an array; must still yield List[str].
+        agent = self._agent(_OkLLM('{"a": "harden ssh", "b": "patch web"}'))
+        from vorsyghta.vm.models import AttackResult
+        res = AttackResult(plan_id="p1", attack_name="a")
+        recs = await agent._generate_recommendations(res)
+        assert isinstance(recs, list)
+        assert all(isinstance(r, str) for r in recs)
+        assert "harden ssh" in recs
+
+    async def test_result_model_has_degraded_flag(self):
+        from vorsyghta.vm.models import AttackResult
+        res = AttackResult(plan_id="p1", attack_name="a")
+        assert res.degraded is False
+
+
+# --------------------------------------------------------------------------- #
 # Helpers
 # --------------------------------------------------------------------------- #
 class _StateStub:
