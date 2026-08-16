@@ -1,7 +1,7 @@
 # ZestPayment Cloud Security Threat Simulation - Implementation Plan
 
 **Client:** ZestPayment  
-**Platform:** Ciicerone AI-Powered Threat Simulation  
+**Platform:** Vorsyghta AI-Powered Threat Simulation  
 **Target Infrastructure:** Huawei Cloud CCE  
 **Compliance:** PCI-DSS, NDPR, CBN Regulations  
 **Date:** June 2026  
@@ -10,21 +10,21 @@
 
 ## Executive Summary
 
-This implementation plan outlines the deployment of Ciicerone's AI-powered threat simulation platform for ZestPayment's cloud-native payment infrastructure. The engagement spans 8-12 weeks across three phases: Discovery, Data Collection & AI Configuration, and Integration & Testing. The platform will simulate payment fraud, API abuse, cloud infrastructure attacks, and data breach scenarios tailored to ZestPayment's specific architecture and regulatory environment.
+This implementation plan outlines the deployment of Vorsyghta's AI-powered threat simulation platform for ZestPayment's cloud-native payment infrastructure. The engagement spans 8-12 weeks across three phases: Discovery, Data Collection & AI Configuration, and Integration & Testing. The platform will simulate payment fraud, API abuse, cloud infrastructure attacks, and data breach scenarios tailored to ZestPayment's specific architecture and regulatory environment.
 
 ---
 
 ## 1. Project Objectives
 
 ### Primary Goals
-1. **Deploy Ciicerone platform** on Huawei Cloud CCE with GPU-enabled LLM hosting
+1. **Deploy Vorsyghta platform** on Huawei Cloud CCE with GPU-enabled LLM hosting
 2. **Create payment-specific threat simulations** covering fraud, API abuse, cloud attacks, and data breaches
 3. **Validate PCI-DSS and NDPR compliance** through simulated attack scenarios
 4. **Train ZestPayment staff** on payment platform threat recognition and response
 5. **Establish continuous security assessment** capability for ongoing risk management
 
 ### Success Criteria
-- Ciicerone platform operational on Huawei Cloud with local LLM (Ollama)
+- Vorsyghta platform operational on Huawei Cloud with local LLM (Ollama)
 - 4+ threat simulation scenarios validated and running
 - PCI-DSS compliance controls tested via simulation
 - Incident response playbooks tested and refined
@@ -85,21 +85,21 @@ This implementation plan outlines the deployment of Ciicerone's AI-powered threa
 
 ### Phase 2: Data Collection & AI Configuration (Weeks 4-9)
 
-**Objective:** Configure Ciicerone platform with ZestPayment-specific knowledge and deploy to Huawei Cloud.
+**Objective:** Configure Vorsyghta platform with ZestPayment-specific knowledge and deploy to Huawei Cloud.
 
 #### Week 4-5: Platform Deployment
 
 | Task | Owner | Deliverable | Status |
 |------|-------|-------------|--------|
 | Provision CCE cluster (2+ nodes, GPU node) | DevOps Engineer | CCE cluster operational | Pending |
-| Configure Huawei SWR and push Ciicerone image | DevOps Engineer | Container image deployed | Pending |
+| Configure Huawei SWR and push Vorsyghta image | DevOps Engineer | Container image deployed | Pending |
 | Deploy Kubernetes manifests | DevOps Engineer | K8s deployment complete | Pending |
 | Configure persistent storage (EVS, SFS, OBS) | DevOps Engineer | Storage configured | Pending |
 | Deploy Ollama with llama3:70b model | DevOps Engineer | LLM service operational | Pending |
 | Configure ELB with SSL termination | DevOps Engineer | Load balancer configured | Pending |
 | Configure WAF for payment security | DevOps Engineer | WAF rules deployed | Pending |
 | Configure Huawei DEW/KMS for secrets | Security Engineer | Secrets management configured | Pending |
-| Configure DNS (ciicerone.com) | DevOps Engineer | DNS records created | Pending |
+| Configure DNS (vorsyghta.com) | DevOps Engineer | DNS records created | Pending |
 
 #### Week 6: LLM Configuration & Domain Knowledge
 
@@ -138,7 +138,7 @@ This implementation plan outlines the deployment of Ciicerone's AI-powered threa
 | Tune simulation parameters based on results | Security Engineer | Tuned scenarios | Pending |
 
 **Phase 2 Deliverables:**
-- [ ] Ciicerone platform deployed on Huawei Cloud CCE
+- [ ] Vorsyghta platform deployed on Huawei Cloud CCE
 - [ ] Ollama LLM operational with payment domain knowledge
 - [ ] 4 threat simulation templates created and tested
 - [ ] Microsoft 365 email and Entra ID integration configured
@@ -200,7 +200,7 @@ This implementation plan outlines the deployment of Ciicerone's AI-powered threa
 
 ## 3. Resource Allocation
 
-### Ciicerone Team
+### Vorsyghta Team
 
 | Role | Allocation | Responsibilities |
 |------|------------|-----------------|
@@ -237,7 +237,7 @@ This implementation plan outlines the deployment of Ciicerone's AI-powered threa
 | Logging | Huawei LTS + JSON | 90-day retention, SIEM forwarding |
 | Metrics | Prometheus | /metrics endpoint, payment-specific metrics |
 | SSL/TLS | Company PKI / Huawei SCM | ELB termination, auto-renewal |
-| DNS | ciicerone.com | A record to ELB, MX for email |
+| DNS | vorsyghta.com | A record to ELB, MX for email |
 
 ---
 
@@ -249,7 +249,7 @@ This implementation plan outlines the deployment of Ciicerone's AI-powered threa
 | API Abuse | `zestpayment_api_abuse.yaml` | High | 90 min | OWASP API |
 | Cloud Misconfiguration | `zestpayment_cloud_misconfig.yaml` | High | 120 min | CIS Cloud |
 | Data Breach | `zestpayment_data_breach.yaml` | Critical | 150 min | PCI-DSS, NDPR |
-| Quantum Threat Scan | `ciicerone quantum scan` | Medium | 60 min | NIST PQC |
+| Quantum Threat Scan | `vorsyghta quantum scan` | Medium | 60 min | NIST PQC |
 
 ---
 
@@ -294,7 +294,7 @@ Week 12:    ████          Phase 3: Refinement & Handover
 - [ ] Validated threat scenario list
 
 ### Phase 2
-- [ ] Ciicerone deployed on Huawei Cloud CCE
+- [ ] Vorsyghta deployed on Huawei Cloud CCE
 - [ ] Ollama LLM operational with payment domain knowledge
 - [ ] 4 threat simulation templates created
 - [ ] Microsoft 365 and Entra ID integration

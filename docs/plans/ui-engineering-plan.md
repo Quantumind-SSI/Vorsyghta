@@ -1,6 +1,6 @@
-# Ciicerone UI — Full Engineering Plan
+# Vorsyghta UI — Full Engineering Plan
 
-Concrete, file-by-file implementation plan for the Ciicerone web platform UI.
+Concrete, file-by-file implementation plan for the Vorsyghta web platform UI.
 
 Four surfaces, one Next.js codebase:
 - **Surface 1:** SOC Console (blue team analysts)
@@ -34,7 +34,7 @@ Four surfaces, one Next.js codebase:
 ## Architecture
 
 ```
-ciicerone-web/                     (Next.js app — new repo or monorepo package)
+vorsyghta-web/                     (Next.js app — new repo or monorepo package)
 ├── app/
 │   ├── (soc)/                     ← Surface 1: SOC Console
 │   ├── (campaigns)/               ← Surface 2: Red Team
@@ -73,7 +73,7 @@ ciicerone-web/                     (Next.js app — new repo or monorepo package
 The existing FastAPI backend needs additions to support the UI:
 
 ```
-ciicerone/
+vorsyghta/
 ├── api/
 │   ├── routers/
 │   │   ├── blue_team.py           ← NEW — SOC endpoints
@@ -97,7 +97,7 @@ The FastAPI backend has no authentication, no blue team API router, no campaign 
 
 ### File-by-file changes
 
-#### 1. New file: `ciicerone/core/auth.py`
+#### 1. New file: `vorsyghta/core/auth.py`
 
 JWT-based auth with role definitions and tenant scoping.
 
@@ -127,7 +127,7 @@ Key decisions:
 - Tenant scoping for `CLIENT` role — all queries filtered by `tenant_id`.
 - Secrets from environment variables (`JWT_SECRET`, `JWT_ALGORITHM=HS256`).
 
-#### 2. New file: `ciicerone/api/routers/auth.py`
+#### 2. New file: `vorsyghta/api/routers/auth.py`
 
 ```python
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -148,7 +148,7 @@ async def logout(refresh_token: str) -> None
 Phase 1: Simple email/password against a local users table or config file.
 Phase 2: OAuth via GitHub / Microsoft Entra ID (for ZestPayment integration).
 
-#### 3. New file: `ciicerone/api/routers/blue_team.py`
+#### 3. New file: `vorsyghta/api/routers/blue_team.py`
 
 Exposes all blue team CLI functionality as REST endpoints. Each CLI command maps to an endpoint.
 
@@ -202,7 +202,7 @@ async def get_dashboard(ctx = Depends(require_role(UserRole.ANALYST))) -> Dashbo
 
 Each endpoint delegates to the existing blue team modules (`SIEMSimulator`, `IDSDetector`, `EDRAgent`, `AlertTriage`, `IncidentResponse`, `ThreatHunter`, `LogAnalyzer`, `ForensicsCollector`). The logic already exists — this is a thin REST wrapper.
 
-#### 4. New file: `ciicerone/api/routers/campaigns.py`
+#### 4. New file: `vorsyghta/api/routers/campaigns.py`
 
 ```python
 router = APIRouter(prefix="/api/campaigns", tags=["campaigns"])
@@ -221,7 +221,7 @@ router = APIRouter(prefix="/api/campaigns", tags=["campaigns"])
 
 Delegates to existing `ThreatDeploymentEngine`, `CampaignAnalyticsEngine`, `RealTimeDashboard`, and `YAMLConfigLoader`.
 
-#### 5. New file: `ciicerone/api/routers/portal.py`
+#### 5. New file: `vorsyghta/api/routers/portal.py`
 
 ```python
 router = APIRouter(prefix="/api/portal", tags=["portal"])
@@ -236,7 +236,7 @@ router = APIRouter(prefix="/api/portal", tags=["portal"])
 
 All endpoints require `UserRole.CLIENT` and scope data by `tenant_id`. Read-only — no POST/PUT/DELETE.
 
-#### 6. New file: `ciicerone/api/routers/admin.py`
+#### 6. New file: `vorsyghta/api/routers/admin.py`
 
 ```python
 router = APIRouter(prefix="/api/admin", tags=["admin"])
@@ -256,7 +256,7 @@ router = APIRouter(prefix="/api/admin", tags=["admin"])
 
 Requires `UserRole.ADMIN`.
 
-#### 7. New file: `ciicerone/api/websocket.py`
+#### 7. New file: `vorsyghta/api/websocket.py`
 
 SSE endpoints for real-time data push.
 
@@ -287,14 +287,14 @@ SSE chosen over WebSocket for Phase 1 because:
 - Auto-reconnect built into the browser `EventSource` API.
 - Phase 2 can add WebSocket for bidirectional needs (e.g., collaborative incident response).
 
-#### 8. Edit: `ciicerone/api/main.py`
+#### 8. Edit: `vorsyghta/api/main.py`
 
 - Register new routers: `auth_router`, `blue_team_router`, `campaigns_router`, `portal_router`, `admin_router`, `sse_router`.
-- Update CORS to read allowed origins from environment (`CORS_ORIGINS=https://ciicerone.com,https://www.ciicerone.com`).
+- Update CORS to read allowed origins from environment (`CORS_ORIGINS=https://vorsyghta.com,https://www.vorsyghta.com`).
 - Add JWT auth middleware.
 - Update health check to include SIEM, DB, and LLM provider status.
 
-#### 9. Edit: `ciicerone/api/routers/__init__.py`
+#### 9. Edit: `vorsyghta/api/routers/__init__.py`
 
 Import and export all new routers.
 
@@ -317,8 +317,8 @@ sse-starlette>=1.8.0          # SSE support for FastAPI
 #### 1. Project initialization
 
 ```bash
-pnpm create next-app@latest ciicerone-web --typescript --tailwind --app --src-dir
-cd ciicerone-web
+pnpm create next-app@latest vorsyghta-web --typescript --tailwind --app --src-dir
+cd vorsyghta-web
 pnpm add @tanstack/react-query @tanstack/react-table zustand lucide-react \
   react-hook-form zod @hookform/resolvers tremor next-auth@beta \
   @react-pdf/renderer shiki date-fns clsx tailwind-merge
@@ -435,7 +435,7 @@ NextAuth.js configuration.
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
-      name: "Ciicerone",
+      name: "Vorsyghta",
       credentials: { email: {}, password: {} },
       async authorize(credentials) {
         const res = await apiFetch("/api/auth/login", {
@@ -876,8 +876,8 @@ tests/unit/
 # Backend
 pytest tests/unit/test_auth.py tests/unit/test_blue_team_router.py -v
 pytest tests/unit/test_campaigns_router.py tests/unit/test_portal_router.py -v
-ruff check ciicerone/core/auth.py ciicerone/api/routers/blue_team.py
-mypy ciicerone/core/auth.py
+ruff check vorsyghta/core/auth.py vorsyghta/api/routers/blue_team.py
+mypy vorsyghta/core/auth.py
 
 # Frontend
 pnpm vitest run
@@ -894,15 +894,15 @@ pnpm lint
 
 | Environment | Platform | URL |
 |-------------|----------|-----|
-| Production | Vercel | `ciicerone.com` |
-| Staging | Vercel (preview) | `staging.ciicerone.com` |
+| Production | Vercel | `vorsyghta.com` |
+| Staging | Vercel (preview) | `staging.vorsyghta.com` |
 | Local | `next dev` | `localhost:3000` |
 
 ### Environment Variables (frontend)
 
 ```bash
-NEXT_PUBLIC_API_URL=https://api.ciicerone.com
-NEXTAUTH_URL=https://ciicerone.com
+NEXT_PUBLIC_API_URL=https://api.vorsyghta.com
+NEXTAUTH_URL=https://vorsyghta.com
 NEXTAUTH_SECRET=<random-32-char-string>
 ```
 
@@ -915,7 +915,7 @@ JWT_SECRET=<random-32-char-string>
 JWT_ALGORITHM=HS256
 JWT_ACCESS_EXPIRE_MINUTES=15
 JWT_REFRESH_EXPIRE_DAYS=7
-CORS_ORIGINS=https://ciicerone.com,https://www.ciicerone.com
+CORS_ORIGINS=https://vorsyghta.com,https://www.vorsyghta.com
 ```
 
 ### Docker Compose (local dev)
@@ -925,7 +925,7 @@ Add to existing `docker-compose.yml`:
 ```yaml
 services:
   web:
-    build: ./ciicerone-web
+    build: ./vorsyghta-web
     ports:
       - "3000:3000"
     environment:
@@ -942,9 +942,9 @@ services:
 
 ### Phase 1: Foundation (Week 1-2)
 
-1. Backend auth (`ciicerone/core/auth.py`, `ciicerone/api/routers/auth.py`)
-2. Blue team API router (`ciicerone/api/routers/blue_team.py`) — all endpoints
-3. SSE router (`ciicerone/api/websocket.py`)
+1. Backend auth (`vorsyghta/core/auth.py`, `vorsyghta/api/routers/auth.py`)
+2. Blue team API router (`vorsyghta/api/routers/blue_team.py`) — all endpoints
+3. SSE router (`vorsyghta/api/websocket.py`)
 4. Register routers in `api/main.py`, update CORS
 5. Next.js project init, Tailwind, shadcn/ui
 6. Auth flow (login page, NextAuth config, middleware)
@@ -1010,15 +1010,15 @@ services:
 
 | File | Type | Lines (est.) |
 |------|------|-------------|
-| `ciicerone/core/auth.py` | New | ~200 |
-| `ciicerone/api/routers/auth.py` | New | ~150 |
-| `ciicerone/api/routers/blue_team.py` | New | ~400 |
-| `ciicerone/api/routers/campaigns.py` | New | ~250 |
-| `ciicerone/api/routers/portal.py` | New | ~150 |
-| `ciicerone/api/routers/admin.py` | New | ~200 |
-| `ciicerone/api/websocket.py` | New | ~150 |
-| `ciicerone/api/main.py` | Edit | ~30 changed |
-| `ciicerone/api/routers/__init__.py` | Edit | ~10 changed |
+| `vorsyghta/core/auth.py` | New | ~200 |
+| `vorsyghta/api/routers/auth.py` | New | ~150 |
+| `vorsyghta/api/routers/blue_team.py` | New | ~400 |
+| `vorsyghta/api/routers/campaigns.py` | New | ~250 |
+| `vorsyghta/api/routers/portal.py` | New | ~150 |
+| `vorsyghta/api/routers/admin.py` | New | ~200 |
+| `vorsyghta/api/websocket.py` | New | ~150 |
+| `vorsyghta/api/main.py` | Edit | ~30 changed |
+| `vorsyghta/api/routers/__init__.py` | Edit | ~10 changed |
 | Backend tests | New | ~800 |
 | **Backend total** | | **~2,340** |
 
@@ -1045,7 +1045,7 @@ services:
 
 - **Auth complexity:** Phase 1 uses simple JWT + password. Phase 2 needs OAuth (GitHub, Entra ID). The `AuthContext` abstraction supports both, but the user store needs to be designed for Phase 2 from the start.
 - **SSE vs WebSocket:** SSE is simpler but one-way. If we need collaborative incident response (multiple analysts editing the same incident), we'll need WebSocket. Mitigation: design the SSE router so it can be upgraded to WebSocket without changing the frontend event handling.
-- **Blue team router is a thin wrapper:** All blue team modules are in-memory (no persistence yet). The router endpoints will work but data won't survive restarts. Mitigation: Phase 2 adds Cosmos DB persistence (already deployed — `ciicerone-blueteam-db` with containers for incidents, alerts, forensic-artifacts, hunt-results, triage-results).
+- **Blue team router is a thin wrapper:** All blue team modules are in-memory (no persistence yet). The router endpoints will work but data won't survive restarts. Mitigation: Phase 2 adds Cosmos DB persistence (already deployed — `vorsyghta-blueteam-db` with containers for incidents, alerts, forensic-artifacts, hunt-results, triage-results).
 - **Rate limiting:** No rate limiting on the API. The UI's TanStack Query polling could hammer the backend. Mitigation: add `slowapi` rate limiter to FastAPI, set sensible polling intervals (30s for dashboard, 5s for live feeds via SSE).
 
 ### Frontend

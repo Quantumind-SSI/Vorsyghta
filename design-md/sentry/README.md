@@ -1,16 +1,16 @@
-# Ciicerone Design System (Sentry-inspired)
+# Vorsyghta Design System (Sentry-inspired)
 
-This folder holds the design system adopted for **Ciicerone** — the enterprise
+This folder holds the design system adopted for **Vorsyghta** — the enterprise
 AI-powered cybersecurity threat simulation platform.
 
 ## Why this theme
 
-Ciicerone is a security/threat-alerting product with a developer + enterprise
+Vorsyghta is a security/threat-alerting product with a developer + enterprise
 dual audience, heavy on audit logs, MITRE ATT&CK references, and code (Python /
 FastAPI / YAML scenario definitions). The Sentry-inspired design language maps
 onto that almost 1:1:
 
-| Ciicerone trait | Sentry design match |
+| Vorsyghta trait | Sentry design match |
 |---|---|
 | Security/threat-alerting product | "Debugging console wearing a leather jacket" — observability + alerting aesthetic |
 | Developer + enterprise dual audience | Two-polarity canvas: dark midnight hero for marketing, white for dense reference/pricing tables |
@@ -22,9 +22,9 @@ onto that almost 1:1:
 ## Contents
 
 - [`DESIGN.md`](./DESIGN.md) — full token set (colors, typography, rounded,
-  spacing, components) plus prose adapted for Ciicerone. The token values are
+  spacing, components) plus prose adapted for Vorsyghta. The token values are
   copied verbatim from the upstream Sentry-inspired system; only the
-  intro/component examples have been rewritten to reference Ciicerone surfaces
+  intro/component examples have been rewritten to reference Vorsyghta surfaces
   (threat console, MITRE ATT&CK navigator, audit-log viewer, deployment/pricing
   matrix, FastAPI / YAML code blocks).
 

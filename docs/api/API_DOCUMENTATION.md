@@ -1,17 +1,17 @@
-# Ciicerone API Documentation
+# Vorsyghta API Documentation
 
 **Version:** 1.0.0  
 **Last Updated:** November 2025
 
 ## Overview
 
-Ciicerone provides a RESTful API for programmatic access to threat simulation capabilities. The API enables enterprises to integrate threat scenario generation, content validation, and simulation orchestration into their security workflows.
+Vorsyghta provides a RESTful API for programmatic access to threat simulation capabilities. The API enables enterprises to integrate threat scenario generation, content validation, and simulation orchestration into their security workflows.
 
 ## Base Configuration
 
 ### Base URL
 ```
-Production: https://api.Ciicerone.io/v1
+Production: https://api.Vorsyghta.io/v1
 Development: http://localhost:8000
 ```
 
@@ -20,7 +20,7 @@ Development: http://localhost:8000
 Production deployments require API key authentication:
 
 ```bash
-curl -X GET "https://api.Ciicerone.io/v1/health" \
+curl -X GET "https://api.Vorsyghta.io/v1/health" \
      -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
@@ -365,14 +365,14 @@ Configure webhooks to receive real-time notifications:
 
 Official SDKs available:
 
-- **Python:** `pip install Ciicerone-sdk`
-- **Node.js:** `npm install @Ciicerone/sdk`
-- **Go:** `go get github.com/Ciicerone/go-sdk`
+- **Python:** `pip install Vorsyghta-sdk`
+- **Node.js:** `npm install @Vorsyghta/sdk`
+- **Go:** `go get github.com/QuantumindSSI/go-sdk`
 
 ---
 
 ## Support
 
-- **Documentation:** https://docs.Ciicerone.io
-- **API Status:** https://status.Ciicerone.io
-- **Support Email:** support@Ciicerone.io
+- **Documentation:** https://docs.Vorsyghta.io
+- **API Status:** https://status.Vorsyghta.io
+- **Support Email:** support@Vorsyghta.io

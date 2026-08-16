@@ -1,4 +1,4 @@
-# Ciicerone End-to-End Demo Scenario
+# Vorsyghta End-to-End Demo Scenario
 # Narrative: "Project Nightfall" — Acme Corp Q3 security assessment
 # Target: Alice Johnson, Chief Financial Officer (acme-corp.com)
 
@@ -8,7 +8,7 @@ metadata:
     Authorized red-team engagement simulating a targeted spear-phishing attack
     against Acme Corp's CFO using a fraudulent "Q3 Board Materials" lure.
     Demonstrates the full kill-chain from recon to detection.
-  author: Ciicerone Demo
+  author: Vorsyghta Demo
   version: 1.0.0
   tags:
     - demo

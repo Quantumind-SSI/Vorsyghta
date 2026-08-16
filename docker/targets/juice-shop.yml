@@ -1,5 +1,5 @@
 # =============================================================================
-# Ciicerone — Sanctioned Pentest Target: OWASP Juice Shop
+# Vorsyghta — Sanctioned Pentest Target: OWASP Juice Shop
 # =============================================================================
 # OPTIONAL layer, applied on top of the integration stack:
 #   docker-compose.yml
@@ -8,7 +8,7 @@
 #   docker/targets/juice-shop.yml            <-- THIS FILE
 #
 # Brings up OWASP Juice Shop (bkimminich/juice-shop) as a SANCTIONED,
-# intentionally-vulnerable target on the Ciicerone internal Docker network so
+# intentionally-vulnerable target on the Vorsyghta internal Docker network so
 # the red-team attack agent + discovery toolchain can exercise the full
 # pentest pipeline (recon -> web fuzz -> API grammar fuzz -> SQLi triage ->
 # structured CWE/CVSS report) against a target with KNOWN ground truth.
@@ -33,7 +33,7 @@
 #
 # Network reachability:
 #   * Internal:  http://juice-shop:3000  (from any container on
-#                ciicerone-network — e.g. ciicerone-api, or a tool server
+#                vorsyghta-network — e.g. vorsyghta-api, or a tool server
 #                container joined to the same network)
 #   * Host:      http://localhost:${JUICE_SHOP_PORT:-3000}  (for the red-team
 #                CLI / acceptance gate running on the host)
@@ -56,18 +56,18 @@ services:
   juice-shop:
     image: bkimminich/juice-shop:${JUICE_SHOP_IMAGE_TAG:-latest}
     pull_policy: always
-    container_name: ciicerone-target-juice-shop
+    container_name: vorsyghta-target-juice-shop
     # Juice Shop is a SANCTIONED training target — label it so the safety /
     # audit layer can distinguish it from production surfaces.
     labels:
-      com.ciicerone.role: "sanctioned-target"
-      com.ciicerone.target: "juice-shop"
-      com.ciicerone.authorization: "training-use-only"
+      com.vorsyghta.role: "sanctioned-target"
+      com.vorsyghta.target: "juice-shop"
+      com.vorsyghta.authorization: "training-use-only"
     environment:
       # Quiet the startup banner noise in CI logs.
       - NODE_ENV=production
     ports:
       - "${JUICE_SHOP_PORT:-3000}:3000"
     networks:
-      - ciicerone-network
+      - vorsyghta-network
     restart: "no"

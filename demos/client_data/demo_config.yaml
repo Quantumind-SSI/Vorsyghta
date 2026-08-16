@@ -1,4 +1,4 @@
-# Demo configuration for Ciicerone client-data feature.
+# Demo configuration for Vorsyghta client-data feature.
 # This config uses a local HTTP server (started by run_demo.sh) so no API keys are needed.
 
 llm:

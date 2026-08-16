@@ -16,12 +16,12 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     CREATE EXTENSION IF NOT EXISTS "pg_trgm";
     
     -- Create schemas
-    CREATE SCHEMA IF NOT EXISTS ciicerone;
+    CREATE SCHEMA IF NOT EXISTS vorsyghta;
     CREATE SCHEMA IF NOT EXISTS analytics;
     CREATE SCHEMA IF NOT EXISTS audit;
     
     -- Grant permissions
-    GRANT ALL PRIVILEGES ON SCHEMA ciicerone TO $POSTGRES_USER;
+    GRANT ALL PRIVILEGES ON SCHEMA vorsyghta TO $POSTGRES_USER;
     GRANT ALL PRIVILEGES ON SCHEMA analytics TO $POSTGRES_USER;
     GRANT ALL PRIVILEGES ON SCHEMA audit TO $POSTGRES_USER;
     
@@ -44,7 +44,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     CREATE INDEX IF NOT EXISTS idx_activity_log_action ON audit.activity_log(action);
     
     -- Create simulations table
-    CREATE TABLE IF NOT EXISTS ciicerone.simulations (
+    CREATE TABLE IF NOT EXISTS vorsyghta.simulations (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -59,14 +59,14 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     );
     
     -- Create index for simulations
-    CREATE INDEX IF NOT EXISTS idx_simulations_created_at ON ciicerone.simulations(created_at DESC);
-    CREATE INDEX IF NOT EXISTS idx_simulations_status ON ciicerone.simulations(status);
-    CREATE INDEX IF NOT EXISTS idx_simulations_template ON ciicerone.simulations(template_name);
+    CREATE INDEX IF NOT EXISTS idx_simulations_created_at ON vorsyghta.simulations(created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_simulations_status ON vorsyghta.simulations(status);
+    CREATE INDEX IF NOT EXISTS idx_simulations_template ON vorsyghta.simulations(template_name);
     
     -- Create generated content table
-    CREATE TABLE IF NOT EXISTS ciicerone.generated_content (
+    CREATE TABLE IF NOT EXISTS vorsyghta.generated_content (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-        simulation_id UUID REFERENCES ciicerone.simulations(id) ON DELETE CASCADE,
+        simulation_id UUID REFERENCES vorsyghta.simulations(id) ON DELETE CASCADE,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         content_type VARCHAR(50) NOT NULL,
         subject TEXT,
@@ -77,8 +77,8 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     );
     
     -- Create index for generated content
-    CREATE INDEX IF NOT EXISTS idx_generated_content_simulation ON ciicerone.generated_content(simulation_id);
-    CREATE INDEX IF NOT EXISTS idx_generated_content_created_at ON ciicerone.generated_content(created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_generated_content_simulation ON vorsyghta.generated_content(simulation_id);
+    CREATE INDEX IF NOT EXISTS idx_generated_content_created_at ON vorsyghta.generated_content(created_at DESC);
     
     -- Create analytics aggregation table
     CREATE TABLE IF NOT EXISTS analytics.daily_stats (
@@ -102,16 +102,16 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     \$\$ language 'plpgsql';
     
     -- Create trigger for simulations
-    DROP TRIGGER IF EXISTS update_simulations_updated_at ON ciicerone.simulations;
+    DROP TRIGGER IF EXISTS update_simulations_updated_at ON vorsyghta.simulations;
     CREATE TRIGGER update_simulations_updated_at
-        BEFORE UPDATE ON ciicerone.simulations
+        BEFORE UPDATE ON vorsyghta.simulations
         FOR EACH ROW
         EXECUTE FUNCTION update_updated_at_column();
     
     -- Log initialization
     INSERT INTO audit.activity_log (action, resource_type, details)
-    VALUES ('database_initialized', 'system', '{"message": "Ciicerone database initialized successfully"}');
+    VALUES ('database_initialized', 'system', '{"message": "Vorsyghta database initialized successfully"}');
     
 EOSQL
 
-echo "Ciicerone PostgreSQL database initialized successfully!"
+echo "Vorsyghta PostgreSQL database initialized successfully!"

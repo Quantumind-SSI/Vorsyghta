@@ -1,16 +1,16 @@
 """Comprehensive unit tests for the database persistence layer.
 
 Targets the Phase 1 persistence layer introduced in commit 07181fb:
-- :mod:`ciicerone.db.base` — declarative base, async engine factory, URL
+- :mod:`vorsyghta.db.base` — declarative base, async engine factory, URL
   resolution, pool-kwargs-from-env, singleton engine/factory, dispose,
   safe-URL-for-log.
-- :mod:`ciicerone.db.session` — ``DatabaseConfig``, session factory creation,
+- :mod:`vorsyghta.db.session` — ``DatabaseConfig``, session factory creation,
   ``get_session`` context manager (rollback-on-exception, close-in-finally,
   factory/engine/singleton precedence), FastAPI dependency.
-- :mod:`ciicerone.db.health` — ``DatabaseHealth``, ``check_database_health``
+- :mod:`vorsyghta.db.health` — ``DatabaseHealth``, ``check_database_health``
   (connectivity failure, schema-query failure, table-missing, success, engine
   fallback).
-- :mod:`ciicerone.db` — public re-exports.
+- :mod:`vorsyghta.db` — public re-exports.
 
 No happy-path-only tests: every branch, env-parsing edge case, precedence rule
 and failure mode is exercised.  Real in-memory SQLite engines (via aiosqlite)
@@ -34,7 +34,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-from ciicerone.db import (
+from vorsyghta.db import (
     Base,
     DatabaseConfig,
     DatabaseHealth,
@@ -47,9 +47,9 @@ from ciicerone.db import (
     get_session_dep,
     get_session_factory,
 )
-from ciicerone.db import base as db_base
-from ciicerone.db import health as db_health
-from ciicerone.db import session as db_session
+from vorsyghta.db import base as db_base
+from vorsyghta.db import health as db_health
+from vorsyghta.db import session as db_session
 
 
 # ---------------------------------------------------------------------------
@@ -126,7 +126,7 @@ class TestResolveUrl:
 
     def test_default_when_no_argument_and_no_env(self):
         # The default is normalised to the asyncpg dialect.
-        assert db_base._resolve_url(None) == "postgresql+asyncpg://localhost/ciicerone"
+        assert db_base._resolve_url(None) == "postgresql+asyncpg://localhost/vorsyghta"
 
     def test_plain_postgresql_url_normalised_to_asyncpg(self):
         assert db_base._resolve_url("postgresql://u:p@h:5432/db") == \
@@ -176,7 +176,7 @@ class TestPoolKwargsFromEnv:
 
     def test_non_integer_env_falls_back_to_default(self, monkeypatch, caplog):
         monkeypatch.setenv("DB_POOL_SIZE", "not-an-int")
-        with caplog.at_level(logging.WARNING, logger="ciicerone.db.base"):
+        with caplog.at_level(logging.WARNING, logger="vorsyghta.db.base"):
             kw = db_base._pool_kwargs_from_env()
         assert kw["pool_size"] == 10
         assert any("Invalid int for DB_POOL_SIZE" in r.message for r in caplog.records)
@@ -208,7 +208,7 @@ class TestCreateEngine:
     exactly what was passed regardless of dialect.
     """
 
-    _PG_URL = "postgresql://user:pass@localhost:5432/ciicerone"
+    _PG_URL = "postgresql://user:pass@localhost:5432/vorsyghta"
 
     def test_returns_async_engine_for_postgres(self):
         engine = create_engine(self._PG_URL)
@@ -233,14 +233,14 @@ class TestCreateEngine:
         assert engine.sync_engine.echo is True
 
     def test_logs_safe_url_without_credentials(self, caplog):
-        with caplog.at_level(logging.INFO, logger="ciicerone.db.base"):
+        with caplog.at_level(logging.INFO, logger="vorsyghta.db.base"):
             create_engine("postgresql://user:secret@host:5432/db")
         assert all("secret" not in r.message for r in caplog.records)
 
     # --- kwarg-forwarding verified via mock (dialect-independent) ---
 
     def test_pool_kwargs_forwarded_to_create_async_engine(self):
-        with patch("ciicerone.db.base.create_async_engine") as mock_ca:
+        with patch("vorsyghta.db.base.create_async_engine") as mock_ca:
             mock_ca.return_value = MagicMock(spec=AsyncEngine)
             create_engine(self._PG_URL, pool_size=3, max_overflow=5,
                            pool_timeout=7, pool_recycle=9)
@@ -254,7 +254,7 @@ class TestCreateEngine:
     def test_env_pool_kwargs_used_when_no_explicit_override(self, monkeypatch):
         monkeypatch.setenv("DB_POOL_SIZE", "8")
         monkeypatch.setenv("DB_MAX_OVERFLOW", "16")
-        with patch("ciicerone.db.base.create_async_engine") as mock_ca:
+        with patch("vorsyghta.db.base.create_async_engine") as mock_ca:
             mock_ca.return_value = MagicMock(spec=AsyncEngine)
             create_engine(self._PG_URL)
             _, kwargs = mock_ca.call_args
@@ -262,21 +262,21 @@ class TestCreateEngine:
             assert kwargs["max_overflow"] == 16
 
     def test_echo_forwarded_to_create_async_engine(self):
-        with patch("ciicerone.db.base.create_async_engine") as mock_ca:
+        with patch("vorsyghta.db.base.create_async_engine") as mock_ca:
             mock_ca.return_value = MagicMock(spec=AsyncEngine)
             create_engine(self._PG_URL, echo=True)
             _, kwargs = mock_ca.call_args
             assert kwargs["echo"] is True
 
     def test_extra_kwargs_forwarded_to_create_async_engine(self):
-        with patch("ciicerone.db.base.create_async_engine") as mock_ca:
+        with patch("vorsyghta.db.base.create_async_engine") as mock_ca:
             mock_ca.return_value = MagicMock(spec=AsyncEngine)
             create_engine(self._PG_URL, future=True)
             _, kwargs = mock_ca.call_args
             assert kwargs["future"] is True
 
     def test_pool_pre_ping_popped_from_extra_not_double_passed(self):
-        with patch("ciicerone.db.base.create_async_engine") as mock_ca:
+        with patch("vorsyghta.db.base.create_async_engine") as mock_ca:
             mock_ca.return_value = MagicMock(spec=AsyncEngine)
             create_engine(self._PG_URL, pool_pre_ping=False, future=True)
             _, kwargs = mock_ca.call_args
@@ -328,7 +328,7 @@ class TestSingletonEngineAndDispose:
     SQLite's StaticPool rejects.
     """
 
-    _PG_URL = "postgresql://user:pass@localhost:5432/ciicerone"
+    _PG_URL = "postgresql://user:pass@localhost:5432/vorsyghta"
 
     def test_get_engine_creates_singleton(self, reset_singletons, monkeypatch):
         monkeypatch.setenv("DATABASE_URL", self._PG_URL)
@@ -395,7 +395,7 @@ class TestDatabaseConfig:
         assert DatabaseConfig().resolved_url() == "postgresql://env/env"
 
     def test_resolved_url_falls_back_to_default_when_no_env(self):
-        assert DatabaseConfig().resolved_url() == "postgresql://localhost/ciicerone"
+        assert DatabaseConfig().resolved_url() == "postgresql://localhost/vorsyghta"
 
     def test_extra_dict_is_independent_per_instance(self):
         a = DatabaseConfig()
@@ -652,7 +652,7 @@ class TestCheckDatabaseHealth:
     @pytest.mark.asyncio
     async def test_connectivity_failure_returns_unhealthy(self, caplog):
         engine, _ = _mock_conn(raise_on_select=ConnectionError("refused"))
-        with caplog.at_level(logging.ERROR, logger="ciicerone.db.health"):
+        with caplog.at_level(logging.ERROR, logger="vorsyghta.db.health"):
             result = await check_database_health(engine)
         assert result.healthy is False
         assert "Cannot connect to PostgreSQL" in result.message
@@ -662,7 +662,7 @@ class TestCheckDatabaseHealth:
     @pytest.mark.asyncio
     async def test_schema_query_failure_returns_unhealthy(self, caplog):
         engine, _ = _mock_conn(raise_on_table=RuntimeError("permission denied"))
-        with caplog.at_level(logging.ERROR, logger="ciicerone.db.health"):
+        with caplog.at_level(logging.ERROR, logger="vorsyghta.db.health"):
             result = await check_database_health(engine)
         assert result.healthy is False
         assert "schema query failed" in result.message
@@ -671,7 +671,7 @@ class TestCheckDatabaseHealth:
     @pytest.mark.asyncio
     async def test_table_missing_returns_unhealthy_migrations_not_applied(self, caplog):
         engine, _ = _mock_conn(table_exists_result=False)
-        with caplog.at_level(logging.WARNING, logger="ciicerone.db.health"):
+        with caplog.at_level(logging.WARNING, logger="vorsyghta.db.health"):
             result = await check_database_health(engine)
         assert result.healthy is False
         assert "migrations not applied" in result.message
@@ -680,7 +680,7 @@ class TestCheckDatabaseHealth:
     @pytest.mark.asyncio
     async def test_healthy_when_connectivity_and_table_exist(self, caplog):
         engine, _ = _mock_conn(table_exists_result=True)
-        with caplog.at_level(logging.INFO, logger="ciicerone.db.health"):
+        with caplog.at_level(logging.INFO, logger="vorsyghta.db.health"):
             result = await check_database_health(engine)
         assert result.healthy is True
         assert result.message == "Database is healthy"
@@ -718,10 +718,10 @@ class TestCheckDatabaseHealth:
 
 
 class TestPublicReexports:
-    """``ciicerone.db`` must re-export the documented public API."""
+    """``vorsyghta.db`` must re-export the documented public API."""
 
     def test_all_documented_names_are_exported(self):
-        import ciicerone.db as pkg
+        import vorsyghta.db as pkg
         expected = {
             "Base", "create_engine", "get_engine", "get_session_factory",
             "dispose_engine", "DatabaseConfig", "create_session_factory",
@@ -730,4 +730,4 @@ class TestPublicReexports:
         }
         assert expected.issubset(set(pkg.__all__))
         for name in expected:
-            assert hasattr(pkg, name), f"{name} missing from ciicerone.db"
+            assert hasattr(pkg, name), f"{name} missing from vorsyghta.db"

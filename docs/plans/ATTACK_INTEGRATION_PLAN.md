@@ -1,18 +1,18 @@
-# Ciicerone Attack Integration & Multi-Team Defense Plan
+# Vorsyghta Attack Integration & Multi-Team Defense Plan
 
 ## Executive Summary
 
-Integrate [Ciicerone Attack](https://github.com/vxcontrol/pentagi) as the autonomous offensive engine for Ciicerone,
+Integrate [Vorsyghta Attack](https://github.com/vxcontrol/pentagi) as the autonomous offensive engine for Vorsyghta,
 and build complementary defensive capabilities for Blue, Yellow, and Purple team operations.
 This creates a complete red-blue-purple team training and simulation platform.
 
 ---
 
-## Part 1: Ciicerone Attack Integration (Red Team / Offensive)
+## Part 1: Vorsyghta Attack Integration (Red Team / Offensive)
 
-### 1.1 What Ciicerone Attack Provides
+### 1.1 What Vorsyghta Attack Provides
 
-Ciicerone Attack is a fully autonomous multi-agent AI penetration testing system with:
+Vorsyghta Attack is a fully autonomous multi-agent AI penetration testing system with:
 - **20+ professional pentesting tools** (nmap, metasploit, sqlmap, hydra, gobuster, nuclei, etc.)
 - **Multi-agent architecture**: Orchestrator, Researcher, Developer, Executor agents
 - **Sandboxed Docker execution** with complete isolation
@@ -28,24 +28,24 @@ Ciicerone Attack is a fully autonomous multi-agent AI penetration testing system
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    Ciicerone Platform                     │
+│                    Vorsyghta Platform                     │
 │                                                           │
 │  ┌─────────────┐  ┌──────────────┐  ┌─────────────────┐ │
 │  │  CLI / API  │  │  Web UI      │  │  RAG / Knowledge │ │
 │  └──────┬──────┘  └──────┬───────┘  └────────┬────────┘ │
 │         │                │                    │           │
 │  ┌──────▼────────────────▼────────────────────▼────────┐ │
-│  │              Ciicerone Orchestrator                   │ │
+│  │              Vorsyghta Orchestrator                   │ │
 │  │         (Scenario Manager / Team Coordinator)         │ │
 │  └──────┬────────────────┬─────────────────┬───────────┘ │
 │         │                │                 │              │
 │  ┌──────▼──────┐  ┌─────▼──────┐  ┌───────▼───────────┐ │
 │  │  RED TEAM   │  │ BLUE TEAM  │  │  PURPLE TEAM      │ │
-│  │  (Ciicerone Attack)  │  │ (Defense)  │  │  (Coordination)   │ │
+│  │  (Vorsyghta Attack)  │  │ (Defense)  │  │  (Coordination)   │ │
 │  └──────┬──────┘  └─────┬──────┘  └───────┬───────────┘ │
 │         │                │                 │              │
 │  ┌──────▼──────┐  ┌─────▼──────┐  ┌───────▼───────────┐ │
-│  │ Ciicerone Attack API │  │ SIEM/SOC   │  │  Shared AAR       │ │
+│  │ Vorsyghta Attack API │  │ SIEM/SOC   │  │  Shared AAR       │ │
 │  │ (REST/GraphQL)│  │ Simulator  │  │  (After Action    │ │
 │  │              │  │            │  │   Review)         │ │
 │  └─────────────┘  └────────────┘  └───────────────────┘ │
@@ -62,12 +62,12 @@ Ciicerone Attack is a fully autonomous multi-agent AI penetration testing system
 
 ### 1.3 Integration Steps
 
-#### Phase 1: Ciicerone Attack Deployment (Week 1)
+#### Phase 1: Vorsyghta Attack Deployment (Week 1)
 
-**Step 1: Deploy Ciicerone Attack on Azure**
-- Add Ciicerone Attack as a Docker Compose stack on the Azure VM
-- Update `scripts/azure_provision.sh` to include Ciicerone Attack services
-- Ciicerone Attack requires: 16GB RAM, 100GB disk, Docker + Docker Compose
+**Step 1: Deploy Vorsyghta Attack on Azure**
+- Add Vorsyghta Attack as a Docker Compose stack on the Azure VM
+- Update `scripts/azure_provision.sh` to include Vorsyghta Attack services
+- Vorsyghta Attack requires: 16GB RAM, 100GB disk, Docker + Docker Compose
 
 ```yaml
 # docker-compose.attack.yml (to be added to project)
@@ -107,15 +107,15 @@ volumes:
   attack-redis-data:
 ```
 
-**Step 2: Create Ciicerone Attack API Client**
-- New file: `ciicerone/integrations/attack_client.py`
+**Step 2: Create Vorsyghta Attack API Client**
+- New file: `vorsyghta/integrations/attack_client.py`
 - REST API client for creating flows, monitoring tasks, retrieving reports
 - GraphQL client for complex queries (attack patterns, memory, knowledge graph)
 
 ```python
-# ciicerone/integrations/attack_client.py (planned)
+# vorsyghta/integrations/attack_client.py (planned)
 class AttackClient:
-    """Client for Ciicerone Attack REST/GraphQL API."""
+    """Client for Vorsyghta Attack REST/GraphQL API."""
 
     async def create_flow(self, name, description, target, parameters) -> Flow:
         """Create a new pentesting flow."""
@@ -136,46 +136,46 @@ class AttackClient:
         """Get artifacts (files, logs, screenshots) from flow."""
 
     async def search_memory(self, query) -> List[MemoryEntry]:
-        """Search Ciicerone Attack's vector store for past attack patterns."""
+        """Search Vorsyghta Attack's vector store for past attack patterns."""
 ```
 
-**Step 3: Create Ciicerone Attack Integration Module**
-- New file: `ciicerone/integrations/attack.py`
-- Wraps Ciicerone Attack client with Ciicerone scenario management
-- Maps Ciicerone scenarios to Ciicerone Attack flows
-- Translates Ciicerone Attack reports to Ciicerone After Action Reviews
+**Step 3: Create Vorsyghta Attack Integration Module**
+- New file: `vorsyghta/integrations/attack.py`
+- Wraps Vorsyghta Attack client with Vorsyghta scenario management
+- Maps Vorsyghta scenarios to Vorsyghta Attack flows
+- Translates Vorsyghta Attack reports to Vorsyghta After Action Reviews
 
 #### Phase 2: Red Team Scenario Integration (Week 2)
 
 **Step 4: Scenario-to-Flow Mapping**
-- New file: `ciicerone/integrations/attack_mapper.py`
-- Maps Ciicerone YAML scenarios to Ciicerone Attack flow parameters
-- Translates MITRE ATT&CK techniques to Ciicerone Attack task descriptions
+- New file: `vorsyghta/integrations/attack_mapper.py`
+- Maps Vorsyghta YAML scenarios to Vorsyghta Attack flow parameters
+- Translates MITRE ATT&CK techniques to Vorsyghta Attack task descriptions
 - Handles target environment configuration
 
 **Step 5: Update CLI**
-- Add `ciicerone red-team attack` command
-- Add `ciicerone red-team flow --status <flow_id>` command
-- Add `ciicerone red-team report <flow_id>` command
-- Add `ciicerone red-team steer <flow_id> --instruction "..."` command
+- Add `vorsyghta red-team attack` command
+- Add `vorsyghta red-team flow --status <flow_id>` command
+- Add `vorsyghta red-team report <flow_id>` command
+- Add `vorsyghta red-team steer <flow_id> --instruction "..."` command
 
 **Step 6: Real-time Attack Monitoring**
 - WebSocket/SSE integration for live attack feed
 - Display attack progress in CLI and Web UI
-- Stream Ciicerone Attack agent decisions to Ciicerone audit log
+- Stream Vorsyghta Attack agent decisions to Vorsyghta audit log
 
 #### Phase 3: Shared Infrastructure (Week 3)
 
 **Step 7: Azure VM Provisioning Update**
 - Update `scripts/azure_provision.sh` to deploy:
-  - Ciicerone Attack stack (API, DB, Redis, Scraper)
+  - Vorsyghta Attack stack (API, DB, Redis, Scraper)
   - Target VMs (DVWA, Metasploitable, Windows靶机)
   - Defense VM (SIEM, IDS/IPS, EDR)
 - Network segmentation: attack network (10.0.100.0/24) + defense network (10.0.200.0/24)
 
 **Step 8: Config Integration**
 - Add `attack` section to `config.yaml`
-- Add environment variables: `CIICERONE_ATTACK_API_URL`, `CIICERONE_ATTACK_API_TOKEN`
+- Add environment variables: `VORSYGHTA_ATTACK_API_URL`, `VORSYGHTA_ATTACK_API_TOKEN`
 - Add to `.env` template
 
 ---
@@ -186,10 +186,10 @@ class AttackClient:
 
 **Goal**: Detect, respond to, and recover from attacks in real-time.
 
-#### Module: `ciicerone/defense/blue_team/`
+#### Module: `vorsyghta/defense/blue_team/`
 
 ```
-ciicerone/defense/
+vorsyghta/defense/
 ├── __init__.py
 ├── blue_team/
 │   ├── __init__.py
@@ -301,11 +301,11 @@ YELLOW_TEAM_TOOLS = [
 ```
 1. Exercise Setup
    ├── Purple Team Controller defines scenario
-   ├── Red Team (Ciicerone Attack) gets attack objectives
+   ├── Red Team (Vorsyghta Attack) gets attack objectives
    └── Blue Team gets detection objectives (no attack details)
 
 2. Execution
-   ├── Red Team executes attack via Ciicerone Attack
+   ├── Red Team executes attack via Vorsyghta Attack
    ├── Blue Team monitors/defends in real-time
    └── Purple Team records timeline of both
 
@@ -327,14 +327,14 @@ YELLOW_TEAM_TOOLS = [
 
 ## Part 3: Implementation Roadmap
 
-### Phase 1: Ciicerone Attack Integration (Weeks 1-3)
+### Phase 1: Vorsyghta Attack Integration (Weeks 1-3)
 
 | Week | Task | Deliverable |
 |---|---|---|
-| 1 | Deploy Ciicerone Attack on Azure VM | `docker-compose.attack.yml`, updated `azure_provision.sh` |
-| 1 | Create Ciicerone Attack API client | `ciicerone/integrations/attack_client.py` |
-| 2 | Scenario-to-flow mapping | `ciicerone/integrations/attack_mapper.py` |
-| 2 | CLI red-team commands | Updated `ciicerone/cli/red_team.py` |
+| 1 | Deploy Vorsyghta Attack on Azure VM | `docker-compose.attack.yml`, updated `azure_provision.sh` |
+| 1 | Create Vorsyghta Attack API client | `vorsyghta/integrations/attack_client.py` |
+| 2 | Scenario-to-flow mapping | `vorsyghta/integrations/attack_mapper.py` |
+| 2 | CLI red-team commands | Updated `vorsyghta/cli/red_team.py` |
 | 3 | Real-time monitoring | WebSocket integration, live attack feed |
 | 3 | Config & env integration | Updated `config.yaml`, `.env` template |
 
@@ -342,12 +342,12 @@ YELLOW_TEAM_TOOLS = [
 
 | Week | Task | Deliverable |
 |---|---|---|
-| 4 | SIEM simulator + log analyzer | `ciicerone/defense/blue_team/siem_simulator.py`, `log_analyzer.py` |
-| 4 | IDS detector | `ciicerone/defense/blue_team/ids_detector.py` |
+| 4 | SIEM simulator + log analyzer | `vorsyghta/defense/blue_team/siem_simulator.py`, `log_analyzer.py` |
+| 4 | IDS detector | `vorsyghta/defense/blue_team/ids_detector.py` |
 | 5 | Incident response + threat hunter | `incident_response.py`, `threat_hunter.py` |
 | 5 | EDR agent + forensics | `edr_agent.py`, `forensics.py` |
-| 6 | Blue team MCP tools | Updated `ciicerone/mcp/tools/defense_tools.py` |
-| 6 | CLI blue-team commands | `ciicerone/cli/blue_team.py` |
+| 6 | Blue team MCP tools | Updated `vorsyghta/mcp/tools/defense_tools.py` |
+| 6 | CLI blue-team commands | `vorsyghta/cli/blue_team.py` |
 
 ### Phase 3: Yellow Team Module (Weeks 7-8)
 
@@ -356,7 +356,7 @@ YELLOW_TEAM_TOOLS = [
 | 7 | Compliance + risk assessment | `compliance_checker.py`, `risk_assessor.py` |
 | 7 | Architecture review + policy | `architecture_reviewer.py`, `policy_validator.py` |
 | 8 | Awareness training + metrics | `awareness_trainer.py`, `metrics_collector.py` |
-| 8 | CLI yellow-team commands | `ciicerone/cli/yellow_team.py` |
+| 8 | CLI yellow-team commands | `vorsyghta/cli/yellow_team.py` |
 
 ### Phase 4: Purple Team Module (Weeks 9-10)
 
@@ -365,7 +365,7 @@ YELLOW_TEAM_TOOLS = [
 | 9 | Coordination engine + AAR | `coordination.py`, `aar_generator.py` |
 | 9 | Detection validator + feedback | `detection_validator.py`, `feedback_loop.py` |
 | 10 | Effectiveness scorer + exercise controller | `effectiveness_scorer.py`, `exercise_controller.py` |
-| 10 | CLI purple-team commands | `ciicerone/cli/purple_team.py` |
+| 10 | CLI purple-team commands | `vorsyghta/cli/purple_team.py` |
 
 ### Phase 5: Integration & Testing (Weeks 11-12)
 
@@ -382,7 +382,7 @@ YELLOW_TEAM_TOOLS = [
 
 ```
 Attack Phase:
-  Ciicerone Scenario → Ciicerone Attack Flow → Ciicerone Attack Agents → Attack VM → Target VMs
+  Vorsyghta Scenario → Vorsyghta Attack Flow → Vorsyghta Attack Agents → Attack VM → Target VMs
        ↓                    ↓                ↓
   Audit Log          Flow Status       Agent Decisions
                                           ↓
@@ -408,17 +408,17 @@ Purple Phase:
 
 ## Part 5: Key Design Decisions
 
-1. **Ciicerone Attack as external service**: Deploy as Docker Compose stack, communicate via REST/GraphQL API. Don't fork or embed Ciicerone Attack code directly.
+1. **Vorsyghta Attack as external service**: Deploy as Docker Compose stack, communicate via REST/GraphQL API. Don't fork or embed Vorsyghta Attack code directly.
 
-2. **Shared Azure infrastructure**: Single Azure VM hosts both Ciicerone Attack and defense tools. Network segmentation separates attack and defense networks.
+2. **Shared Azure infrastructure**: Single Azure VM hosts both Vorsyghta Attack and defense tools. Network segmentation separates attack and defense networks.
 
 3. **MCP tool pattern**: All new defensive capabilities exposed as MCP tools, consistent with existing attack tools pattern.
 
-4. **RAG integration**: All After Action Reviews, attack patterns, and detection lessons stored in Ciicerone's existing RAG system for future retrieval.
+4. **RAG integration**: All After Action Reviews, attack patterns, and detection lessons stored in Vorsyghta's existing RAG system for future retrieval.
 
 5. **MITRE ATT&CK as common language**: Red team techniques and blue team detections both mapped to MITRE ATT&CK for correlation.
 
-6. **Scenario-driven**: All exercises start from Ciicerone YAML scenarios. Red team gets attack objectives, blue team gets detection objectives.
+6. **Scenario-driven**: All exercises start from Vorsyghta YAML scenarios. Red team gets attack objectives, blue team gets detection objectives.
 
 7. **Real-time + async**: Live monitoring via WebSocket during exercises, async analysis and reporting post-exercise.
 
@@ -427,33 +427,33 @@ Purple Phase:
 ## Part 6: New Files Summary
 
 ### Integration Files
-- `ciicerone/integrations/__init__.py`
-- `ciicerone/integrations/attack_client.py` — Ciicerone Attack REST/GraphQL API client
-- `ciicerone/integrations/attack.py` — High-level Ciicerone Attack integration wrapper
-- `ciicerone/integrations/attack_mapper.py` — Scenario-to-flow mapping
-- `docker-compose.attack.yml` — Ciicerone Attack Docker Compose stack
+- `vorsyghta/integrations/__init__.py`
+- `vorsyghta/integrations/attack_client.py` — Vorsyghta Attack REST/GraphQL API client
+- `vorsyghta/integrations/attack.py` — High-level Vorsyghta Attack integration wrapper
+- `vorsyghta/integrations/attack_mapper.py` — Scenario-to-flow mapping
+- `docker-compose.attack.yml` — Vorsyghta Attack Docker Compose stack
 
 ### Defense Modules
-- `ciicerone/defense/__init__.py`
-- `ciicerone/defense/blue_team/` — 8 modules (SIEM, IDS, EDR, IR, hunting, logs, triage, forensics)
-- `ciicerone/defense/yellow_team/` — 6 modules (compliance, architecture, risk, policy, awareness, metrics)
-- `ciicerone/defense/purple_team/` — 6 modules (coordination, AAR, validation, feedback, scoring, exercise)
-- `ciicerone/defense/shared/` — 3 modules (timeline, correlation)
+- `vorsyghta/defense/__init__.py`
+- `vorsyghta/defense/blue_team/` — 8 modules (SIEM, IDS, EDR, IR, hunting, logs, triage, forensics)
+- `vorsyghta/defense/yellow_team/` — 6 modules (compliance, architecture, risk, policy, awareness, metrics)
+- `vorsyghta/defense/purple_team/` — 6 modules (coordination, AAR, validation, feedback, scoring, exercise)
+- `vorsyghta/defense/shared/` — 3 modules (timeline, correlation)
 
 ### CLI Commands
-- `ciicerone/cli/red_team.py` — Red team CLI (Ciicerone Attack integration)
-- `ciicerone/cli/blue_team.py` — Blue team CLI (defensive operations)
-- `ciicerone/cli/yellow_team.py` — Yellow team CLI (GRC)
-- `ciicerone/cli/purple_team.py` — Purple team CLI (coordination)
+- `vorsyghta/cli/red_team.py` — Red team CLI (Vorsyghta Attack integration)
+- `vorsyghta/cli/blue_team.py` — Blue team CLI (defensive operations)
+- `vorsyghta/cli/yellow_team.py` — Yellow team CLI (GRC)
+- `vorsyghta/cli/purple_team.py` — Purple team CLI (coordination)
 
 ### MCP Tools
-- `ciicerone/mcp/tools/defense_tools.py` — Blue team MCP tools
-- `ciicerone/mcp/tools/yellow_team_tools.py` — Yellow team MCP tools
+- `vorsyghta/mcp/tools/defense_tools.py` — Blue team MCP tools
+- `vorsyghta/mcp/tools/yellow_team_tools.py` — Yellow team MCP tools
 
 ### Config
 - Updated `config.yaml` — attack, defense sections
-- Updated `scripts/azure_provision.sh` — Ciicerone Attack + defense VM provisioning
-- Updated `.env` template — Ciicerone Attack API credentials
+- Updated `scripts/azure_provision.sh` — Vorsyghta Attack + defense VM provisioning
+- Updated `.env` template — Vorsyghta Attack API credentials
 
 ### Tests
 - `tests/unit/test_attack_client.py`
@@ -468,7 +468,7 @@ Purple Phase:
 
 | Metric | Target |
 |---|---|
-| Ciicerone Attack flow creation from Ciicerone scenario | < 5 seconds |
+| Vorsyghta Attack flow creation from Vorsyghta scenario | < 5 seconds |
 | Real-time attack monitoring latency | < 2 seconds |
 | Blue team detection coverage | > 70% of MITRE techniques |
 | Purple team AAR generation | < 30 seconds post-exercise |

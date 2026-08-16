@@ -33,11 +33,11 @@ This is core infrastructure work that directly aligns with Ajibola's assigned fe
 
 | Task | Deliverable | Files |
 |------|-------------|-------|
-| SQLAlchemy declarative base + engine config | `ciicerone/db/base.py` — declarative base, async engine factory, session factory | New file |
-| Async session management | `ciicerone/db/session.py` — `get_session()` async context manager, connection pooling config | New file |
-| Database health check | `ciicerone/db/health.py` — ping DB on startup, fail fast with helpful error | New file |
+| SQLAlchemy declarative base + engine config | `vorsyghta/db/base.py` — declarative base, async engine factory, session factory | New file |
+| Async session management | `vorsyghta/db/session.py` — `get_session()` async context manager, connection pooling config | New file |
+| Database health check | `vorsyghta/db/health.py` — ping DB on startup, fail fast with helpful error | New file |
 | Event sourcing wiring | Wire `core/event_sourcing.py` `PostgresEventStore` to actually emit events from the simulator. Currently the `Event` class and `EventStore` exist but the simulator never calls them. | Edit `core/simulator.py`, `core/event_sourcing.py` |
-| DB package init | `ciicerone/db/__init__.py` — exports | New file |
+| DB package init | `vorsyghta/db/__init__.py` — exports | New file |
 
 **Why Ajibola:** Event Sourcing Architecture is explicitly feature #11 in his assignment. The ORM base is core architecture (feature #2). He owns the simulator's internals.
 
@@ -68,7 +68,7 @@ Aligns with his Attack Scenario Generator (#1) and MITRE ATT&CK Integration (#2)
 - `vm/agent.py:execute_attack` — save `AgentState` snapshots per step for replay
 - CLI `vm.py:run_attack` — fetch saved attack results by ID from DB
 
-**Deliverable:** `ciicerone/db/models/red_team.py`
+**Deliverable:** `vorsyghta/db/models/red_team.py`
 
 #### 2B. Blue Team Models (Foundation)
 
@@ -93,7 +93,7 @@ Aligns with his Security Operations Dashboard (#3), Threat Hunting Framework (#6
 - `defense/blue_team/threat_hunter.py:_execute_hunt` — persist hunt results to DB
 - `defense/blue_team/incident_response.py` — implement incident workflow with DB state tracking (currently a stub)
 
-**Deliverable:** `ciicerone/db/models/blue_team.py`
+**Deliverable:** `vorsyghta/db/models/blue_team.py`
 
 #### 2C. Blue Team Models (Advanced)
 
@@ -112,7 +112,7 @@ Aligns with his Advanced Threat Intelligence Integration (#2), Signature-Based D
 - `intelligence/services.py:ThreatIntelligenceService` — replace canned return objects with real feed queries + DB persistence
 - Blue team analytics engine — persist analytics results for historical comparison
 
-**Deliverable:** `ciicerone/db/models/threat_intel.py`
+**Deliverable:** `vorsyghta/db/models/threat_intel.py`
 
 **Coordination with Temi:** IOC records are written by red team (IOC generation) and read by blue team (signature detection). Temi creates the writer, David creates the reader. Both use the same `IOCRecord` model.
 
@@ -136,7 +136,7 @@ Aligns with his Data Processing Pipeline (#8) and Advanced Caching Strategy (#12
 - `deployment/__init__.py:ThreatDeploymentEngine` — persist campaign and deployment records
 - Wire template loading: `core/simulator.py` should load scenarios from `ScenarioRecord` (DB) or YAML (file), not create from scratch
 
-**Deliverable:** `ciicerone/db/models/simulation.py`, `ciicerone/db/models/campaign.py`
+**Deliverable:** `vorsyghta/db/models/simulation.py`, `vorsyghta/db/models/campaign.py`
 
 #### 2E. Intelligence Models
 
@@ -155,7 +155,7 @@ Ibrahim owns threat hunting (which consumes intelligence), David owns threat int
 - `intelligence/integrations.py:LLMIntelligenceIntegrator` — wire LLM analysis into pipeline and persist analysis results (currently exists but never called)
 - `intelligence/services.py:LinkedInIntelligence` — either implement real API integration or remove the stub and mark the model as `data_available: False` in DB
 
-**Deliverable:** `ciicerone/db/models/intelligence.py`
+**Deliverable:** `vorsyghta/db/models/intelligence.py`
 
 **Split:** David creates the models and writers (threat intel production). Ibrahim creates the readers and hunting queries (threat intel consumption).
 
@@ -177,7 +177,7 @@ The quantum layer is AI/math-adjacent and Lanre owns model management. While qua
 - `api/routers/quantum.py:assess` — persist assessment results to DB after computation
 - `quantum/agent.py:full_assessment` — save all 5 component results to DB
 
-**Deliverable:** `ciicerone/db/models/quantum.py`
+**Deliverable:** `vorsyghta/db/models/quantum.py`
 
 #### 2G. Compliance & Audit Models
 
@@ -198,7 +198,7 @@ Aligns with his GDPR (#1), HIPAA (#2), and audit framework features. Also owns t
 - `core/audit_logger.py` — replace `MemoryAuditSink` as default with `DatabaseAuditSink`
 - Wire audit logging into all flows (simulation, attack, intelligence, deployment) — every action that modifies state should emit an audit event
 
-**Deliverable:** `ciicerone/db/models/audit.py`, `ciicerone/db/models/compliance.py`
+**Deliverable:** `vorsyghta/db/models/audit.py`, `vorsyghta/db/models/compliance.py`
 
 **Key advantage:** The migrations for `audit.events` and `audit.snapshots` already exist in `migrations/versions/`. Jeremiah just needs to create the ORM models that map to them and implement the sink.
 
@@ -214,7 +214,7 @@ Aligns with her CI/CD Pipeline Infrastructure (#2), Infrastructure as Code (#5),
 |------|-------------|---------|
 | Alembic migration for all new tables | `migrations/versions/XXX_persistence_layer.py` | One migration adding all tables from Phase 2. Coordinate with each maintainer to get their table definitions. |
 | Docker Compose PostgreSQL config | `docker-compose.yml` | Ensure PostgreSQL service is configured with persistence (volume mount), proper credentials, and health check |
-| Connection pooling configuration | `ciicerone/db/session.py` config | Pool size, max overflow, pool timeout, pool recycling — configurable via env vars |
+| Connection pooling configuration | `vorsyghta/db/session.py` config | Pool size, max overflow, pool timeout, pool recycling — configurable via env vars |
 | Database backup/restore scripts | `scripts/db_backup.sh`, `scripts/db_restore.sh` | For production deployments |
 | Migration runner in CI/CD | `.github/workflows/` or CI config | Run migrations automatically on deploy |
 | Database monitoring | Prometheus metrics for DB | Connection count, query latency, pool utilization |

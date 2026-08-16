@@ -1,4 +1,4 @@
-**Ciicerone Records of Processing Activities (ROPA)**
+**Vorsyghta Records of Processing Activities (ROPA)**
 
 **Version:** 1.0  
 **Last Updated:** January 20, 2026  
@@ -17,12 +17,12 @@ This document maintains the Records of Processing Activities as required by GDPR
 
 | Field | Value |
 |-------|-------|
-| **Controller Name** | Ciicerone Project |
+| **Controller Name** | Vorsyghta Project |
 | **Controller Address** | [Address] |
-| **Controller Contact** | privacy@ciicerone.io |
+| **Controller Contact** | privacy@vorsyghta.io |
 | **Joint Controller** | N/A |
 | **Representative** | N/A (controller established in EU) |
-| **Data Protection Officer** | dpo@ciicerone.io |
+| **Data Protection Officer** | dpo@vorsyghta.io |
 
 ---
 
@@ -35,7 +35,7 @@ This document maintains the Records of Processing Activities as required by GDPR
 | **Activity ID** | PA-001 |
 | **Activity Name** | User Account Management |
 | **Description** | Creation, maintenance, and deletion of user accounts |
-| **Purpose** | Enable users to access and use Ciicerone services |
+| **Purpose** | Enable users to access and use Vorsyghta services |
 | **Legal Basis** | Contract (Article 6(1)(b)) |
 | **Data Categories** | Email address, username, display name, password (hashed) |
 | **Data Subject Categories** | Platform users |
@@ -70,12 +70,12 @@ This document maintains the Records of Processing Activities as required by GDPR
 
 ---
 
-**Section PA-003: Ciiceroneulation Execution**
+**Section PA-003: Vorsyghtaulation Execution**
 
 | Field | Value |
 |-------|-------|
 | **Activity ID** | PA-003 |
-| **Activity Name** | Ciiceroneulation Execution |
+| **Activity Name** | Vorsyghtaulation Execution |
 | **Description** | Processing user-provided scenarios to generate threat simulations |
 | **Purpose** | Core service delivery - threat simulation |
 | **Legal Basis** | Contract (Article 6(1)(b)) |

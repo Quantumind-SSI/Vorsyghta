@@ -1,7 +1,7 @@
-# Ciicerone Pilot Programme — Cold Email Template
+# Vorsyghta Pilot Programme — Cold Email Template
 
 **Audience:** Budding financial startups, traditional banks, and blockchain/crypto firms
-**Goal:** Partner for a pilot programme of the Ciicerone multi-team agentic cybersecurity threat simulation platform
+**Goal:** Partner for a pilot programme of the Vorsyghta multi-team agentic cybersecurity threat simulation platform
 **Tone:** Professional, concise, value-led
 
 ---
@@ -13,7 +13,7 @@ Pick the one that best fits the recipient. Keep it under 60 characters where pos
 1. `Pilot: Multi-team agentic threat simulation for {Company}`
 2. `Strengthen {Company}'s security posture — pilot programme`
 3. `AI red/blue team simulation pilot for {Company}`
-4. `Partner with Ciicerone — cybersecurity pilot for {Company}`
+4. `Partner with Vorsyghta — cybersecurity pilot for {Company}`
 
 ---
 
@@ -22,7 +22,7 @@ Pick the one that best fits the recipient. Keep it under 60 characters where pos
 ```
 Hi {First Name},
 
-I'm {Your Name} from Ciicerone. We've built a multi-team, fully
+I'm {Your Name} from Vorsyghta. We've built a multi-team, fully
 agentic cybersecurity threat simulation platform, and we're
 selecting a small cohort of financial institutions — traditional
 banks and blockchain firms — for a closed pilot programme.
@@ -36,8 +36,8 @@ rarely exercise the full detection-and-response chain — from
 red team intrusion to blue team detection to compliance
 reporting.
 
-WHAT CIICERONE DOES
-Ciicerone deploys autonomous AI agents organised into eight
+WHAT VORSYGHTA DOES
+Vorsyghta deploys autonomous AI agents organised into eight
 colour teams that simulate, detect, and report on realistic
 threat scenarios end-to-end:
 
@@ -92,9 +92,9 @@ after-action report beforehand.
 Thanks for your time,
 
 {Your Name}
-{Title}, Ciicerone
+{Title}, Vorsyghta
 {Email} | {Phone}
-https://github.com/ciicerone/ciicerone
+https://github.com/QuantumindSSI/Vorsyghta
 
 P.S. We can run the pilot entirely on your infrastructure with
 local models — no data leaves your environment if that's a

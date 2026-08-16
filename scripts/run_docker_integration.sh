@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Ciicerone Docker Integration Harness
+# Vorsyghta Docker Integration Harness
 # =============================================================================
-# Brings up the FULL Ciicerone stack in your local Docker network using the
+# Brings up the FULL Vorsyghta stack in your local Docker network using the
 # DEV image built from ./Dockerfile (which bakes in all code, infra wiring,
 # migrations, tests, and demos), then runs the Docker-native acceptance gate
 # against it to produce REAL, proven results backed by Azure OpenAI.
 #
 # Stack brought up (from docker-compose.yml + integration override):
-#   postgres, redis, ollama, ciicerone-api, prometheus, grafana
+#   postgres, redis, ollama, vorsyghta-api, prometheus, grafana
 #
 # Flow:
 #   1. Validate .env has the required Azure OpenAI + secret vars
-#   2. Build the ciicerone-api image locally from ./Dockerfile
-#      (--client-image: instead pull ghcr.io/quantumindssi/ciicerone:latest
+#   2. Build the vorsyghta-api image locally from ./Dockerfile
+#      (--client-image: instead pull ghcr.io/quantumindssi/vorsyghta:latest
 #       and skip the local build — see docker/docker-compose.client-image.yml)
 #   3. docker compose up -d (full stack)
 #   4. Wait for the API health endpoint to report healthy
@@ -31,7 +31,7 @@
 #
 # Required .env entries:
 #   AZURE_OPENAI_API_KEY, AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_DEPLOYMENT
-#   CIICERONE_SECRET_KEY
+#   VORSYGHTA_SECRET_KEY
 #   POSTGRES_PASSWORD, GRAFANA_ADMIN_PASSWORD, PGADMIN_PASSWORD
 #
 # Optional .env entries (only used with --client-image):
@@ -57,7 +57,7 @@ NO_BUILD=0
 DOWN_ONLY=0
 CLIENT_IMAGE=0
 CLIENT_IMAGE_TAG="${CLIENT_IMAGE_TAG:-latest}"
-CLIENT_IMAGE_REF="ghcr.io/quantumindssi/ciicerone:${CLIENT_IMAGE_TAG}"
+CLIENT_IMAGE_REF="ghcr.io/quantumindssi/vorsyghta:${CLIENT_IMAGE_TAG}"
 
 GREEN='\033[0;32m'
 RED='\033[0;31m'
@@ -118,7 +118,7 @@ require_var() {
 require_var AZURE_OPENAI_API_KEY
 require_var AZURE_OPENAI_ENDPOINT
 require_var AZURE_OPENAI_DEPLOYMENT
-require_var CIICERONE_SECRET_KEY
+require_var VORSYGHTA_SECRET_KEY
 require_var POSTGRES_PASSWORD
 require_var GRAFANA_ADMIN_PASSWORD
 
@@ -133,14 +133,14 @@ if [ "$CLIENT_IMAGE" -eq 1 ]; then
     docker pull "$CLIENT_IMAGE_REF" 2>&1 | tee "$RUN_DIR/pull.log"
     info "Image pulled. Local build skipped (--client-image)."
 elif [ "$NO_BUILD" -eq 0 ]; then
-    info "Building ciicerone-api image from ./Dockerfile (dev image with all code/infra)..."
-    "${COMPOSE[@]}" build ciicerone-api 2>&1 | tee "$RUN_DIR/build.log"
+    info "Building vorsyghta-api image from ./Dockerfile (dev image with all code/infra)..."
+    "${COMPOSE[@]}" build vorsyghta-api 2>&1 | tee "$RUN_DIR/build.log"
 else
     info "Skipping image build (--no-build)."
 fi
 
 # ---- Bring up the stack ---------------------------------------------------
-info "Bringing up the full stack (postgres, redis, ollama, ciicerone-api, prometheus, grafana)..."
+info "Bringing up the full stack (postgres, redis, ollama, vorsyghta-api, prometheus, grafana)..."
 "${COMPOSE[@]}" up -d 2>&1 | tee "$RUN_DIR/up.log"
 
 # ---- Wait for API health --------------------------------------------------
@@ -159,7 +159,7 @@ except Exception: print('')" 2>/dev/null || true)
 done
 if [ "$HEALTHY" -eq 0 ]; then
     err "API did not become healthy in time. Last few API logs:"
-    "${COMPOSE[@]}" logs --tail=50 ciicerone-api >&2 || true
+    "${COMPOSE[@]}" logs --tail=50 vorsyghta-api >&2 || true
     die "Stack came up but API is not healthy."
 fi
 
@@ -168,9 +168,9 @@ curl -s "$API_BASE/health" | python3 -m json.tool > "$RUN_DIR/health.json" || tr
 
 # ---- Seed analyst ---------------------------------------------------------
 info "Seeding analyst user (so the gate can run a REAL exercise)..."
-SEED_EMAIL="${SEED_ANALYST_EMAIL:-analyst@ciicerone.local}"
+SEED_EMAIL="${SEED_ANALYST_EMAIL:-analyst@vorsyghta.local}"
 SEED_PASSWORD="${SEED_ANALYST_PASSWORD:-Analyst123!}"
-"${COMPOSE[@]}" exec -T ciicerone-api python -m ciicerone.db.seed 2>&1 | tee "$RUN_DIR/seed.log" || \
+"${COMPOSE[@]}" exec -T vorsyghta-api python -m vorsyghta.db.seed 2>&1 | tee "$RUN_DIR/seed.log" || \
     warn "Seeder exited non-zero — continuing (user may already exist)."
 
 # ---- Run the acceptance gate ----------------------------------------------
@@ -186,17 +186,17 @@ fi
 # ---- Collect proven-result artifacts --------------------------------------
 info "Collecting proven-result artifacts to $RUN_DIR ..."
 # Exercise + AAR JSONs stashed by the gate in /tmp.
-cp /tmp/ciicerone_exercise_*.json "$RUN_DIR/" 2>/dev/null && info "  exercise result JSON collected" || warn "  no exercise JSON found in /tmp"
-cp /tmp/ciicerone_aar_*.json "$RUN_DIR/" 2>/dev/null && info "  AAR JSON collected" || warn "  no AAR JSON found in /tmp"
+cp /tmp/vorsyghta_exercise_*.json "$RUN_DIR/" 2>/dev/null && info "  exercise result JSON collected" || warn "  no exercise JSON found in /tmp"
+cp /tmp/vorsyghta_aar_*.json "$RUN_DIR/" 2>/dev/null && info "  AAR JSON collected" || warn "  no AAR JSON found in /tmp"
 # Stack state snapshot.
 "${COMPOSE[@]}" ps > "$RUN_DIR/compose_ps.txt" 2>&1 || true
-"${COMPOSE[@]}" logs --tail=200 ciicerone-api > "$RUN_DIR/api_logs.txt" 2>&1 || true
+"${COMPOSE[@]}" logs --tail=200 vorsyghta-api > "$RUN_DIR/api_logs.txt" 2>&1 || true
 # OpenAPI schema as a proven artifact (proves router surface).
 curl -s "$API_BASE/openapi.json" > "$RUN_DIR/openapi.json" 2>/dev/null || true
 
 # Write a small manifest.
 {
-    echo "Ciicerone Docker Integration Run — $TS"
+    echo "Vorsyghta Docker Integration Run — $TS"
     echo "API_BASE: $API_BASE"
     echo "AZURE_OPENAI_ENDPOINT: ${AZURE_OPENAI_ENDPOINT}"
     echo "AZURE_OPENAI_DEPLOYMENT: ${AZURE_OPENAI_DEPLOYMENT}"

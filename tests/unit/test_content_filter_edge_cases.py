@@ -16,7 +16,7 @@ import hmac
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from ciicerone.safety.content_filter import (
+from vorsyghta.safety.content_filter import (
     ContentFilter,
     FilterConfig,
     FilterResult,
@@ -26,7 +26,7 @@ from ciicerone.safety.content_filter import (
     AuthorizationValidator,
     RateLimiter,
 )
-from ciicerone.safety.exceptions import SafetyViolationError, ContentFilterError
+from vorsyghta.safety.exceptions import SafetyViolationError, ContentFilterError
 
 
 class TestEdgeCasesInput:

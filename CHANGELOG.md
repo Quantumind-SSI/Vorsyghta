@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Ciicerone will be documented in this file.
+All notable changes to Vorsyghta will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -34,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 🎉 Initial Release
 
-This is the first official release of Ciicerone, an enterprise-grade AI-powered threat simulation platform.
+This is the first official release of Vorsyghta, an enterprise-grade AI-powered threat simulation platform.
 
 ### Added
 
@@ -81,15 +81,15 @@ This is the first official release of Ciicerone, an enterprise-grade AI-powered 
 - LANL Authentication Dataset
 
 #### CLI Commands
-- `Ciicerone simulate` - Run threat simulations
-- `Ciicerone templates` - Manage templates
-- `Ciicerone llm` - Configure LLM providers
-- `Ciicerone datasets` - Manage datasets
-- `Ciicerone deploy` - Deployment integration
-- `Ciicerone logs` - View simulation logs
-- `Ciicerone intel` - Threat intelligence
-- `Ciicerone rag` - RAG system management
-- `Ciicerone feedback` - Feedback loop system
+- `Vorsyghta simulate` - Run threat simulations
+- `Vorsyghta templates` - Manage templates
+- `Vorsyghta llm` - Configure LLM providers
+- `Vorsyghta datasets` - Manage datasets
+- `Vorsyghta deploy` - Deployment integration
+- `Vorsyghta logs` - View simulation logs
+- `Vorsyghta intel` - Threat intelligence
+- `Vorsyghta rag` - RAG system management
+- `Vorsyghta feedback` - Feedback loop system
 
 #### API Endpoints
 - `/api/v1/simulate` - Run simulations
@@ -122,7 +122,7 @@ This is the first official release of Ciicerone, an enterprise-grade AI-powered 
 
 ## Versioning
 
-Ciicerone follows Semantic Versioning:
+Vorsyghta follows Semantic Versioning:
 
 - **MAJOR** version: Incompatible API changes
 - **MINOR** version: New functionality (backwards compatible)
@@ -141,12 +141,12 @@ If you were using pre-release development builds:
 
 ## Links
 
-- [GitHub Repository](https://github.com/Ciicerone/Ciicerone)
-- [Documentation](https://github.com/Ciicerone/Ciicerone/docs)
-- [Issue Tracker](https://github.com/Ciicerone/Ciicerone/issues)
-- [Security Policy](https://github.com/Ciicerone/Ciicerone/security)
+- [GitHub Repository](https://github.com/QuantumindSSI/Vorsyghta)
+- [Documentation](https://github.com/QuantumindSSI/Vorsyghta/docs)
+- [Issue Tracker](https://github.com/QuantumindSSI/Vorsyghta/issues)
+- [Security Policy](https://github.com/QuantumindSSI/Vorsyghta/security)
 
 ---
 
-[Unreleased]: https://github.com/Ciicerone/Ciicerone/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/Ciicerone/Ciicerone/releases/tag/v0.1.0
+[Unreleased]: https://github.com/QuantumindSSI/Vorsyghta/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/QuantumindSSI/Vorsyghta/releases/tag/v0.1.0

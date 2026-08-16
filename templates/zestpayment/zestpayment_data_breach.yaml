@@ -6,13 +6,13 @@
 # capabilities, data loss prevention, and incident response procedures.
 #
 # USAGE:
-#   ciicerone simulate -s templates/zestpayment/zestpayment_data_breach.yaml
+#   vorsyghta simulate -s templates/zestpayment/zestpayment_data_breach.yaml
 
 metadata:
   name: "ZestPayment Data Breach Simulation"
   description: "Simulates data exfiltration and breach scenarios targeting ZestPayment customer and payment data"
   version: "1.0.0"
-  author: "Ciicerone Security Team"
+  author: "Vorsyghta Security Team"
   created_at: "2026-06-29T10:00:00Z"
   updated_at: "2026-06-29T10:00:00Z"
   tags: ["data_breach", "exfiltration", "pci-dss", "ndpr", "zestpayment", "customer_data"]

@@ -1,6 +1,6 @@
 # End-to-End Implementation Audit
 
-Comprehensive audit of bugs, faults, happy-path-only code, stubs, TODOs, inefficiencies, and flow breaks that hinder a true end-to-end implementation of Ciicerone.
+Comprehensive audit of bugs, faults, happy-path-only code, stubs, TODOs, inefficiencies, and flow breaks that hinder a true end-to-end implementation of Vorsyghta.
 
 ## Totals
 
@@ -28,10 +28,10 @@ Comprehensive audit of bugs, faults, happy-path-only code, stubs, TODOs, ineffic
 - Quantum assessments: returned but never saved (`quantum/agent.py:247`)
 
 #### 1.2 Threat simulation flow — results never stored
-`ciicerone/core/simulator.py:84` — `execute_simulation()` returns a `SimulationResult` but never persists it. No DB save, no file write. Result exists only in memory.
+`vorsyghta/core/simulator.py:84` — `execute_simulation()` returns a `SimulationResult` but never persists it. No DB save, no file write. Result exists only in memory.
 
 #### 1.3 VM attack flow — results never stored
-`ciicerone/vm/agent.py:313` — `_generate_report()` returns `AttackResult` but never saves it. No DB table exists.
+`vorsyghta/vm/agent.py:313` — `_generate_report()` returns `AttackResult` but never saves it. No DB table exists.
 
 #### 1.4 Blue team flow — no end-to-end engagement
 No orchestration layer connects SIEM → IDS → alerts → triage → incident response → forensics. Each module works in isolation. No `blue-team engage` command exists. SIEM simulator doesn't feed IDS. Incident response is a stub.
@@ -60,7 +60,7 @@ No orchestration layer connects SIEM → IDS → alerts → triage → incident 
 `vm/agent.py:566` — `_generate_summary()` calls LLM but result is just attached to object. No actual report file generation (PDF, HTML, etc.).
 
 #### 1.12 VM attack — Docker images don't exist
-`vm/operator.py:698` — `DockerHypervisor.create_vm()` requires images `ciicerone/ubuntu-attacker` and `ciicerone/ubuntu-target` which don't exist in Docker Hub. User must build manually.
+`vm/operator.py:698` — `DockerHypervisor.create_vm()` requires images `vorsyghta/ubuntu-attacker` and `vorsyghta/ubuntu-target` which don't exist in Docker Hub. User must build manually.
 
 #### 1.13 Blue team — SIEM isolated from IDS
 `defense/blue_team/siem_simulator.py:165` — `SIEMSimulator.ingest_log()` stores logs in memory. `IDSDetector.inspect_packet()` generates alerts but never sends them to SIEM. No connection between IDS alerts and SIEM correlation rules.

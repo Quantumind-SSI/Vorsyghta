@@ -1,13 +1,13 @@
 # =============================================================================
-# CODEOWNERS for Ciicerone
+# CODEOWNERS for Vorsyghta
 # =============================================================================
-# Primary Contact: ciicerone@ciicerone.com
+# Primary Contact: vorsyghta@vorsyghta.com
 # Repository Owner: @Thundastormgod
 # 
 # These owners will be requested for review when someone opens a PR.
 # Order matters - later matches take precedence.
 #
-# For issues and questions, contact: @Thundastormgod or ciicerone@ciicerone.com
+# For issues and questions, contact: @Thundastormgod or vorsyghta@vorsyghta.com
 # =============================================================================
 
 # -----------------------------------------------------------------------------
@@ -21,31 +21,31 @@
 # Maintainers: Jibo, Lara (TSG-DEV) - Co-Core Software Developers
 # Emails: ajiboyshokunbi@yahoo.com, @laradipupo
 # -----------------------------------------------------------------------------
-/ciicerone/core/ @Thundastormgod @laradipupo
-/ciicerone/config/ @Thundastormgod @laradipupo
-/ciicerone/api/ @Thundastormgod @laradipupo
+/vorsyghta/core/ @Thundastormgod @laradipupo
+/vorsyghta/config/ @Thundastormgod @laradipupo
+/vorsyghta/api/ @Thundastormgod @laradipupo
 
 # -----------------------------------------------------------------------------
 # CLI Interface
 # Maintainers: Jibo, Lara (TSG-DEV) - Co-Core Software Developers
 # Emails: ajiboyshokunbi@yahoo.com, @laradipupo
 # -----------------------------------------------------------------------------
-/ciicerone/cli/ @Thundastormgod @laradipupo
+/vorsyghta/cli/ @Thundastormgod @laradipupo
 
 # -----------------------------------------------------------------------------
 # LLM Integration & ML/AI
 # Maintainer: Lanre (TSG-ML)
 # Email: hr.lanreshittu@yahoo.com
 # -----------------------------------------------------------------------------
-/ciicerone/llm/ @Thundastormgod
-/ciicerone/rag/ @Thundastormgod
+/vorsyghta/llm/ @Thundastormgod
+/vorsyghta/rag/ @Thundastormgod
 
 # -----------------------------------------------------------------------------
 # Security & Safety - RED Team (Offensive)
 # Maintainers: Temi, Olabisi (TSG-RED)
 # Emails: noblenabeela360@gmail.com, bayulus4great@gmail.com
 # -----------------------------------------------------------------------------
-/ciicerone/safety/ @Thundastormgod
+/vorsyghta/safety/ @Thundastormgod
 /SECURITY.md @Thundastormgod
 
 # -----------------------------------------------------------------------------
@@ -53,15 +53,15 @@
 # Maintainer: David (TSG-BLUE)
 # Email: onojad@gmail.com
 # -----------------------------------------------------------------------------
-/ciicerone/analytics/ @Thundastormgod
-/ciicerone/intelligence/ @Thundastormgod
+/vorsyghta/analytics/ @Thundastormgod
+/vorsyghta/intelligence/ @Thundastormgod
 
 # -----------------------------------------------------------------------------
 # Deployment & DevOps
 # Maintainers: Jibo, Lara (TSG-DEV) - Co-Core Software Developers
 # Emails: ajiboyshokunbi@yahoo.com, @laradipupo
 # -----------------------------------------------------------------------------
-/ciicerone/deployment/ @Thundastormgod @laradipupo
+/vorsyghta/deployment/ @Thundastormgod @laradipupo
 /.github/workflows/ @Thundastormgod @laradipupo
 /Dockerfile* @Thundastormgod @laradipupo
 /docker-compose* @Thundastormgod @laradipupo
@@ -71,15 +71,15 @@
 # Maintainer: David (TSG-BLUE)
 # Email: onojad@gmail.com
 # -----------------------------------------------------------------------------
-/ciicerone/datasets/ @Thundastormgod
+/vorsyghta/datasets/ @Thundastormgod
 
 # -----------------------------------------------------------------------------
 # Platform Integrations & MCP
 # Maintainers: Jibo, Lara (TSG-DEV) - Co-Core Software Developers
 # Emails: ajiboyshokunbi@yahoo.com, @laradipupo
 # -----------------------------------------------------------------------------
-/ciicerone/mcp/ @Thundastormgod @laradipupo
-/ciicerone/vm/ @Thundastormgod @laradipupo
+/vorsyghta/mcp/ @Thundastormgod @laradipupo
+/vorsyghta/vm/ @Thundastormgod @laradipupo
 
 # -----------------------------------------------------------------------------
 # Documentation
@@ -93,7 +93,7 @@
 # Maintainer: Jerry (TSG-COMP)
 # GitHub: @Okino007
 # -----------------------------------------------------------------------------
-/ciicerone/feedback/ @Thundastormgod @Okino007
+/vorsyghta/feedback/ @Thundastormgod @Okino007
 
 # -----------------------------------------------------------------------------
 # Templates & Scenarios

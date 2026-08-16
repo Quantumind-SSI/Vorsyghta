@@ -1,4 +1,4 @@
-**Ciicerone Privacy Notice**
+**Vorsyghta Privacy Notice**
 
 **Version:** 1.0  
 **Effective Date:** January 20, 2026  
@@ -17,7 +17,7 @@
 | Support communications | Customer service | Contract | 2 years |
 
 **Your Rights:** Access, correct, delete, port, restrict, object  
-**Contact:** privacy@ciicerone.io
+**Contact:** privacy@vorsyghta.io
 
 ---
 
@@ -26,11 +26,11 @@
 **Section 1. Who We Are**
 
 **Data Controller:**  
-Ciicerone Project  
-Email: privacy@ciicerone.io  
-Data Protection Officer: dpo@ciicerone.io
+Vorsyghta Project  
+Email: privacy@vorsyghta.io  
+Data Protection Officer: dpo@vorsyghta.io
 
-Ciicerone is an AI-powered security threat simulation platform. This notice explains how we collect, use, and protect your personal data.
+Vorsyghta is an AI-powered security threat simulation platform. This notice explains how we collect, use, and protect your personal data.
 
 **Section 2. What Data We Collect**
 
@@ -150,7 +150,7 @@ Under GDPR, you have the following rights:
 | **Access** | Get a copy of your data | Settings → Export Data |
 | **Rectification** | Correct inaccurate data | Settings → Profile |
 | **Erasure** | Delete your data | Settings → Delete Account |
-| **Restriction** | Limit how we use your data | Contact privacy@ciicerone.io |
+| **Restriction** | Limit how we use your data | Contact privacy@vorsyghta.io |
 | **Portability** | Receive data in machine-readable format | Settings → Export Data |
 | **Object** | Object to processing based on legitimate interest | Settings → Privacy |
 | **Withdraw Consent** | Withdraw consent at any time | Settings → Privacy |
@@ -196,7 +196,7 @@ Manage cookies in your account settings or browser.
 
 **Section 12. Children**
 
-Ciicerone is not intended for users under 16. We do not knowingly collect data from children. If we learn we have collected such data, we will delete it promptly.
+Vorsyghta is not intended for users under 16. We do not knowingly collect data from children. If we learn we have collected such data, we will delete it promptly.
 
 **Section 13. Changes to This Notice**
 
@@ -208,10 +208,10 @@ We may update this notice to reflect changes in our practices or legal requireme
 **Section 14. Contact Us**
 
 **For privacy questions:**  
-Email: privacy@ciicerone.io
+Email: privacy@vorsyghta.io
 
 **Data Protection Officer:**  
-Email: dpo@ciicerone.io
+Email: dpo@vorsyghta.io
 
 **For complaints:**  
 You have the right to lodge a complaint with a supervisory authority. In the EU, this is typically the data protection authority in your country of residence.
@@ -242,7 +242,7 @@ You have additional rights under CCPA/CPRA:
 | **Who we share with** | Service providers only, under contract |
 | **Your control** | Access, correct, delete, export, object |
 | **Security** | Encryption, access control, monitoring |
-| **Contact** | privacy@ciicerone.io |
+| **Contact** | privacy@vorsyghta.io |
 
 ---
 

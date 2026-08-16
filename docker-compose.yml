@@ -1,8 +1,8 @@
 # ================================
-# Ciicerone - Complete Docker Stack
+# Vorsyghta - Complete Docker Stack
 # ================================
 # Production-ready containerized deployment
-# Services: PostgreSQL, Redis, Ollama, Ciicerone API, Prometheus, Grafana
+# Services: PostgreSQL, Redis, Ollama, Vorsyghta API, Prometheus, Grafana
 
 services:
   # ================================
@@ -10,12 +10,12 @@ services:
   # ================================
   postgres:
     image: postgres:16-alpine
-    container_name: ciicerone-postgres
+    container_name: vorsyghta-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-ciicerone}
+      POSTGRES_USER: ${POSTGRES_USER:-vorsyghta}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
-      POSTGRES_DB: ${POSTGRES_DB:-ciicerone}
+      POSTGRES_DB: ${POSTGRES_DB:-vorsyghta}
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -23,22 +23,22 @@ services:
     ports:
       - "5433:5432"
     networks:
-      - ciicerone-network
+      - vorsyghta-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ciicerone}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vorsyghta}"]
       interval: 10s
       timeout: 5s
       retries: 5
     labels:
-      com.ciicerone.service: "database"
-      com.ciicerone.description: "PostgreSQL database for persistent storage"
+      com.vorsyghta.service: "database"
+      com.vorsyghta.description: "PostgreSQL database for persistent storage"
 
   # ================================
   # Redis Cache
   # ================================
   redis:
     image: redis:7-alpine
-    container_name: ciicerone-redis
+    container_name: vorsyghta-redis
     restart: unless-stopped
     command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
     volumes:
@@ -46,29 +46,29 @@ services:
     ports:
       - "6380:6379"
     networks:
-      - ciicerone-network
+      - vorsyghta-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 3s
       retries: 5
     labels:
-      com.ciicerone.service: "cache"
-      com.ciicerone.description: "Redis for caching and session management"
+      com.vorsyghta.service: "cache"
+      com.vorsyghta.description: "Redis for caching and session management"
 
   # ================================
   # Ollama - Local LLM Server
   # ================================
   ollama:
     image: ollama/ollama:latest
-    container_name: ciicerone-ollama
+    container_name: vorsyghta-ollama
     restart: unless-stopped
     volumes:
       - ollama_models:/root/.ollama
     ports:
       - "11434:11434"
     networks:
-      - ciicerone-network
+      - vorsyghta-network
     environment:
       - OLLAMA_HOST=0.0.0.0
       - OLLAMA_ORIGINS=*
@@ -79,8 +79,8 @@ services:
       retries: 3
       start_period: 60s
     labels:
-      com.ciicerone.service: "llm"
-      com.ciicerone.description: "Local LLM server with Ollama"
+      com.vorsyghta.service: "llm"
+      com.vorsyghta.description: "Local LLM server with Ollama"
     deploy:
       resources:
         limits:
@@ -89,13 +89,13 @@ services:
           memory: 4G
 
   # ================================
-  # Ciicerone API Server
+  # Vorsyghta API Server
   # ================================
-  ciicerone-api:
+  vorsyghta-api:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: ciicerone-api
+    container_name: vorsyghta-api
     restart: unless-stopped
     depends_on:
       postgres:
@@ -106,7 +106,7 @@ services:
         condition: service_started
     environment:
       # Database
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-ciicerone}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-ciicerone}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-vorsyghta}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-vorsyghta}
       # Redis
       - REDIS_URL=redis://redis:6379/0
       # LLM Providers
@@ -126,7 +126,7 @@ services:
       - PYTHONUNBUFFERED=1
       - PYTHONDONTWRITEBYTECODE=1
     volumes:
-      - ./ciicerone:/app/ciicerone:ro
+      - ./vorsyghta:/app/vorsyghta:ro
       - ./templates:/app/templates:ro
       - ./data:/app/data
       - ./logs:/app/logs
@@ -135,7 +135,7 @@ services:
     ports:
       - "8001:8000"
     networks:
-      - ciicerone-network
+      - vorsyghta-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -143,15 +143,15 @@ services:
       retries: 3
       start_period: 40s
     labels:
-      com.ciicerone.service: "api"
-      com.ciicerone.description: "Ciicerone main API server"
+      com.vorsyghta.service: "api"
+      com.vorsyghta.description: "Vorsyghta main API server"
 
   # ================================
   # Prometheus - Metrics Collection
   # ================================
   prometheus:
     image: prom/prometheus:latest
-    container_name: ciicerone-prometheus
+    container_name: vorsyghta-prometheus
     restart: unless-stopped
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -165,24 +165,24 @@ services:
     ports:
       - "9091:9090"
     networks:
-      - ciicerone-network
+      - vorsyghta-network
     depends_on:
-      - ciicerone-api
+      - vorsyghta-api
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
       interval: 30s
       timeout: 10s
       retries: 3
     labels:
-      com.ciicerone.service: "monitoring"
-      com.ciicerone.description: "Prometheus metrics collection"
+      com.vorsyghta.service: "monitoring"
+      com.vorsyghta.description: "Prometheus metrics collection"
 
   # ================================
   # Grafana - Metrics Visualization
   # ================================
   grafana:
     image: grafana/grafana:latest
-    container_name: ciicerone-grafana
+    container_name: vorsyghta-grafana
     restart: unless-stopped
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
@@ -197,7 +197,7 @@ services:
     ports:
       - "3001:3000"
     networks:
-      - ciicerone-network
+      - vorsyghta-network
     depends_on:
       - prometheus
     healthcheck:
@@ -206,18 +206,18 @@ services:
       timeout: 10s
       retries: 3
     labels:
-      com.ciicerone.service: "monitoring"
-      com.ciicerone.description: "Grafana metrics dashboard"
+      com.vorsyghta.service: "monitoring"
+      com.vorsyghta.description: "Grafana metrics dashboard"
 
   # ================================
   # PgAdmin - Database Management (Optional)
   # ================================
   pgadmin:
     image: dpage/pgadmin4:latest
-    container_name: ciicerone-pgadmin
+    container_name: vorsyghta-pgadmin
     restart: unless-stopped
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@ciicerone.local
+      PGADMIN_DEFAULT_EMAIL: admin@vorsyghta.local
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:?Set PGADMIN_PASSWORD in .env}
       PGADMIN_CONFIG_SERVER_MODE: 'False'
       PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
@@ -226,55 +226,55 @@ services:
     ports:
       - "5050:80"
     networks:
-      - ciicerone-network
+      - vorsyghta-network
     depends_on:
       - postgres
     profiles:
       - tools
     labels:
-      com.ciicerone.service: "tools"
-      com.ciicerone.description: "PgAdmin database management interface"
+      com.vorsyghta.service: "tools"
+      com.vorsyghta.description: "PgAdmin database management interface"
 
 # ================================
 # Networks
 # ================================
 networks:
-  ciicerone-network:
+  vorsyghta-network:
     driver: bridge
-    name: ciicerone-network
+    name: vorsyghta-network
     labels:
-      com.ciicerone.network: "main"
+      com.vorsyghta.network: "main"
 
 # ================================
 # Volumes
 # ================================
 volumes:
   postgres_data:
-    name: ciicerone-postgres-data
+    name: vorsyghta-postgres-data
     labels:
-      com.ciicerone.volume: "database"
+      com.vorsyghta.volume: "database"
   
   redis_data:
-    name: ciicerone-redis-data
+    name: vorsyghta-redis-data
     labels:
-      com.ciicerone.volume: "cache"
+      com.vorsyghta.volume: "cache"
   
   ollama_models:
-    name: ciicerone-ollama-models
+    name: vorsyghta-ollama-models
     labels:
-      com.ciicerone.volume: "models"
+      com.vorsyghta.volume: "models"
   
   prometheus_data:
-    name: ciicerone-prometheus-data
+    name: vorsyghta-prometheus-data
     labels:
-      com.ciicerone.volume: "metrics"
+      com.vorsyghta.volume: "metrics"
   
   grafana_data:
-    name: ciicerone-grafana-data
+    name: vorsyghta-grafana-data
     labels:
-      com.ciicerone.volume: "dashboards"
+      com.vorsyghta.volume: "dashboards"
   
   pgadmin_data:
-    name: ciicerone-pgadmin-data
+    name: vorsyghta-pgadmin-data
     labels:
-      com.ciicerone.volume: "tools"
+      com.vorsyghta.volume: "tools"

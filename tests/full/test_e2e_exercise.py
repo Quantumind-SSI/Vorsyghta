@@ -1,4 +1,4 @@
-"""End-to-end test for the Ciicerone color-team exercise flow.
+"""End-to-end test for the Vorsyghta color-team exercise flow.
 
 Validates the full red → blue → purple → black pipeline without requiring
 external services (LLM, database, or network). All LLM calls are mocked.
@@ -16,17 +16,17 @@ import asyncio
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from ciicerone.core.exercise_orchestrator import ExerciseOrchestrator, ExerciseResult
-from ciicerone.core.aar_generator import AARGenerator
-from ciicerone.core.evaluation_engine import EvaluationEngine
-from ciicerone.core.audit_logger import (
+from vorsyghta.core.exercise_orchestrator import ExerciseOrchestrator, ExerciseResult
+from vorsyghta.core.aar_generator import AARGenerator
+from vorsyghta.core.evaluation_engine import EvaluationEngine
+from vorsyghta.core.audit_logger import (
     AuditLogger, MemoryAuditSink, HashChainAuditSink, get_audit_logger,
     reset_audit_logger,
 )
-from ciicerone.core.models import ThreatScenario, ThreatType, SimulationResult, SimulationStage, SimulationStatus
-from ciicerone.core.event_bus import EventBus
-from ciicerone.core.event_types import EventType, BlueTeamAlertEvent, RedTeamAttackStageEvent
-from ciicerone.db.models import (
+from vorsyghta.core.models import ThreatScenario, ThreatType, SimulationResult, SimulationStage, SimulationStatus
+from vorsyghta.core.event_bus import EventBus
+from vorsyghta.core.event_types import EventType, BlueTeamAlertEvent, RedTeamAttackStageEvent
+from vorsyghta.db.models import (
     SimulationResultRecord, AlertRecord, AuditEventRecord,
     AttackPlanRecord, UserRecord, TenantRecord,
 )
@@ -258,7 +258,7 @@ class TestHashChainAuditSink:
     """Tests for the tamper-evident hash-chain audit sink."""
 
     def test_first_event_has_zero_prev_hash(self):
-        from ciicerone.core.audit_logger import AuditEvent, AuditCategory, AuditSeverity
+        from vorsyghta.core.audit_logger import AuditEvent, AuditCategory, AuditSeverity
         inner = MemoryAuditSink()
         chain = HashChainAuditSink(inner)
 
@@ -277,7 +277,7 @@ class TestHashChainAuditSink:
         assert len(written.context["event_hash"]) == 64
 
     def test_chain_prev_hash_links_events(self):
-        from ciicerone.core.audit_logger import AuditEvent, AuditCategory
+        from vorsyghta.core.audit_logger import AuditEvent, AuditCategory
         inner = MemoryAuditSink()
         chain = HashChainAuditSink(inner)
 
@@ -302,7 +302,7 @@ class TestHashChainAuditSink:
 
     def test_chain_is_tamper_evident(self):
         """The hash chain ensures each event references the previous event's hash."""
-        from ciicerone.core.audit_logger import AuditEvent, AuditCategory
+        from vorsyghta.core.audit_logger import AuditEvent, AuditCategory
         inner = MemoryAuditSink()
         chain = HashChainAuditSink(inner)
 
@@ -331,7 +331,7 @@ class TestExerciseOrchestrator:
     @pytest.mark.asyncio
     async def test_full_exercise_produces_complete_result(self, bec_scenario, mock_simulator):
         """Full e2e: red → blue → purple → black, all teams produce output."""
-        with patch("ciicerone.core.exercise_orchestrator.Simulator", return_value=mock_simulator):
+        with patch("vorsyghta.core.exercise_orchestrator.Simulator", return_value=mock_simulator):
             orchestrator = ExerciseOrchestrator(tenant_id="bank-pilot-test")
             result = await orchestrator.run_exercise(
                 scenario=bec_scenario,
@@ -349,7 +349,7 @@ class TestExerciseOrchestrator:
 
     @pytest.mark.asyncio
     async def test_red_team_produces_stages(self, bec_scenario, mock_simulator):
-        with patch("ciicerone.core.exercise_orchestrator.Simulator", return_value=mock_simulator):
+        with patch("vorsyghta.core.exercise_orchestrator.Simulator", return_value=mock_simulator):
             orchestrator = ExerciseOrchestrator(tenant_id="test")
             result = await orchestrator.run_exercise(bec_scenario, teams=["red"])
 
@@ -360,7 +360,7 @@ class TestExerciseOrchestrator:
 
     @pytest.mark.asyncio
     async def test_blue_team_generates_alerts_for_each_stage(self, bec_scenario, mock_simulator):
-        with patch("ciicerone.core.exercise_orchestrator.Simulator", return_value=mock_simulator):
+        with patch("vorsyghta.core.exercise_orchestrator.Simulator", return_value=mock_simulator):
             orchestrator = ExerciseOrchestrator(tenant_id="test")
             result = await orchestrator.run_exercise(bec_scenario, teams=["red", "blue"])
 
@@ -374,7 +374,7 @@ class TestExerciseOrchestrator:
 
     @pytest.mark.asyncio
     async def test_purple_team_generates_aar(self, bec_scenario, mock_simulator):
-        with patch("ciicerone.core.exercise_orchestrator.Simulator", return_value=mock_simulator):
+        with patch("vorsyghta.core.exercise_orchestrator.Simulator", return_value=mock_simulator):
             orchestrator = ExerciseOrchestrator(tenant_id="test")
             result = await orchestrator.run_exercise(bec_scenario, teams=["red", "blue", "purple"])
 
@@ -386,7 +386,7 @@ class TestExerciseOrchestrator:
 
     @pytest.mark.asyncio
     async def test_black_team_scores_exercise(self, bec_scenario, mock_simulator):
-        with patch("ciicerone.core.exercise_orchestrator.Simulator", return_value=mock_simulator):
+        with patch("vorsyghta.core.exercise_orchestrator.Simulator", return_value=mock_simulator):
             orchestrator = ExerciseOrchestrator(tenant_id="test")
             result = await orchestrator.run_exercise(bec_scenario, teams=["red", "blue", "purple", "black"])
 
@@ -403,7 +403,7 @@ class TestExerciseOrchestrator:
         audit = get_audit_logger()
         audit.add_sink(memory_sink)
 
-        with patch("ciicerone.core.exercise_orchestrator.Simulator", return_value=mock_simulator):
+        with patch("vorsyghta.core.exercise_orchestrator.Simulator", return_value=mock_simulator):
             orchestrator = ExerciseOrchestrator(tenant_id="test")
             await orchestrator.run_exercise(bec_scenario, teams=["red"], exercise_id="audit-test")
 
@@ -415,7 +415,7 @@ class TestExerciseOrchestrator:
     @pytest.mark.asyncio
     async def test_exercise_completes_on_partial_teams(self, bec_scenario, mock_simulator):
         """Running with only red+blue should still complete successfully."""
-        with patch("ciicerone.core.exercise_orchestrator.Simulator", return_value=mock_simulator):
+        with patch("vorsyghta.core.exercise_orchestrator.Simulator", return_value=mock_simulator):
             orchestrator = ExerciseOrchestrator(tenant_id="test")
             result = await orchestrator.run_exercise(bec_scenario, teams=["red", "blue"])
 
@@ -425,7 +425,7 @@ class TestExerciseOrchestrator:
 
     @pytest.mark.asyncio
     async def test_exercise_result_serializes_to_dict(self, bec_scenario, mock_simulator):
-        with patch("ciicerone.core.exercise_orchestrator.Simulator", return_value=mock_simulator):
+        with patch("vorsyghta.core.exercise_orchestrator.Simulator", return_value=mock_simulator):
             orchestrator = ExerciseOrchestrator(tenant_id="test")
             result = await orchestrator.run_exercise(bec_scenario, teams=["red", "blue", "purple", "black"])
 

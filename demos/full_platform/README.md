@@ -1,15 +1,15 @@
-# Ciicerone Full-Platform Demo
+# Vorsyghta Full-Platform Demo
 
-This demo walks through all major Ciicerone feature areas in one script. It uses the same offline client-data demo server as `demos/client_data/`, so no API keys or cloud credentials are required (except for the optional `--recon` flag).
+This demo walks through all major Vorsyghta feature areas in one script. It uses the same offline client-data demo server as `demos/client_data/`, so no API keys or cloud credentials are required (except for the optional `--recon` flag).
 
 ## What it demonstrates
 
 1. **Platform status** (`status`)
 2. **Scenario templates** (`templates list-all`)
 3. **Playbook validation** (`validate playbook`) using a production-grade markdown playbook
-4. **Ciicerone Attack scenario-to-task mapping** — demonstrates how the playbook maps to autonomous red-team tasks
+4. **Vorsyghta Attack scenario-to-task mapping** — demonstrates how the playbook maps to autonomous red-team tasks
 5. **Client data ingestion & enrichment** (`client-data sync`, `show`, `enrich`)
-6. **Red team / Ciicerone Attack integration** (`red-team health`)
+6. **Red team / Vorsyghta Attack integration** (`red-team health`)
 6. **Blue team defensive operations** (`blue-team dashboard`, `ids`, `edr`, `incident`)
 7. **Intelligence / OSINT** (`intel sources`)
 8. **Detection engineering** (`detect list-formats`)
@@ -24,7 +24,7 @@ This demo walks through all major Ciicerone feature areas in one script. It uses
 ## Run the demo
 
 ```bash
-cd /Users/startferanmi/Documents/Ciicerone/Ciicerone/demos/full_platform
+cd /path/to/Vorsyghta/demos/full_platform   # repo root
 bash run_full_demo.sh
 ```
 

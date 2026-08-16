@@ -7,14 +7,14 @@
 
 ### Recommended Setup
 ```bash
-git clone https://github.com/Ciicerone/Ciicerone
-cd Ciicerone
+git clone https://github.com/QuantumindSSI/Vorsyghta
+cd Vorsyghta
 python -m venv .venv
 source .venv/bin/activate
 pip install -e .
 pip install -r requirements-dev.txt
 pytest
-ciicerone status
+vorsyghta status
 
 ## Optional: Quick setup using Makefile
 

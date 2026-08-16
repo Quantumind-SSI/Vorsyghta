@@ -179,11 +179,11 @@ This playbook aligns with the following industry standards:
 4. Share anonymized IOCs and TTPs with threat intelligence sharing groups.
 5. Track remediation actions in the risk register until closure.
 
-## 11. Appendix: Ciicerone Attack Red-Team Mapping
+## 11. Appendix: Vorsyghta Attack Red-Team Mapping
 
-When this playbook is used to drive a purple-team exercise, Ciicerone Attack translates the scenario into the following autonomous tasks:
+When this playbook is used to drive a purple-team exercise, Vorsyghta Attack translates the scenario into the following autonomous tasks:
 
-| Phase | MITRE Technique | Ciicerone Attack Task | Agent |
+| Phase | MITRE Technique | Vorsyghta Attack Task | Agent |
 |-------|-----------------|--------------|-------|
 | Reconnaissance | T1589 | Gather Target Identity Information | researcher |
 | Weaponization | T1566.001 | Spear-Phishing Attachment | developer |

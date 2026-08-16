@@ -4,28 +4,28 @@ import asyncio
 
 import pytest
 
-from ciicerone.client_data.config import (
+from vorsyghta.client_data.config import (
     ClientDataConfig,
     ClientDataSourceConfig,
     CredentialSet,
     SecretRef,
     SourceType,
 )
-from ciicerone.client_data.credentials import EnvCredentialProvider
-from ciicerone.client_data.enrichment import ClientDataEnricher
-from ciicerone.client_data.manager import ClientDataManager
-from ciicerone.client_data.models import (
+from vorsyghta.client_data.credentials import EnvCredentialProvider
+from vorsyghta.client_data.enrichment import ClientDataEnricher
+from vorsyghta.client_data.manager import ClientDataManager
+from vorsyghta.client_data.models import (
     ClientProfile,
     Employee,
     NetworkLink,
     NetworkNode,
     NetworkTopology,
 )
-from ciicerone.client_data.sources import GenericApiSource, Gns3Source
-from ciicerone.client_data.sources.cloud import GoogleDriveSource
-from ciicerone.client_data.recon import CompanyReconAgent
-from ciicerone.intelligence.models import CompanyIntelligence, ConfidenceLevel, IntelligenceSource
-from ciicerone.client_data.sources.crm import HubSpotSource
+from vorsyghta.client_data.sources import GenericApiSource, Gns3Source
+from vorsyghta.client_data.sources.cloud import GoogleDriveSource
+from vorsyghta.client_data.recon import CompanyReconAgent
+from vorsyghta.intelligence.models import CompanyIntelligence, ConfidenceLevel, IntelligenceSource
+from vorsyghta.client_data.sources.crm import HubSpotSource
 
 
 @pytest.fixture
@@ -142,7 +142,7 @@ def test_gns3_source_normalizes_topology(tmp_path):
 
 
 def test_enricher_matches_employee_by_role(sample_profile):
-    from ciicerone.config.models import TargetProfile, ThreatScenario
+    from vorsyghta.config.models import TargetProfile, ThreatScenario
 
     scenario = ThreatScenario(
         metadata={"name": "Test Scenario", "description": "A test phishing scenario", "version": "1.0.0"},
@@ -216,7 +216,7 @@ def test_google_drive_source_maps_files():
 def test_company_recon_agent_resolves_domain_from_email(sample_profile):
     class FakeOSINTService:
         async def comprehensive_reconnaissance(self, target, recon_types=None):
-            from ciicerone.intelligence.models import OSINTResult
+            from vorsyghta.intelligence.models import OSINTResult
 
             return OSINTResult(
                 target_identifier=target,
@@ -237,7 +237,7 @@ def test_company_recon_agent_resolves_domain_from_email(sample_profile):
             )
 
     agent = CompanyReconAgent(osint_service=FakeOSINTService())
-    from ciicerone.config.models import TargetProfile, ThreatScenario
+    from vorsyghta.config.models import TargetProfile, ThreatScenario
 
     scenario = ThreatScenario(
         metadata={"name": "Test", "description": "A test scenario", "version": "1.0.0"},

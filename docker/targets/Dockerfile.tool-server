@@ -1,5 +1,5 @@
 # ================================
-# Ciicerone Sandbox Tool Server
+# Vorsyghta Sandbox Tool Server
 # ================================
 # Containerized edition of the Phantom Kali tool server. Bundles the
 # offensive tools that the AttackOrchestrator drives (nmap, nikto, sqlmap,
@@ -11,15 +11,15 @@
 # must never be published to an untrusted network.
 #
 # Build:
-#   docker build -t ciicerone-tool-server -f docker/targets/Dockerfile.tool-server docker/targets/
+#   docker build -t vorsyghta-tool-server -f docker/targets/Dockerfile.tool-server docker/targets/
 #
 # Run (internal network only — no host port by default):
-#   docker run -d --name ciicerone-tool-server ciicerone-tool-server
+#   docker run -d --name vorsyghta-tool-server vorsyghta-tool-server
 
 FROM python:3.11-slim
 
-LABEL maintainer="Ciicerone Team"
-LABEL description="Ciicerone sandbox tool server — offensive tool execution surface (sanctioned targets only)"
+LABEL maintainer="Vorsyghta Team"
+LABEL description="Vorsyghta sandbox tool server — offensive tool execution surface (sanctioned targets only)"
 
 # ---- Offensive tools ------------------------------------------------------
 # nikto, dirb, whatweb, gobuster, hydra, sqlmap, ffuf, nuclei are available

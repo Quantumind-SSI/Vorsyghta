@@ -1,8 +1,8 @@
 # =============================================================================
-# Ciicerone — Docker Integration Test Override (Ollama path)
+# Vorsyghta — Docker Integration Test Override (Ollama path)
 # =============================================================================
 # Layered on top of docker-compose.yml. Brings up the FULL stack from the base
-# compose (PostgreSQL, Redis, Ollama, ciicerone-api, Prometheus, Grafana) and
+# compose (PostgreSQL, Redis, Ollama, vorsyghta-api, Prometheus, Grafana) and
 # additionally:
 #
 #   * runs Alembic migrations via a one-shot `migrate` service BEFORE the API
@@ -15,8 +15,8 @@
 #     everything stays in your network)
 #   * passes OLLAMA_BASE_URL + OLLAMA_MODEL through to the API container
 #     (the manager reads these env vars to point at http://ollama:11434)
-#   * sets CIICERONE_SECRET_KEY explicitly (the JWT signer reads
-#     CIICERONE_SECRET_KEY, not SECRET_KEY)
+#   * sets VORSYGHTA_SECRET_KEY explicitly (the JWT signer reads
+#     VORSYGHTA_SECRET_KEY, not SECRET_KEY)
 #   * exposes only the API on the host (port 8001) — auxiliary host ports are
 #     cleared so the harness runs on shared hosts
 #
@@ -27,7 +27,7 @@
 #     up -d --build
 #
 # Required .env entries:
-#   CIICERONE_SECRET_KEY=<openssl rand -hex 32>
+#   VORSYGHTA_SECRET_KEY=<openssl rand -hex 32>
 #   POSTGRES_PASSWORD=...
 #   GRAFANA_ADMIN_PASSWORD=...
 #   PGADMIN_PASSWORD=...
@@ -46,29 +46,29 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: ciicerone-migrate
+    container_name: vorsyghta-migrate
     depends_on:
       postgres:
         condition: service_healthy
     environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-ciicerone}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-ciicerone}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-vorsyghta}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-vorsyghta}
     working_dir: /app
     # Run migrations then exit; the API waits for this to complete.
     command: ["python", "-m", "alembic", "upgrade", "head"]
     networks:
-      - ciicerone-network
+      - vorsyghta-network
     restart: "no"
 
-  ciicerone-api:
+  vorsyghta-api:
     environment:
       # ---- Ollama as the real LLM provider (in-network, no cloud keys) ----
       - OLLAMA_BASE_URL=http://ollama:11434
       - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3.1:8b}
       - DEFAULT_LLM_PROVIDER=ollama
-      # ---- Stable JWT secret (rbac.py reads CIICERONE_SECRET_KEY) ----
-      - CIICERONE_SECRET_KEY=${CIICERONE_SECRET_KEY:?Set CIICERONE_SECRET_KEY in .env}
+      # ---- Stable JWT secret (rbac.py reads VORSYGHTA_SECRET_KEY) ----
+      - VORSYGHTA_SECRET_KEY=${VORSYGHTA_SECRET_KEY:?Set VORSYGHTA_SECRET_KEY in .env}
       # ---- Seed control for the integration analyst ----
-      - SEED_ANALYST_EMAIL=${SEED_ANALYST_EMAIL:-analyst@ciicerone.local}
+      - SEED_ANALYST_EMAIL=${SEED_ANALYST_EMAIL:-analyst@vorsyghta.local}
       - SEED_ANALYST_PASSWORD=${SEED_ANALYST_PASSWORD:-Analyst123!}
       - SEED_TENANT_ID=${SEED_TENANT_ID:-default}
       - SEED_ANALYST_ROLE=${SEED_ANALYST_ROLE:-analyst}

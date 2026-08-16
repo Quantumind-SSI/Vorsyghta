@@ -4,12 +4,12 @@
 
 set -euo pipefail
 
-RESOURCE_GROUP="${RESOURCE_GROUP:-ciicerone-rg}"
+RESOURCE_GROUP="${RESOURCE_GROUP:-vorsyghta-rg}"
 LOCATION="${LOCATION:-eastus2}"
-ACR_NAME="${ACR_NAME:-ciiceroneacr$(date +%s)}"
-CONTAINER_NAME="${CONTAINER_NAME:-ciicerone-neo4j}"
+ACR_NAME="${ACR_NAME:-vorsyghtaacr$(date +%s)}"
+CONTAINER_NAME="${CONTAINER_NAME:-vorsyghta-neo4j}"
 NEO4J_PASSWORD="${NEO4J_PASSWORD:-password}"
-DNS_LABEL="${DNS_LABEL:-ciicerone-neo4j-$(date +%s)}"
+DNS_LABEL="${DNS_LABEL:-vorsyghta-neo4j-$(date +%s)}"
 
 echo "[INFO] Deploying Neo4j via Azure Container Registry..."
 echo "[INFO] Resource group: ${RESOURCE_GROUP}"

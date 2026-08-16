@@ -1,9 +1,9 @@
-# Ciicerone Security Guide
+# Vorsyghta Security Guide
 
 **Version:** 1.0.0  
 **Last Updated:** November 2025
 
-Comprehensive security guide for deploying, configuring, and using Ciicerone safely in enterprise environments.
+Comprehensive security guide for deploying, configuring, and using Vorsyghta safely in enterprise environments.
 
 ---
 
@@ -31,7 +31,7 @@ Comprehensive security guide for deploying, configuring, and using Ciicerone saf
 
 ### Security Architecture
 
-Ciicerone implements defense-in-depth security:
+Vorsyghta implements defense-in-depth security:
 
 ```
 ┌─────────────────────────────────────────┐
@@ -71,8 +71,8 @@ Ciicerone implements defense-in-depth security:
 **IMPORTANT: Do NOT use GitHub Issues for security vulnerabilities**
 
 **Contact Information:**
-- **Email:** Ciiceronegpt@hotmail.com
-- **Subject Line:** `[SECURITY] Ciicerone Vulnerability Report`
+- **Email:** Vorsyghtagpt@hotmail.com
+- **Subject Line:** `[SECURITY] Vorsyghta Vulnerability Report`
 - **PGP Key:** Available upon request
 
 ### What to Include
@@ -165,7 +165,7 @@ Security research under this policy is:
 
 **Rewards (Future):**
 - Significant vulnerabilities: Monetary bounty (planned)
-- All reports: Ciicerone swag and merchandise
+- All reports: Vorsyghta swag and merchandise
 
 ---
 
@@ -238,8 +238,8 @@ api:
 FROM python:3.11.6-slim
 
 # Run as non-root user
-RUN useradd -m -u 1000 Ciiceronegpt
-USER Ciiceronegpt
+RUN useradd -m -u 1000 Vorsyghtagpt
+USER Vorsyghtagpt
 
 # Read-only root filesystem
 VOLUME ["/app/logs", "/app/data"]
@@ -251,8 +251,8 @@ LABEL security.scan="enabled"
 ```yaml
 # docker-compose.yml
 services:
-  Ciiceronegpt:
-    image: Ciiceronegpt:latest
+  Vorsyghtagpt:
+    image: Vorsyghtagpt:latest
     read_only: true
     cap_drop:
       - ALL
@@ -277,10 +277,10 @@ export OPENROUTER_API_KEY="sk-or-v1-..."
 
 # Use secrets management
 # AWS Secrets Manager
-aws secretsmanager get-secret-value --secret-id Ciiceronegpt/api-keys
+aws secretsmanager get-secret-value --secret-id Vorsyghtagpt/api-keys
 
 # HashiCorp Vault
-vault kv get secret/Ciiceronegpt/api-keys
+vault kv get secret/Vorsyghtagpt/api-keys
 ```
 
 **DON'T:**
@@ -300,7 +300,7 @@ llm:
 export OPENROUTER_API_KEY="sk-or-v1-NEW_KEY"
 
 # 3. Test
-python3 -m Ciiceronegpt llm test-providers
+python3 -m Vorsyghtagpt llm test-providers
 
 # 4. Revoke old key
 ```
@@ -309,7 +309,7 @@ python3 -m Ciiceronegpt llm test-providers
 
 ```python
 # Monitor API key usage
-from Ciiceronegpt.utils.audit import APIKeyAuditor
+from Vorsyghtagpt.utils.audit import APIKeyAuditor
 
 auditor = APIKeyAuditor()
 auditor.track_usage(api_key, endpoint, timestamp)
@@ -340,7 +340,7 @@ export OPENROUTER_API_KEY_PROD="sk-or-v1-prod..."
 
 ### Safety Filters
 
-Ciicerone implements multi-layer content filtering:
+Vorsyghta implements multi-layer content filtering:
 
 #### Layer 1: Pre-Generation
 
@@ -358,7 +358,7 @@ simulation:
 #### Layer 2: Post-Generation
 
 ```python
-from Ciiceronegpt.llm.validation import ContentValidator
+from Vorsyghtagpt.llm.validation import ContentValidator
 
 validator = ContentValidator(safety_level="STRICT")
 result = validator.validate_content(generated_content)
@@ -372,10 +372,10 @@ if not result.is_safe:
 
 ```bash
 # Always review generated content
-python3 -m Ciiceronegpt simulate -s template.yaml --preview
+python3 -m Vorsyghtagpt simulate -s template.yaml --preview
 
 # Manual approval before use
-python3 -m Ciiceronegpt simulate -s template.yaml --require-approval
+python3 -m Vorsyghtagpt simulate -s template.yaml --require-approval
 ```
 
 ### Educational Disclaimers
@@ -414,7 +414,7 @@ This is simulated threat content for security training purposes.
 
 ### GDPR Compliance
 
-Ciicerone minimizes data collection:
+Vorsyghta minimizes data collection:
 
 ```python
 # Data minimization
@@ -438,13 +438,13 @@ User rights implementation:
 
 ```bash
 # Right to know
-python3 -m Ciiceronegpt data export-user-data --user-id USER_ID
+python3 -m Vorsyghtagpt data export-user-data --user-id USER_ID
 
 # Right to delete
-python3 -m Ciiceronegpt data delete-user-data --user-id USER_ID
+python3 -m Vorsyghtagpt data delete-user-data --user-id USER_ID
 
 # Right to opt-out
-python3 -m Ciiceronegpt data opt-out --user-id USER_ID
+python3 -m Vorsyghtagpt data opt-out --user-id USER_ID
 ```
 
 ### SOC 2 Controls
@@ -512,7 +512,7 @@ except Exception as e:
 
 ```bash
 # 1. Keep software updated
-pip install --upgrade Ciiceronegpt
+pip install --upgrade Vorsyghtagpt
 
 # 2. Regular security scans
 bandit -r src/
@@ -522,7 +522,7 @@ safety check
 pip-audit
 
 # 4. Container scanning
-trivy image Ciiceronegpt:latest
+trivy image Vorsyghtagpt:latest
 ```
 
 ### Monitoring
@@ -561,13 +561,13 @@ monitoring:
 ```bash
 # Immediate actions
 # 1. Rotate compromised API keys
-python3 -m Ciiceronegpt security rotate-keys --emergency
+python3 -m Vorsyghtagpt security rotate-keys --emergency
 
 # 2. Block malicious IPs
-python3 -m Ciiceronegpt security block-ip 192.168.1.100
+python3 -m Vorsyghtagpt security block-ip 192.168.1.100
 
 # 3. Isolate affected systems
-docker-compose down Ciiceronegpt-api
+docker-compose down Vorsyghtagpt-api
 ```
 
 #### Phase 3: Investigation
@@ -605,7 +605,7 @@ bandit -r src/ -o bandit-report.html
 safety check --json > safety-report.json
 
 # Container scanning
-trivy image Ciiceronegpt:latest
+trivy image Vorsyghtagpt:latest
 
 # License compliance
 pip-licenses --format=html > licenses.html
@@ -632,10 +632,10 @@ pip-licenses --format=html > licenses.html
 ## Contact
 
 **Security Team:**
-- **Email:** Ciiceronegpt@hotmail.com
+- **Email:** Vorsyghtagpt@hotmail.com
 - **PGP Key:** Available upon request
 - **Response Time:** 48 hours maximum
 
 **General Support:**
-- **GitHub Issues:** https://github.com/Ciiceronegpt-AI/Ciicerone/issues
-- **Discussions:** https://github.com/Ciiceronegpt-AI/Ciicerone/discussions
+- **GitHub Issues:** https://github.com/QuantumindSSI/Vorsyghta/issues
+- **Discussions:** https://github.com/QuantumindSSI/Vorsyghta/discussions

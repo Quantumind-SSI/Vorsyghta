@@ -23,7 +23,7 @@ Additional structural assertions
     postgres_event_store.py imports cleanly without asyncpg installed.
 9.  OpenAI / Anthropic providers set tokens_used as an attribute after
     LLMResponse construction (no TypeError on init, no stray .usage attr).
-10. validate_env.py checks CIICERONE_SECRET_KEY (not SECRET_KEY).
+10. validate_env.py checks VORSYGHTA_SECRET_KEY (not SECRET_KEY).
 """
 
 from __future__ import annotations
@@ -37,10 +37,10 @@ from unittest.mock import patch
 
 import pytest
 
-# Ensure CIICERONE_SECRET_KEY is set before importing rbac/auth modules.
+# Ensure VORSYGHTA_SECRET_KEY is set before importing rbac/auth modules.
 # Use a stable, obviously-non-production value.
 os.environ.setdefault(
-    "CIICERONE_SECRET_KEY",
+    "VORSYGHTA_SECRET_KEY",
     "test-secret-key-for-verification-only-32chars!",
 )
 
@@ -75,14 +75,14 @@ class TestLLMResponseTokensUsed:
     """Fix: LLMResponse.__init__ now initialises self.tokens_used = 0."""
 
     def test_default_is_zero(self):
-        from ciicerone.llm.base import LLMResponse
+        from vorsyghta.llm.base import LLMResponse
 
         r = LLMResponse(content="hi", provider="openai", model="gpt-4")
         assert hasattr(r, "tokens_used"), "tokens_used attribute must exist"
         assert r.tokens_used == 0
 
     def test_settable(self):
-        from ciicerone.llm.base import LLMResponse
+        from vorsyghta.llm.base import LLMResponse
 
         r = LLMResponse(content="hi", provider="openai", model="gpt-4")
         r.tokens_used = 1234
@@ -95,7 +95,7 @@ class TestLLMResponseTokensUsed:
 
 def _make_engagement(start_date=None, end_date=None):
     """Build a minimal ACTIVE Engagement for is_active() tests."""
-    from ciicerone.research.engagement import (
+    from vorsyghta.research.engagement import (
         Engagement,
         EngagementStatus,
         LegalFramework,
@@ -163,7 +163,7 @@ class TestInvalidEnumInFromDict:
     """Fix: _from_dict catches ValueError on bad enum values instead of crashing."""
 
     def test_engagement_skips_invalid_methods(self, tmp_storage_dir):
-        from ciicerone.research.engagement import (
+        from vorsyghta.research.engagement import (
             EngagementManager,
             ResearchMethod,
         )
@@ -189,7 +189,7 @@ class TestInvalidEnumInFromDict:
         ), "invalid allowed_method must be skipped, not stored as a string"
 
     def test_disclosure_falls_back_on_invalid_enums(self, tmp_storage_dir):
-        from ciicerone.research.disclosure import (
+        from vorsyghta.research.disclosure import (
             DisclosureManager,
             DisclosureStatus,
             VendorResponse,
@@ -218,7 +218,7 @@ class TestGrantExtensionNoneEmbargo:
     """Fix: when embargo_end_date is None, the extension is computed from now."""
 
     def test_sets_new_end_date(self, tmp_storage_dir):
-        from ciicerone.research.disclosure import (
+        from vorsyghta.research.disclosure import (
             DisclosureManager,
             DisclosureRecord,
         )
@@ -247,7 +247,7 @@ class TestGrantExtensionNoneEmbargo:
         assert 29 <= delta.days <= 30, f"expected ~30 days, got {delta.days}"
 
     def test_extension_count_incremented(self, tmp_storage_dir):
-        from ciicerone.research.disclosure import (
+        from vorsyghta.research.disclosure import (
             DisclosureManager,
             DisclosureRecord,
         )
@@ -285,7 +285,7 @@ class TestSetNestedBoundsValidation:
 
     @pytest.fixture
     def mutator(self):
-        from ciicerone.research.llm_mutator import LLMMutator
+        from vorsyghta.research.llm_mutator import LLMMutator
 
         # Bypass __init__ — we only exercise _set_nested.
         return LLMMutator.__new__(LLMMutator)
@@ -344,7 +344,7 @@ class TestAdminRegistrationBlocked:
         # so the endpoint never touches real infrastructure. Capture the
         # role/tenant that the handler actually persists so tests can assert
         # they are forced to viewer/default regardless of client input.
-        import ciicerone.api.routers.auth as auth_mod
+        import vorsyghta.api.routers.auth as auth_mod
 
         captured: dict = {}
 
@@ -470,14 +470,14 @@ class TestAsyncpgFallbackImport:
         # Force a fresh import with asyncpg hidden.
         monkeypatch.setitem(sys.modules, "asyncpg", None)
         # Drop any cached import.
-        sys.modules.pop("ciicerone.core.postgres_event_store", None)
+        sys.modules.pop("vorsyghta.core.postgres_event_store", None)
         try:
-            import ciicerone.core.postgres_event_store as pes  # noqa: F401
+            import vorsyghta.core.postgres_event_store as pes  # noqa: F401
 
             # If we got here without NameError, the fix holds.
             assert pes is not None
         finally:
-            sys.modules.pop("ciicerone.core.postgres_event_store", None)
+            sys.modules.pop("vorsyghta.core.postgres_event_store", None)
 
 
 # ============================================================================
@@ -494,7 +494,7 @@ class TestProviderTokensUsedAssignment:
     """
 
     def test_llmresponse_does_not_accept_tokens_used_kwarg(self):
-        from ciicerone.llm.base import LLMResponse
+        from vorsyghta.llm.base import LLMResponse
 
         with pytest.raises(TypeError):
             LLMResponse(
@@ -510,26 +510,26 @@ class TestProviderTokensUsedAssignment:
         # the provider's code path leaves no .usage attribute on the result.
         # Since we cannot run the real API, this is a structural smoke test:
         # the module must import cleanly and the class must exist.
-        from ciicerone.llm.providers import anthropic_provider
+        from vorsyghta.llm.providers import anthropic_provider
 
         assert hasattr(anthropic_provider, "AnthropicProvider")
 
 
 # ============================================================================
-# 10. validate_env.py checks CIICERONE_SECRET_KEY
+# 10. validate_env.py checks VORSYGHTA_SECRET_KEY
 # ============================================================================
 
 class TestValidateEnvSecretKeyName:
-    """Fix: validate_env.py now checks CIICERONE_SECRET_KEY (matching rbac.py)
+    """Fix: validate_env.py now checks VORSYGHTA_SECRET_KEY (matching rbac.py)
     instead of the old SECRET_KEY name.
     """
 
-    def test_required_vars_uses_ciicerone_secret_key(self):
-        from ciicerone.config import validate_env
+    def test_required_vars_uses_vorsyghta_secret_key(self):
+        from vorsyghta.config import validate_env
 
         names = [v.name for v in validate_env.REQUIRED_VARS]
-        assert "CIICERONE_SECRET_KEY" in names, (
-            "validate_env must check CIICERONE_SECRET_KEY (the name rbac.py reads)"
+        assert "VORSYGHTA_SECRET_KEY" in names, (
+            "validate_env must check VORSYGHTA_SECRET_KEY (the name rbac.py reads)"
         )
         assert "SECRET_KEY" not in names, (
             "old SECRET_KEY name should no longer be in REQUIRED_VARS"

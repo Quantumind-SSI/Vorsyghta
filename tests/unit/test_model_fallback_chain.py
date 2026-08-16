@@ -10,7 +10,7 @@ import time
 from typing import Any, Dict, List
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from ciicerone.llm.fallback_chain import (
+from vorsyghta.llm.fallback_chain import (
     ModelFallbackChain,
     FallbackChainConfig,
     SelectionStrategy,
@@ -22,8 +22,8 @@ from ciicerone.llm.fallback_chain import (
     MetricsCollector,
     create_fallback_chain,
 )
-from ciicerone.llm.base import BaseLLMProvider, LLMResponse
-from ciicerone.llm.exceptions import RateLimitError
+from vorsyghta.llm.base import BaseLLMProvider, LLMResponse
+from vorsyghta.llm.exceptions import RateLimitError
 
 
 # ============================================================================

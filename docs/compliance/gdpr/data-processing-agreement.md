@@ -1,4 +1,4 @@
-**Ciicerone Data Processing Agreement (DPA) Template**
+**Vorsyghta Data Processing Agreement (DPA) Template**
 
 **Version:** 1.0  
 **Effective Date:** January 20, 2026  
@@ -12,7 +12,7 @@
 This Data Processing Agreement ("DPA") forms part of the agreement between:
 
 **Data Controller:** [Customer Name] ("Controller")  
-**Data Processor:** Ciicerone Project ("Processor")
+**Data Processor:** Vorsyghta Project ("Processor")
 
 Together referred to as the "Parties."
 
@@ -27,7 +27,7 @@ Together referred to as the "Parties."
 | **Data Subject** | An identified or identifiable natural person |
 | **Sub-processor** | Any third party engaged by Processor to process Personal Data |
 | **Data Protection Laws** | GDPR and applicable national implementing legislation |
-| **Services** | The Ciicerone services described in the main agreement |
+| **Services** | The Vorsyghta services described in the main agreement |
 
 ---
 
@@ -282,9 +282,9 @@ This DPA, together with the main agreement and any annexes, constitutes the enti
 - Role: Controller
 
 **Data Importer (Processor):**
-- Name: Ciicerone Project
+- Name: Vorsyghta Project
 - Address: [Address]
-- Contact: privacy@Ciicerone.io
+- Contact: privacy@Vorsyghta.io
 - Activities: AI-powered security threat simulation platform
 - Role: Processor
 
@@ -377,7 +377,7 @@ Title: _______________________
 Date: _______________________  
 Signature: ___________________
 
-**Data Processor (Ciicerone):**
+**Data Processor (Vorsyghta):**
 
 Name: _______________________  
 Title: _______________________  

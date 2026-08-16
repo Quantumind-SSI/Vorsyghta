@@ -1,4 +1,4 @@
-**Ciicerone Acceptable Use Policy**
+**Vorsyghta Acceptable Use Policy**
 
 **Version:** 1.0  
 **Effective Date:** January 20, 2026  
@@ -12,9 +12,9 @@
 
 **Section 1.1 Purpose**
 
-This Acceptable Use Policy ("Policy") establishes the rules and guidelines for the appropriate use of Ciicerone, an AI-powered security threat simulation platform. This Policy aims to:
+This Acceptable Use Policy ("Policy") establishes the rules and guidelines for the appropriate use of Vorsyghta, an AI-powered security threat simulation platform. This Policy aims to:
 
-- Protect the integrity and security of Ciicerone and its users
+- Protect the integrity and security of Vorsyghta and its users
 - Ensure compliance with applicable laws and regulations
 - Promote responsible and ethical use of security simulation tools
 - Prevent misuse that could harm individuals, organizations, or systems
@@ -23,16 +23,16 @@ This Acceptable Use Policy ("Policy") establishes the rules and guidelines for t
 
 This Policy applies to:
 
-- All users of Ciicerone services (cloud, on-premises, or API)
-- All data processed through Ciicerone
-- All integrations and extensions of Ciicerone
-- Contributors to the Ciicerone open-source project
+- All users of Vorsyghta services (cloud, on-premises, or API)
+- All data processed through Vorsyghta
+- All integrations and extensions of Vorsyghta
+- Contributors to the Vorsyghta open-source project
 
 **Section 1.3 Definitions**
 
 | Term | Definition |
 |------|------------|
-| **User** | Any individual or entity using Ciicerone services |
+| **User** | Any individual or entity using Vorsyghta services |
 | **Simulation** | A generated threat scenario or security assessment |
 | **Target System** | Systems against which simulations are executed |
 | **Authorized Testing** | Testing conducted with explicit written permission |
@@ -43,7 +43,7 @@ This Policy applies to:
 
 **Section 2.1 Permitted Uses**
 
-Ciicerone may be used for:
+Vorsyghta may be used for:
 
 **Section Security Assessment**
 - Authorized penetration testing
@@ -66,7 +66,7 @@ Ciicerone may be used for:
 
 **Section 2.2 Authorization Requirements**
 
-Before using Ciicerone for testing, users MUST:
+Before using Vorsyghta for testing, users MUST:
 
 1. **Obtain Written Authorization**
    - Documented permission from system owners
@@ -112,7 +112,7 @@ The following uses are **strictly prohibited** and may result in immediate termi
 
 **Section 3.2 Restricted Uses (Require Approval)**
 
-The following require explicit written approval from Ciicerone:
+The following require explicit written approval from Vorsyghta:
 
 - Testing against third-party services (even with authorization)
 - Large-scale automated testing
@@ -166,7 +166,7 @@ Users must report:
 
 **Section 5.1 Monitoring**
 
-Ciicerone may monitor usage to:
+Vorsyghta may monitor usage to:
 
 - Detect policy violations
 - Prevent abuse and misuse
@@ -243,21 +243,21 @@ Users will be notified of material changes via:
 
 **Section Questions and Support**
 
-- **General Inquiries**: support@ciicerone.io
-- **Compliance Questions**: compliance@ciicerone.io
-- **Security Reports**: security@ciicerone.io
+- **General Inquiries**: support@vorsyghta.io
+- **Compliance Questions**: compliance@vorsyghta.io
+- **Security Reports**: security@vorsyghta.io
 
 **Section Emergency Contact**
 
 For urgent security matters:
-- **Email**: ciicerone@hotmail.com
+- **Email**: vorsyghta@hotmail.com
 - **Subject**: [URGENT] Security Matter
 
 ---
 
 **9. Acknowledgment**
 
-By using Ciicerone, users acknowledge that they have:
+By using Vorsyghta, users acknowledge that they have:
 
 - Read and understood this Acceptable Use Policy
 - Agreed to comply with all terms and conditions
@@ -283,5 +283,5 @@ By using Ciicerone, users acknowledge that they have:
 
 ---
 
-*This document is part of the Ciicerone Compliance Documentation.*  
+*This document is part of the Vorsyghta Compliance Documentation.*  
 *For the latest version, visit: docs/compliance/policies/acceptable-use-policy.md*

@@ -1,6 +1,6 @@
-# The Ciicerone Intelligence Stack
+# The Vorsyghta Intelligence Stack
 
-The Intelligence Stack is Ciicerone's proprietary differentiator — a unified, event-sourced threat intelligence pipeline that connects every team, every simulation, and every detection back to a single source of truth. Unlike traditional security tools that silo intelligence within individual teams, Ciicerone's stack flows intelligence **bidirectionally** across red team, blue team, ML/AI, compliance, and infrastructure, creating a closed-loop system where each team's output becomes another team's input.
+The Intelligence Stack is Vorsyghta's proprietary differentiator — a unified, event-sourced threat intelligence pipeline that connects every team, every simulation, and every detection back to a single source of truth. Unlike traditional security tools that silo intelligence within individual teams, Vorsyghta's stack flows intelligence **bidirectionally** across red team, blue team, ML/AI, compliance, and infrastructure, creating a closed-loop system where each team's output becomes another team's input.
 
 ## Why It's Proprietary
 
@@ -17,7 +17,7 @@ No other platform combines:
 
 ```
                     ┌─────────────────────────────────┐
-                    │   Ciicerone Intelligence Stack   │
+                    │   Vorsyghta Intelligence Stack   │
                     │                                  │
                     │  OSINT  │  Dark Web  │  MITRE   │
                     │  Engine │  Monitor   │  ATT&CK  │
@@ -45,7 +45,7 @@ No other platform combines:
 
 ### 1. From Generic to Targeted Simulations
 
-Traditional platforms run canned scenarios. Ciicerone's OSINT engine gathers live intelligence on the target organisation — employee profiles from LinkedIn, technology stack from website scraping, domain records from WHOIS/DNS, social media activity patterns — and feeds this directly into the LLM prompt context. The result: phishing emails that reference actual executives, data exfiltration scenarios that target the real database architecture, and credential stuffing attacks using domains and email patterns specific to the organisation.
+Traditional platforms run canned scenarios. Vorsyghta's OSINT engine gathers live intelligence on the target organisation — employee profiles from LinkedIn, technology stack from website scraping, domain records from WHOIS/DNS, social media activity patterns — and feeds this directly into the LLM prompt context. The result: phishing emails that reference actual executives, data exfiltration scenarios that target the real database architecture, and credential stuffing attacks using domains and email patterns specific to the organisation.
 
 ### 2. From Reactive to Proactive Detection
 
@@ -74,11 +74,11 @@ Every simulation event — from `SimulationStarted` through each `StageStarted`/
 
 ## Client Infrastructure Requirements for Network Threat Simulation
 
-The Intelligence Stack doesn't just gather external OSINT — it also ingests the client's own network and cloud infrastructure data to build accurate, high-fidelity threat simulations. This is what separates Ciicerone from generic simulation platforms: simulations are executed against a **digital twin** of the client's actual environment, not a synthetic lab.
+The Intelligence Stack doesn't just gather external OSINT — it also ingests the client's own network and cloud infrastructure data to build accurate, high-fidelity threat simulations. This is what separates Vorsyghta from generic simulation platforms: simulations are executed against a **digital twin** of the client's actual environment, not a synthetic lab.
 
 ### Network Infrastructure (On-Premises & Hybrid)
 
-Clients provide network topology data that Ciicerone ingests via the `ClientDataManager` and `Gns3Source` adapter. The following data is required and consumed:
+Clients provide network topology data that Vorsyghta ingests via the `ClientDataManager` and `Gns3Source` adapter. The following data is required and consumed:
 
 | Data Point | Source | How It's Used in Simulation |
 |---|---|---|
@@ -239,28 +239,28 @@ This infrastructure data is then combined with OSINT and dark web findings to pr
 
 ```bash
 # Gather comprehensive intelligence on a target
-ciicerone intel gather zestpayment.com --types profile company dark_web
+vorsyghta intel gather zestpayment.com --types profile company dark_web
 
 # Search dark web for leaked ZestPayment confidential data
-ciicerone intel dark-web "ZestPayment" -d zestpayment.com -k credentials payment database
+vorsyghta intel dark-web "ZestPayment" -d zestpayment.com -k credentials payment database
 
 # Enhance a threat scenario with live intelligence
-ciicerone intel enhance templates/zestpayment/zestpayment_data_breach.yaml zestpayment.com
+vorsyghta intel enhance templates/zestpayment/zestpayment_data_breach.yaml zestpayment.com
 
 # List available intelligence sources
-ciicerone intel sources
+vorsyghta intel sources
 
 # Execute threat hunting hypotheses
-ciicerone blue-team hunt search --technique T1003
-ciicerone blue-team hunt search --all
+vorsyghta blue-team hunt search --technique T1003
+vorsyghta blue-team hunt search --all
 ```
 
 ## Related Documentation
 
 - [MITRE ATT&CK Full Coverage](../../dev-docs/architecture/ENGINE_PARADIGMS_AND_FIDELITY_LEVELS.md)
-- [Kill Chain Intelligence Output](../../dev-docs/architecture/CIICERONE_KILL_CHAIN_INTELLIGENCE_OUTPUT.md)
-- [Intelligence Reporting Capabilities](../../dev-docs/architecture/CIICERONE_INTELLIGENCE_REPORTING_CAPABILITIES.md)
+- [Kill Chain Intelligence Output](../../dev-docs/architecture/VORSYGHTA_KILL_CHAIN_INTELLIGENCE_OUTPUT.md)
+- [Intelligence Reporting Capabilities](../../dev-docs/architecture/VORSYGHTA_INTELLIGENCE_REPORTING_CAPABILITIES.md)
 - [Detection Rule Generation](../../dev-docs/architecture/DETECTION_RULE_GENERATION_MECHANISM.md)
-- [Event Sourcing Implementation](../../ciicerone/core/event_sourcing.py)
-- [Dark Web Monitor Service](../../ciicerone/intelligence/services.py)
+- [Event Sourcing Implementation](../../vorsyghta/core/event_sourcing.py)
+- [Dark Web Monitor Service](../../vorsyghta/intelligence/services.py)
 - [ZestPayment Dark Web Monitoring Template](../../templates/zestpayment/zestpayment_dark_web_monitoring.yaml)

@@ -1,14 +1,14 @@
-# Ciicerone Blue Team — SOC Analyst Onboarding Guide
+# Vorsyghta Blue Team — SOC Analyst Onboarding Guide
 
 **Version:** 1.0  
 **Audience:** SOC Analysts, Tier 1–3  
-**Prerequisites:** Basic security knowledge, CLI familiarity, access to Ciicerone environment  
+**Prerequisites:** Basic security knowledge, CLI familiarity, access to Vorsyghta environment  
 
 ---
 
 ## Table of Contents
 
-1. [What Is Ciicerone Blue Team?](#1-what-is-ciicerone-blue-team)
+1. [What Is Vorsyghta Blue Team?](#1-what-is-vorsyghta-blue-team)
 2. [Architecture Overview](#2-architecture-overview)
 3. [Environment Setup](#3-environment-setup)
 4. [Your First Day: Verification & Connectivity](#4-your-first-day-verification--connectivity)
@@ -31,9 +31,9 @@
 
 ---
 
-## 1. What Is Ciicerone Blue Team?
+## 1. What Is Vorsyghta Blue Team?
 
-Ciicerone Blue Team is the **defensive operations module** of the Ciicerone AI-powered threat simulation platform. It provides SOC analysts with a unified toolkit for:
+Vorsyghta Blue Team is the **defensive operations module** of the Vorsyghta AI-powered threat simulation platform. It provides SOC analysts with a unified toolkit for:
 
 - **SIEM integration** — Query logs and alerts from Splunk, Elastic, Microsoft Sentinel, or QRadar
 - **IDS/IPS detection** — Snort/Suricata-style rule engine with 10 pre-built detection rules
@@ -44,7 +44,7 @@ Ciicerone Blue Team is the **defensive operations module** of the Ciicerone AI-p
 - **Log analysis** — Multi-source parsing (Linux auth, syslog, Windows security, Apache, Nginx) with correlation
 - **Digital forensics** — Evidence collection, chain of custody, hash verification, and timeline reconstruction
 
-All capabilities are accessible via **CLI** (`ciicerone blue-team`) and **REST API**.
+All capabilities are accessible via **CLI** (`vorsyghta blue-team`) and **REST API**.
 
 ---
 
@@ -54,13 +54,13 @@ All capabilities are accessible via **CLI** (`ciicerone blue-team`) and **REST A
 ┌─────────────────────────────────────────────────────────┐
 │                   SOC Analyst Workstation                │
 │                                                          │
-│  ciicerone blue-team <command>    REST API (FastAPI)     │
+│  vorsyghta blue-team <command>    REST API (FastAPI)     │
 │         │                              │                 │
 └─────────┼──────────────────────────────┼─────────────────┘
           │                              │
           ▼                              ▼
 ┌─────────────────────────────────────────────────────────┐
-│                   Ciicerone Blue Team                    │
+│                   Vorsyghta Blue Team                    │
 │                                                          │
 │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐   │
 │  │   SIEM   │ │   IDS    │ │   EDR    │ │  Triage  │   │
@@ -101,7 +101,7 @@ All capabilities are accessible via **CLI** (`ciicerone blue-team`) and **REST A
 ### 3.1 Prerequisites
 
 - Python 3.10+
-- Ciicerone installed (`pip install -e .` or `poetry install`)
+- Vorsyghta installed (`pip install -e .` or `poetry install`)
 - Environment variables configured (see `.env.example`)
 
 ### 3.2 Environment Variables
@@ -124,18 +124,18 @@ SIEM_INDEX=main                         # Default index/namespace
 # SIEM_URL format: https://api.loganalytics.io/v1/workspaces/{workspaceId}
 
 # === Logging ===
-CIICERONE_LOG_LEVEL=INFO                # DEBUG, INFO, WARNING, ERROR
-CIICERONE_LOG_FORMAT=json               # json or text
+VORSYGHTA_LOG_LEVEL=INFO                # DEBUG, INFO, WARNING, ERROR
+VORSYGHTA_LOG_FORMAT=json               # json or text
 ```
 
 ### 3.3 Verify Installation
 
 ```bash
-# Check Ciicerone is installed
-ciicerone --version
+# Check Vorsyghta is installed
+vorsyghta --version
 
 # Check blue-team command is available
-ciicerone blue-team --help
+vorsyghta blue-team --help
 
 # You should see:
 # SIEM, IDS, EDR, incident response, threat hunting, log analysis,
@@ -149,7 +149,7 @@ ciicerone blue-team --help
 ### Step 1: Check the Blue Team Dashboard
 
 ```bash
-ciicerone blue-team dashboard
+vorsyghta blue-team dashboard
 ```
 
 This shows a summary of all blue team components:
@@ -172,7 +172,7 @@ This shows a summary of all blue team components:
 ### Step 2: Test SIEM Connectivity (if configured)
 
 ```bash
-ciicerone blue-team siem connect
+vorsyghta blue-team siem connect
 ```
 
 Expected output with a connected SIEM:
@@ -193,17 +193,17 @@ Supported platforms: splunk, elastic, sentinel, qradar, generic
 
 ```bash
 # List all blue team subcommands
-ciicerone blue-team --help
+vorsyghta blue-team --help
 
 # Explore each module
-ciicerone blue-team siem --help
-ciicerone blue-team ids --help
-ciicerone blue-team edr --help
-ciicerone blue-team incident --help
-ciicerone blue-team hunt --help
-ciicerone blue-team logs --help
-ciicerone blue-team triage --help
-ciicerone blue-team forensics --help
+vorsyghta blue-team siem --help
+vorsyghta blue-team ids --help
+vorsyghta blue-team edr --help
+vorsyghta blue-team incident --help
+vorsyghta blue-team hunt --help
+vorsyghta blue-team logs --help
+vorsyghta blue-team triage --help
+vorsyghta blue-team forensics --help
 ```
 
 ---
@@ -228,35 +228,35 @@ The SIEM module is your primary window into security events. It connects to real
 
 **Test connectivity:**
 ```bash
-ciicerone blue-team siem connect
+vorsyghta blue-team siem connect
 ```
 
 **Search logs:**
 ```bash
 # Search for failed logins in the last hour
-ciicerone blue-team siem search -q "failed login" -h 1 -l 100
+vorsyghta blue-team siem search -q "failed login" -h 1 -l 100
 
 # Search with JSON output (for piping to other tools)
-ciicerone blue-team siem search -q "T1003" -h 24 -j
+vorsyghta blue-team siem search -q "T1003" -h 24 -j
 ```
 
 **Get alerts:**
 ```bash
 # Get all critical alerts
-ciicerone blue-team siem alerts -s critical -l 50
+vorsyghta blue-team siem alerts -s critical -l 50
 
 # Get new (unacknowledged) alerts
-ciicerone blue-team siem alerts --status new
+vorsyghta blue-team siem alerts --status new
 ```
 
 **View SIEM statistics:**
 ```bash
-ciicerone blue-team siem stats
+vorsyghta blue-team siem stats
 ```
 
 #### How It Works
 
-The `SIEMClient` (`ciicerone/integrations/siem_client.py`) is an async HTTP client that:
+The `SIEMClient` (`vorsyghta/integrations/siem_client.py`) is an async HTTP client that:
 1. Reads platform config from environment variables
 2. Builds platform-specific auth headers (Bearer, Basic, API key, SEC, Azure AD)
 3. Translates queries into platform-specific API calls
@@ -264,7 +264,7 @@ The `SIEMClient` (`ciicerone/integrations/siem_client.py`) is an async HTTP clie
 
 For Sentinel specifically, it uses `AzureCliCredential` for automatic token refresh and queries the Log Analytics API at `/v1/workspaces/{workspaceId}/query` with GET parameters.
 
-When no SIEM is configured, the `SIEMSimulator` (`ciicerone/defense/blue_team/siem_simulator.py`) provides:
+When no SIEM is configured, the `SIEMSimulator` (`vorsyghta/defense/blue_team/siem_simulator.py`) provides:
 - Simulated log ingestion from multiple sources
 - Correlation rules that generate alerts
 - Alert lifecycle management (new → acknowledged → resolved)
@@ -295,7 +295,7 @@ The IDS module simulates a Snort/Suricata-style network detection engine with pr
 
 **Inspect a packet against IDS rules:**
 ```bash
-ciicerone blue-team ids inspect \
+vorsyghta blue-team ids inspect \
   --protocol tcp \
   --src-ip 10.0.0.5 \
   --src-port 12345 \
@@ -306,12 +306,12 @@ ciicerone blue-team ids inspect \
 
 **List all IDS rules:**
 ```bash
-ciicerone blue-team ids rules
+vorsyghta blue-team ids rules
 ```
 
 **View IDS statistics:**
 ```bash
-ciicerone blue-team ids stats
+vorsyghta blue-team ids stats
 ```
 
 #### When to Use
@@ -355,7 +355,7 @@ The EDR module monitors endpoint activity for suspicious processes, file modific
 
 **Monitor a process execution:**
 ```bash
-ciicerone blue-team edr monitor \
+vorsyghta blue-team edr monitor \
   --process "powershell.exe" \
   --cmd "powershell -enc SGVsbG8gV29ybGQ=" \
   --pid 1234 \
@@ -371,7 +371,7 @@ Expected output if suspicious:
 
 **View EDR statistics:**
 ```bash
-ciicerone blue-team edr stats
+vorsyghta blue-team edr stats
 ```
 
 ---
@@ -419,18 +419,18 @@ The engine automatically flags alerts as false positives if they match:
 **Get triaged alerts:**
 ```bash
 # Get all triaged alerts sorted by priority
-ciicerone blue-team triage alerts
+vorsyghta blue-team triage alerts
 
 # Filter by severity
-ciicerone blue-team triage alerts -s critical
+vorsyghta blue-team triage alerts -s critical
 
 # Limit results
-ciicerone blue-team triage alerts -l 50
+vorsyghta blue-team triage alerts -l 50
 ```
 
 **View triage statistics:**
 ```bash
-ciicerone blue-team triage stats
+vorsyghta blue-team triage stats
 ```
 
 Output:
@@ -474,7 +474,7 @@ open → investigating → contained → eradicated → resolved → closed
 
 **Create an incident:**
 ```bash
-ciicerone blue-team incident create \
+vorsyghta blue-team incident create \
   --title "SQL Injection Attack on Payment API" \
   --severity critical \
   --category intrusion \
@@ -488,7 +488,7 @@ The `--auto` flag automatically executes all automated steps (containment action
 
 **Show incident details:**
 ```bash
-ciicerone blue-team incident show INC-20260630-0001
+vorsyghta blue-team incident show INC-20260630-0001
 ```
 
 Output shows the full playbook with step completion status:
@@ -505,28 +505,28 @@ IR-005     containment    Disable compromised accounts  ✓     Automated execut
 **List incidents:**
 ```bash
 # All incidents
-ciicerone blue-team incident list
+vorsyghta blue-team incident list
 
 # Filter by status
-ciicerone blue-team incident list --status investigating
+vorsyghta blue-team incident list --status investigating
 
 # Filter by severity
-ciicerone blue-team incident list --severity critical
+vorsyghta blue-team incident list --severity critical
 ```
 
 **Execute a specific step manually:**
 ```bash
-ciicerone blue-team incident execute INC-20260630-0001 IR-001 --result "Entry point: SQL injection via /api/v1/payments"
+vorsyghta blue-team incident execute INC-20260630-0001 IR-001 --result "Entry point: SQL injection via /api/v1/payments"
 ```
 
 **Generate post-incident report:**
 ```bash
-ciicerone blue-team incident report INC-20260630-0001
+vorsyghta blue-team incident report INC-20260630-0001
 ```
 
 **Add lessons learned:**
 ```bash
-ciicerone blue-team incident lesson INC-20260630-0001 --lesson "Need WAF rule for SQL injection on payment API"
+vorsyghta blue-team incident lesson INC-20260630-0001 --lesson "Need WAF rule for SQL injection on payment API"
 ```
 
 #### IR Phases Explained
@@ -562,22 +562,22 @@ The threat hunting module enables **proactive** threat detection using MITRE ATT
 
 **List available hunt hypotheses:**
 ```bash
-ciicerone blue-team hunt hypotheses
+vorsyghta blue-team hunt hypotheses
 ```
 
 **Hunt for a specific MITRE technique:**
 ```bash
-ciicerone blue-team hunt search --technique T1003
+vorsyghta blue-team hunt search --technique T1003
 ```
 
 **Execute a specific hypothesis:**
 ```bash
-ciicerone blue-team hunt search --hypothesis-id HUNT-001
+vorsyghta blue-team hunt search --hypothesis-id HUNT-001
 ```
 
 **Execute all hypotheses (full hunt sweep):**
 ```bash
-ciicerone blue-team hunt search --all
+vorsyghta blue-team hunt search --all
 ```
 
 Output:
@@ -604,7 +604,7 @@ Hunting for technique T1003...
 After hunting, you can search for specific IOCs across all hunt results:
 
 ```python
-from ciicerone.defense.blue_team.threat_hunter import ThreatHunter
+from vorsyghta.defense.blue_team.threat_hunter import ThreatHunter
 
 hunter = ThreatHunter()
 # ... execute hunts ...
@@ -633,7 +633,7 @@ The log analyzer parses and correlates logs from multiple sources into a normali
 
 **Parse a log file:**
 ```bash
-ciicerone blue-team logs parse \
+vorsyghta blue-team logs parse \
   --file /var/log/auth.log \
   --type linux_auth \
   --host web-server-01
@@ -653,7 +653,7 @@ Stats: {"total_entries": 1247, "by_type": {"auth_failed": 52, ...}}
 
 **Search parsed logs:**
 ```bash
-ciicerone blue-team logs search \
+vorsyghta blue-team logs search \
   --query "failed password" \
   --file /var/log/auth.log \
   --type linux_auth
@@ -692,7 +692,7 @@ Every artifact maintains a chain of custody log:
 ```
 timestamp: 2026-06-30T10:00:00Z
 action: collected
-actor: ciicerone-forensics
+actor: vorsyghta-forensics
 detail: File collected from web-server-01
 ```
 
@@ -700,12 +700,12 @@ detail: File collected from web-server-01
 
 **Initialize a forensic case:**
 ```bash
-ciicerone blue-team forensics init --case-id CASE-2026-001
+vorsyghta blue-team forensics init --case-id CASE-2026-001
 ```
 
 **Collect a file as evidence:**
 ```bash
-ciicerone blue-team forensics collect \
+vorsyghta blue-team forensics collect \
   --file /var/log/auth.log \
   --source web-server-01
 ```
@@ -721,12 +721,12 @@ Collected: FA-CASE-2026-001-0001
 
 **Generate forensic case report:**
 ```bash
-ciicerone blue-team forensics report --case-id CASE-2026-001
+vorsyghta blue-team forensics report --case-id CASE-2026-001
 ```
 
 **View forensics statistics:**
 ```bash
-ciicerone blue-team forensics stats
+vorsyghta blue-team forensics stats
 ```
 
 #### Forensic Timeline
@@ -734,7 +734,7 @@ ciicerone blue-team forensics stats
 The forensics collector builds a timeline from multiple evidence sources:
 
 ```python
-from ciicerone.defense.blue_team.forensics import ForensicsCollector
+from vorsyghta.defense.blue_team.forensics import ForensicsCollector
 
 fc = ForensicsCollector(case_id="CASE-2026-001")
 
@@ -755,7 +755,7 @@ timeline = fc.build_timeline(log_entries)
 The dashboard provides a single-view summary of all blue team components:
 
 ```bash
-ciicerone blue-team dashboard
+vorsyghta blue-team dashboard
 ```
 
 ```
@@ -782,7 +782,7 @@ ciicerone blue-team dashboard
 
 ## 7. Detection Rule Generation
 
-Ciicerone includes a detection rule generator that creates platform-specific rules from MITRE ATT&CK techniques.
+Vorsyghta includes a detection rule generator that creates platform-specific rules from MITRE ATT&CK techniques.
 
 ### Supported Output Formats
 
@@ -797,7 +797,7 @@ Ciicerone includes a detection rule generator that creates platform-specific rul
 ### Usage
 
 ```python
-from ciicerone.analytics.detection_rules import RuleGenerator, RuleFormat
+from vorsyghta.analytics.detection_rules import RuleGenerator, RuleFormat
 
 generator = RuleGenerator()
 
@@ -820,7 +820,7 @@ rule = generator.generate(
 
 ## 8. MITRE ATT&CK Mapping
 
-Every detection, alert, hunt, and incident in Ciicerone Blue Team maps to MITRE ATT&CK techniques. This provides a common language for describing threats.
+Every detection, alert, hunt, and incident in Vorsyghta Blue Team maps to MITRE ATT&CK techniques. This provides a common language for describing threats.
 
 ### High-Priority Techniques (weighted +15 in triage scoring)
 
@@ -849,10 +849,10 @@ Every detection, alert, hunt, and incident in Ciicerone Blue Team maps to MITRE 
 ├──────────────────────────────────────────────────────────┤
 │                                                          │
 │  1. Check dashboard                                      │
-│     $ ciicerone blue-team dashboard                      │
+│     $ vorsyghta blue-team dashboard                      │
 │                                                          │
 │  2. Pull triaged alerts                                  │
-│     $ ciicerone blue-team triage alerts                  │
+│     $ vorsyghta blue-team triage alerts                  │
 │                                                          │
 │  3. Focus on P1 alerts first                             │
 │     - Review recommended action                          │
@@ -865,10 +865,10 @@ Every detection, alert, hunt, and incident in Ciicerone Blue Team maps to MITRE 
 │     - Correlate with SIEM search                         │
 │                                                          │
 │  5. Check SIEM for new alerts                            │
-│     $ ciicerone blue-team siem alerts --status new       │
+│     $ vorsyghta blue-team siem alerts --status new       │
 │                                                          │
 │  6. End-of-shift: review triage stats                    │
-│     $ ciicerone blue-team triage stats                   │
+│     $ vorsyghta blue-team triage stats                   │
 │                                                          │
 └──────────────────────────────────────────────────────────┘
 ```
@@ -881,26 +881,26 @@ Every detection, alert, hunt, and incident in Ciicerone Blue Team maps to MITRE 
 ├──────────────────────────────────────────────────────────┤
 │                                                          │
 │  1. Review escalated incidents                           │
-│     $ ciicerone blue-team incident list --status         │
+│     $ vorsyghta blue-team incident list --status         │
 │       investigating                                      │
 │                                                          │
 │  2. Investigate using SIEM search                        │
-│     $ ciicerone blue-team siem search -q "T1003" -h 24   │
+│     $ vorsyghta blue-team siem search -q "T1003" -h 24   │
 │                                                          │
 │  3. Deep-dive with log analysis                          │
-│     $ ciicerone blue-team logs parse -f /var/log/auth    │
+│     $ vorsyghta blue-team logs parse -f /var/log/auth    │
 │       -t linux_auth                                      │
 │                                                          │
 │  4. Execute IR playbook steps                            │
-│     $ ciicerone blue-team incident execute INC-... IR-   │
+│     $ vorsyghta blue-team incident execute INC-... IR-   │
 │       001 --result "Entry point: SQL injection"          │
 │                                                          │
 │  5. Collect forensic evidence                            │
-│     $ ciicerone blue-team forensics collect -f /var/log  │
+│     $ vorsyghta blue-team forensics collect -f /var/log  │
 │       /auth.log -s web-server-01                         │
 │                                                          │
 │  6. Generate incident report                             │
-│     $ ciicerone blue-team incident report INC-...        │
+│     $ vorsyghta blue-team incident report INC-...        │
 │                                                          │
 └──────────────────────────────────────────────────────────┘
 ```
@@ -913,14 +913,14 @@ Every detection, alert, hunt, and incident in Ciicerone Blue Team maps to MITRE 
 ├──────────────────────────────────────────────────────────┤
 │                                                          │
 │  1. Run proactive threat hunts                           │
-│     $ ciicerone blue-team hunt search --all              │
+│     $ vorsyghta blue-team hunt search --all              │
 │                                                          │
 │  2. Review confirmed hunt results                        │
 │     - If confirmed → create incident for T2              │
 │     - If disproved → document and move on                │
 │                                                          │
 │  3. Tune detection rules based on FP data                │
-│     $ ciicerone blue-team triage stats                   │
+│     $ vorsyghta blue-team triage stats                   │
 │     - High FP rate → review and tune rules               │
 │                                                          │
 │  4. Generate new detection rules                         │
@@ -948,7 +948,7 @@ All blue team capabilities are also available via REST API.
 ### Base URL
 
 ```
-http://ciicerone.com/api/v1/blue-team/
+http://vorsyghta.com/api/v1/blue-team/
 ```
 
 ### Key Endpoints
@@ -979,7 +979,7 @@ http://ciicerone.com/api/v1/blue-team/
 ```bash
 # Get triaged alerts via API
 curl -H "Authorization: Bearer $JWT_TOKEN" \
-  https://ciicerone.com/api/v1/blue-team/triage/alerts?severity=critical
+  https://vorsyghta.com/api/v1/blue-team/triage/alerts?severity=critical
 
 # Create incident via API
 curl -X POST -H "Content-Type: application/json" \
@@ -991,7 +991,7 @@ curl -X POST -H "Content-Type: application/json" \
     "affected_systems": ["web-server-01"],
     "mitre_techniques": ["T1190"]
   }' \
-  https://ciicerone.com/api/v1/blue-team/incident/create
+  https://vorsyghta.com/api/v1/blue-team/incident/create
 ```
 
 ---
@@ -1021,53 +1021,53 @@ curl -X POST -H "Content-Type: application/json" \
 
 ```bash
 # === Dashboard ===
-ciicerone blue-team dashboard
+vorsyghta blue-team dashboard
 
 # === SIEM ===
-ciicerone blue-team siem connect                              # Test connectivity
-ciicerone blue-team siem search -q "query" -h 24 -l 100      # Search logs
-ciicerone blue-team siem alerts -s critical                   # Get alerts
-ciicerone blue-team siem stats                                # Statistics
+vorsyghta blue-team siem connect                              # Test connectivity
+vorsyghta blue-team siem search -q "query" -h 24 -l 100      # Search logs
+vorsyghta blue-team siem alerts -s critical                   # Get alerts
+vorsyghta blue-team siem stats                                # Statistics
 
 # === IDS ===
-ciicerone blue-team ids inspect -p tcp --dest-port 80 ...     # Inspect packet
-ciicerone blue-team ids rules                                 # List rules
-ciicerone blue-team ids stats                                 # Statistics
+vorsyghta blue-team ids inspect -p tcp --dest-port 80 ...     # Inspect packet
+vorsyghta blue-team ids rules                                 # List rules
+vorsyghta blue-team ids stats                                 # Statistics
 
 # === EDR ===
-ciicerone blue-team edr monitor -p "powershell.exe" -c "..."  # Monitor process
-ciicerone blue-team edr stats                                 # Statistics
+vorsyghta blue-team edr monitor -p "powershell.exe" -c "..."  # Monitor process
+vorsyghta blue-team edr stats                                 # Statistics
 
 # === Triage ===
-ciicerone blue-team triage alerts -s critical -l 50           # Triaged alerts
-ciicerone blue-team triage stats                              # Triage statistics
+vorsyghta blue-team triage alerts -s critical -l 50           # Triaged alerts
+vorsyghta blue-team triage stats                              # Triage statistics
 
 # === Incident Response ===
-ciicerone blue-team incident create -t "Title" -s critical \  # Create incident
+vorsyghta blue-team incident create -t "Title" -s critical \  # Create incident
   -c intrusion --systems "srv01,srv02" --mitre "T1190" --auto
-ciicerone blue-team incident show INC-20260630-0001           # Show details
-ciicerone blue-team incident list --status investigating      # List incidents
-ciicerone blue-team incident execute INC-... IR-001 \         # Execute step
+vorsyghta blue-team incident show INC-20260630-0001           # Show details
+vorsyghta blue-team incident list --status investigating      # List incidents
+vorsyghta blue-team incident execute INC-... IR-001 \         # Execute step
   --result "Entry point identified"
-ciicerone blue-team incident report INC-...                   # Generate report
+vorsyghta blue-team incident report INC-...                   # Generate report
 
 # === Threat Hunting ===
-ciicerone blue-team hunt hypotheses                           # List hypotheses
-ciicerone blue-team hunt search --technique T1003             # Hunt by technique
-ciicerone blue-team hunt search --all                         # Hunt all
+vorsyghta blue-team hunt hypotheses                           # List hypotheses
+vorsyghta blue-team hunt search --technique T1003             # Hunt by technique
+vorsyghta blue-team hunt search --all                         # Hunt all
 
 # === Log Analysis ===
-ciicerone blue-team logs parse -f /var/log/auth.log \         # Parse log file
+vorsyghta blue-team logs parse -f /var/log/auth.log \         # Parse log file
   -t linux_auth --host web-server-01
-ciicerone blue-team logs search -q "failed password" \        # Search logs
+vorsyghta blue-team logs search -q "failed password" \        # Search logs
   -f /var/log/auth.log -t linux_auth
 
 # === Forensics ===
-ciicerone blue-team forensics init -c CASE-2026-001           # Initialize case
-ciicerone blue-team forensics collect -f /var/log/auth.log \  # Collect evidence
+vorsyghta blue-team forensics init -c CASE-2026-001           # Initialize case
+vorsyghta blue-team forensics collect -f /var/log/auth.log \  # Collect evidence
   -s web-server-01
-ciicerone blue-team forensics report -c CASE-2026-001         # Case report
-ciicerone blue-team forensics stats                           # Statistics
+vorsyghta blue-team forensics report -c CASE-2026-001         # Case report
+vorsyghta blue-team forensics stats                           # Statistics
 ```
 
 ### Priority Decision Tree
@@ -1079,7 +1079,7 @@ Alert arrives
 Triage engine scores it (0-100)
     │
     ├── P1 (70-100) ──→ Immediate response
-    │                     ├── Create incident: ciicerone blue-team incident create ...
+    │                     ├── Create incident: vorsyghta blue-team incident create ...
     │                     ├── Escalate to T2/T3
     │                     └── Start IR playbook with --auto
     │
@@ -1117,4 +1117,4 @@ Tier 1 (Triage)  ──P1/Further investigation──→  Tier 2 (IR)
 
 ---
 
-*This document is maintained by the Ciicerone team. For questions, contact admin@ciicerone.com.*
+*This document is maintained by the Vorsyghta team. For questions, contact admin@vorsyghta.com.*

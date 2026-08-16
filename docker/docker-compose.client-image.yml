@@ -1,24 +1,24 @@
 # =============================================================================
-# Ciicerone — Client Pre-Built Image Override (Ollama path, hardened)
+# Vorsyghta — Client Pre-Built Image Override (Ollama path, hardened)
 # =============================================================================
 # THIRD layer, applied on top of:
 #   docker-compose.yml
 #   docker/docker-compose.integration.yml   (Ollama path + migrate one-shot)
 #
-# Swaps the locally-built ciicerone-api / migrate images for the pre-built
-# client image published at ghcr.io/quantumindssi/ciicerone, so the harness
+# Swaps the locally-built vorsyghta-api / migrate images for the pre-built
+# client image published at ghcr.io/quantumindssi/vorsyghta, so the harness
 # can run WITHOUT a local Dockerfile build — just `docker pull` + `up`.
 #
 # What this layer does:
-#   * Replaces `build:` with `image: ghcr.io/quantumindssi/ciicerone:${CLIENT_IMAGE_TAG:-latest}`
-#     for BOTH `ciicerone-api` and the `migrate` one-shot. The pre-built image
+#   * Replaces `build:` with `image: ghcr.io/quantumindssi/vorsyghta:${CLIENT_IMAGE_TAG:-latest}`
+#     for BOTH `vorsyghta-api` and the `migrate` one-shot. The pre-built image
 #     already bakes in the application code, migrations, and demos (see Dockerfile),
 #     so the migrate service can run `alembic upgrade head` straight from it.
 #   * Sets `pull_policy: always` so a stale local cache can't shadow a freshly
 #     published client image — every `up` fetches the current digest from ghcr.io.
 #   * Hardens the API env for a secure, network-isolated run:
 #       - ENVIRONMENT=production, DEBUG=false (no verbose error leakage)
-#       - CIICERONE_SECRET_KEY required (JWT signer — stable across workers)
+#       - VORSYGHTA_SECRET_KEY required (JWT signer — stable across workers)
 #       - CORS locked to the API host only (no wildcard origin)
 #       - LOG_LEVEL=INFO (no DEBUG/TRACE secrets in logs)
 #   * Keeps the single host port (${API_PORT:-8001}) for the acceptance gate;
@@ -35,7 +35,7 @@
 #   bash scripts/run_docker_integration.sh --client-image
 #
 # Required .env entries (same as integration override):
-#   CIICERONE_SECRET_KEY=<openssl rand -hex 32>
+#   VORSYGHTA_SECRET_KEY=<openssl rand -hex 32>
 #   POSTGRES_PASSWORD=...
 #   GRAFANA_ADMIN_PASSWORD=...
 #   PGADMIN_PASSWORD=...
@@ -52,23 +52,23 @@ services:
     # without !reset both `build:` and `image:` would survive and compose would
     # try to build AND pull. !reset clears build: so only the pulled image is used.
     build: !reset null
-    image: ghcr.io/quantumindssi/ciicerone:${CLIENT_IMAGE_TAG:-latest}
+    image: ghcr.io/quantumindssi/vorsyghta:${CLIENT_IMAGE_TAG:-latest}
     pull_policy: always
-    container_name: ciicerone-migrate
+    container_name: vorsyghta-migrate
     environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-ciicerone}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-ciicerone}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-vorsyghta}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-vorsyghta}
     working_dir: /app
     command: ["python", "-m", "alembic", "upgrade", "head"]
     networks:
-      - ciicerone-network
+      - vorsyghta-network
     restart: "no"
 
-  # ---- Ciicerone API (use the pulled client image + harden) ----------------
-  ciicerone-api:
+  # ---- Vorsyghta API (use the pulled client image + harden) ----------------
+  vorsyghta-api:
     # Same as above — clear the base compose's `build:` block so only the
     # pulled ghcr.io image is used (no local Dockerfile build).
     build: !reset null
-    image: ghcr.io/quantumindssi/ciicerone:${CLIENT_IMAGE_TAG:-latest}
+    image: ghcr.io/quantumindssi/vorsyghta:${CLIENT_IMAGE_TAG:-latest}
     pull_policy: always
     # Security hardening on top of the integration override's env.
     environment:
@@ -76,8 +76,8 @@ services:
       - ENVIRONMENT=production
       - DEBUG=false
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
-      # ---- Stable JWT signer (rbac.py reads CIICERONE_SECRET_KEY) ----
-      - CIICERONE_SECRET_KEY=${CIICERONE_SECRET_KEY:?Set CIICERONE_SECRET_KEY in .env}
+      # ---- Stable JWT signer (rbac.py reads VORSYGHTA_SECRET_KEY) ----
+      - VORSYGHTA_SECRET_KEY=${VORSYGHTA_SECRET_KEY:?Set VORSYGHTA_SECRET_KEY in .env}
       # ---- CORS locked to the API host only (no wildcard) ----
       - ENABLE_CORS=true
       - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:8001}
@@ -87,7 +87,7 @@ services:
       - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3.1:8b}
       - DEFAULT_LLM_PROVIDER=ollama
       # ---- Seed control for the integration analyst ----
-      - SEED_ANALYST_EMAIL=${SEED_ANALYST_EMAIL:-analyst@ciicerone.local}
+      - SEED_ANALYST_EMAIL=${SEED_ANALYST_EMAIL:-analyst@vorsyghta.local}
       - SEED_ANALYST_PASSWORD=${SEED_ANALYST_PASSWORD:-Analyst123!}
       - SEED_TENANT_ID=${SEED_TENANT_ID:-default}
       - SEED_ANALYST_ROLE=${SEED_ANALYST_ROLE:-analyst}

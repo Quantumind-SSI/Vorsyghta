@@ -2,15 +2,15 @@
 integrations API/CLI wiring, SSO, and Vault/KMS secret management.
 
 These tests exercise the new modules added in the pilot readiness expansion:
-  - ciicerone/core/white_team.py
-  - ciicerone/core/yellow_team.py
-  - ciicerone/core/green_team.py
-  - ciicerone/core/orange_team.py
-  - ciicerone/security/sso.py + sso_bridge.py
-  - ciicerone/security/secret_manager.py
-  - ciicerone/client_data/credentials/hashi_vault.py + aws_sm.py
-  - ciicerone/api/routers/integrations.py + sso.py + secrets.py
-  - ciicerone/cli/integrations.py
+  - vorsyghta/core/white_team.py
+  - vorsyghta/core/yellow_team.py
+  - vorsyghta/core/green_team.py
+  - vorsyghta/core/orange_team.py
+  - vorsyghta/security/sso.py + sso_bridge.py
+  - vorsyghta/security/secret_manager.py
+  - vorsyghta/client_data/credentials/hashi_vault.py + aws_sm.py
+  - vorsyghta/api/routers/integrations.py + sso.py + secrets.py
+  - vorsyghta/cli/integrations.py
   - ExerciseOrchestrator integration with the 4 new teams
 """
 from __future__ import annotations
@@ -21,8 +21,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from ciicerone.core.event_bus import EventBus
-from ciicerone.core.event_types import (
+from vorsyghta.core.event_bus import EventBus
+from vorsyghta.core.event_types import (
     EventType,
     RedTeamAttackStageEvent,
     WhiteTeamROECheckEvent,
@@ -31,10 +31,10 @@ from ciicerone.core.event_types import (
     GreenTeamTrainingAssignedEvent,
     OrangeTeamComplianceGapEvent,
 )
-from ciicerone.core.white_team import WhiteTeamCoordinator
-from ciicerone.core.yellow_team import InfrastructureManager
-from ciicerone.core.green_team import TrainingAwarenessEngine
-from ciicerone.core.orange_team import ComplianceGovernanceEngine
+from vorsyghta.core.white_team import WhiteTeamCoordinator
+from vorsyghta.core.yellow_team import InfrastructureManager
+from vorsyghta.core.green_team import TrainingAwarenessEngine
+from vorsyghta.core.orange_team import ComplianceGovernanceEngine
 
 
 # ---------------------------------------------------------------------------
@@ -360,7 +360,7 @@ class TestOrangeTeam:
 
 class TestExerciseOrchestratorExtended:
     def test_exercise_result_has_extended_fields(self):
-        from ciicerone.core.exercise_orchestrator import ExerciseResult
+        from vorsyghta.core.exercise_orchestrator import ExerciseResult
         result = ExerciseResult(
             exercise_id="ex1",
             tenant_id="t1",
@@ -373,7 +373,7 @@ class TestExerciseOrchestratorExtended:
         assert result.orange_team_report is None
 
     def test_exercise_result_to_dict_includes_extended(self):
-        from ciicerone.core.exercise_orchestrator import ExerciseResult
+        from vorsyghta.core.exercise_orchestrator import ExerciseResult
         result = ExerciseResult(
             exercise_id="ex1",
             tenant_id="t1",
@@ -395,7 +395,7 @@ class TestExerciseOrchestratorExtended:
 
 class TestSSO:
     def test_sso_user_info_model(self):
-        from ciicerone.security.sso import SSOUserInfo
+        from vorsyghta.security.sso import SSOUserInfo
         info = SSOUserInfo(
             provider="oidc",
             external_id="ext-123",
@@ -408,7 +408,7 @@ class TestSSO:
         assert "analyst" in info.groups
 
     def test_oidc_config_model(self):
-        from ciicerone.security.sso import OIDCConfig
+        from vorsyghta.security.sso import OIDCConfig
         config = OIDCConfig(
             client_id="test-id",
             client_secret="test-secret",
@@ -419,7 +419,7 @@ class TestSSO:
         assert "openid" in config.scopes
 
     def test_saml_config_model(self):
-        from ciicerone.security.sso import SAMLConfig
+        from vorsyghta.security.sso import SAMLConfig
         config = SAMLConfig(
             entity_id="https://sp.example.com",
             acs_url="https://sp.example.com/acs",
@@ -428,31 +428,31 @@ class TestSSO:
         assert config.entity_id == "https://sp.example.com"
 
     def test_group_to_role_mapping_admin(self):
-        from ciicerone.security.sso_bridge import SSOBridge, default_role_mapping
-        from ciicerone.security.rbac import Role
+        from vorsyghta.security.sso_bridge import SSOBridge, default_role_mapping
+        from vorsyghta.security.rbac import Role
         mapping = default_role_mapping()
         bridge = SSOBridge(user_store=MagicMock(), role_mapping=mapping)
         role = bridge._map_groups_to_role(["admins", "users"])
         assert role == Role.ADMIN
 
     def test_group_to_role_mapping_analyst(self):
-        from ciicerone.security.sso_bridge import SSOBridge, default_role_mapping
-        from ciicerone.security.rbac import Role
+        from vorsyghta.security.sso_bridge import SSOBridge, default_role_mapping
+        from vorsyghta.security.rbac import Role
         mapping = default_role_mapping()
         bridge = SSOBridge(user_store=MagicMock(), role_mapping=mapping)
         role = bridge._map_groups_to_role(["security-team"])
         assert role == Role.ANALYST
 
     def test_group_to_role_mapping_default_viewer(self):
-        from ciicerone.security.sso_bridge import SSOBridge, default_role_mapping
-        from ciicerone.security.rbac import Role
+        from vorsyghta.security.sso_bridge import SSOBridge, default_role_mapping
+        from vorsyghta.security.rbac import Role
         mapping = default_role_mapping()
         bridge = SSOBridge(user_store=MagicMock(), role_mapping=mapping)
         role = bridge._map_groups_to_role(["random-group"])
         assert role == Role.VIEWER
 
     def test_sso_token_response_model(self):
-        from ciicerone.security.sso_bridge import SSOTokenResponse
+        from vorsyghta.security.sso_bridge import SSOTokenResponse
         resp = SSOTokenResponse(
             access_token="jwt-token",
             user_id="u1",
@@ -470,25 +470,25 @@ class TestSSO:
 
 class TestSecretManager:
     def test_secret_manager_chain(self):
-        from ciicerone.security.secret_manager import SecretManager
-        from ciicerone.client_data.credentials.env import EnvCredentialProvider
+        from vorsyghta.security.secret_manager import SecretManager
+        from vorsyghta.client_data.credentials.env import EnvCredentialProvider
         mgr = SecretManager(providers=[EnvCredentialProvider()])
         assert len(mgr.providers) == 1
 
     @pytest.mark.asyncio
     async def test_get_secret_from_env(self, monkeypatch):
-        from ciicerone.security.secret_manager import SecretManager
-        from ciicerone.client_data.credentials.env import EnvCredentialProvider
+        from vorsyghta.security.secret_manager import SecretManager
+        from vorsyghta.client_data.credentials.env import EnvCredentialProvider
         monkeypatch.setenv("TEST_SECRET_VALUE", "s3cr3t")
         mgr = SecretManager(providers=[EnvCredentialProvider()])
-        from ciicerone.client_data.config import SecretRef
+        from vorsyghta.client_data.config import SecretRef
         value = await mgr.get_secret("TEST_SECRET_VALUE")
         assert value == "s3cr3t"
 
     @pytest.mark.asyncio
     async def test_get_required_raises_on_missing(self, monkeypatch):
-        from ciicerone.security.secret_manager import SecretManager
-        from ciicerone.client_data.credentials.env import EnvCredentialProvider
+        from vorsyghta.security.secret_manager import SecretManager
+        from vorsyghta.client_data.credentials.env import EnvCredentialProvider
         monkeypatch.delenv("DEFINITELY_NOT_SET_SECRET", raising=False)
         mgr = SecretManager(providers=[EnvCredentialProvider()])
         with pytest.raises(ValueError):
@@ -496,8 +496,8 @@ class TestSecretManager:
 
     @pytest.mark.asyncio
     async def test_get_many(self, monkeypatch):
-        from ciicerone.security.secret_manager import SecretManager
-        from ciicerone.client_data.credentials.env import EnvCredentialProvider
+        from vorsyghta.security.secret_manager import SecretManager
+        from vorsyghta.client_data.credentials.env import EnvCredentialProvider
         monkeypatch.setenv("SECRET_A", "val_a")
         mgr = SecretManager(providers=[EnvCredentialProvider()])
         result = await mgr.get_many(["SECRET_A", "MISSING_SECRET"])
@@ -505,13 +505,13 @@ class TestSecretManager:
         assert result["MISSING_SECRET"] is None
 
     def test_from_env_with_no_config(self):
-        from ciicerone.security.secret_manager import SecretManager
+        from vorsyghta.security.secret_manager import SecretManager
         mgr = SecretManager.from_env()
         # Should always have at least the env provider
         assert len(mgr.providers) >= 1
 
     def test_from_env_with_vault_config(self, monkeypatch):
-        from ciicerone.security.secret_manager import SecretManager
+        from vorsyghta.security.secret_manager import SecretManager
         monkeypatch.setenv("VAULT_URL", "https://vault.example.com")
         monkeypatch.setenv("VAULT_TOKEN", "test-token")
         mgr = SecretManager.from_env()
@@ -520,7 +520,7 @@ class TestSecretManager:
 
 class TestHashiCorpVaultProvider:
     def test_init(self):
-        from ciicerone.client_data.credentials.hashi_vault import HashiCorpVaultProvider
+        from vorsyghta.client_data.credentials.hashi_vault import HashiCorpVaultProvider
         provider = HashiCorpVaultProvider(
             vault_url="https://vault.example.com",
             token="test-token",
@@ -529,8 +529,8 @@ class TestHashiCorpVaultProvider:
 
     @pytest.mark.asyncio
     async def test_get_secret_not_found(self):
-        from ciicerone.client_data.credentials.hashi_vault import HashiCorpVaultProvider
-        from ciicerone.client_data.config import SecretRef
+        from vorsyghta.client_data.credentials.hashi_vault import HashiCorpVaultProvider
+        from vorsyghta.client_data.config import SecretRef
         provider = HashiCorpVaultProvider(
             vault_url="https://vault.example.com",
             token="test-token",
@@ -548,7 +548,7 @@ class TestHashiCorpVaultProvider:
 
 class TestAWSSecretsManagerProvider:
     def test_init(self):
-        from ciicerone.client_data.credentials.aws_sm import AWSSecretsManagerProvider
+        from vorsyghta.client_data.credentials.aws_sm import AWSSecretsManagerProvider
         provider = AWSSecretsManagerProvider(
             region="us-east-1",
             access_key_id="test-key",
@@ -563,19 +563,19 @@ class TestAWSSecretsManagerProvider:
 
 class TestAPIRouterRegistration:
     def test_integrations_router_imported(self):
-        from ciicerone.api.routers import integrations_router
+        from vorsyghta.api.routers import integrations_router
         assert integrations_router is not None
 
     def test_sso_router_imported(self):
-        from ciicerone.api.routers import sso_router
+        from vorsyghta.api.routers import sso_router
         assert sso_router is not None
 
     def test_secrets_router_imported(self):
-        from ciicerone.api.routers import secrets_router
+        from vorsyghta.api.routers import secrets_router
         assert secrets_router is not None
 
     def test_routers_in_all(self):
-        from ciicerone.api.routers import __all__
+        from vorsyghta.api.routers import __all__
         assert "integrations_router" in __all__
         assert "sso_router" in __all__
         assert "secrets_router" in __all__
@@ -587,12 +587,12 @@ class TestAPIRouterRegistration:
 
 class TestCLIRegistration:
     def test_integrations_cli_group_registered(self):
-        from ciicerone.cli.integrations import integrations_group
+        from vorsyghta.cli.integrations import integrations_group
         assert integrations_group is not None
         assert integrations_group.name == "integrations"
 
     def test_integrations_cli_has_commands(self):
-        from ciicerone.cli.integrations import integrations_group
+        from vorsyghta.cli.integrations import integrations_group
         command_names = list(integrations_group.commands.keys())
         assert "list" in command_names
         assert "test" in command_names or "test-all" in command_names
@@ -604,7 +604,7 @@ class TestCLIRegistration:
 
 class TestORMModels:
     def test_white_team_models_import(self):
-        from ciicerone.db.models.white_team import (
+        from vorsyghta.db.models.white_team import (
             ROECheckRecord, ROEViolationRecord, RiskAssessmentRecord,
         )
         assert ROECheckRecord.__tablename__ == "roe_check_records"
@@ -612,14 +612,14 @@ class TestORMModels:
         assert RiskAssessmentRecord.__tablename__ == "risk_assessment_records"
 
     def test_yellow_team_models_import(self):
-        from ciicerone.db.models.yellow_team import (
+        from vorsyghta.db.models.yellow_team import (
             EnvironmentRecord, EnvironmentComponentRecord,
         )
         assert EnvironmentRecord.__tablename__ == "yellow_team_environments"
         assert EnvironmentComponentRecord.__tablename__ == "yellow_team_environment_components"
 
     def test_green_team_models_import(self):
-        from ciicerone.db.models.green_team import (
+        from vorsyghta.db.models.green_team import (
             TrainingAssignmentRecord, TrainingModuleRecord, AwarenessAssessmentRecord,
         )
         assert TrainingAssignmentRecord.__tablename__ == "training_assignments"
@@ -627,7 +627,7 @@ class TestORMModels:
         assert AwarenessAssessmentRecord.__tablename__ == "awareness_assessments"
 
     def test_orange_team_models_import(self):
-        from ciicerone.db.models.orange_team import (
+        from vorsyghta.db.models.orange_team import (
             ComplianceGapRecord, FrameworkMappingRecord, ComplianceReportRecord,
         )
         assert ComplianceGapRecord.__tablename__ == "compliance_gap_records"
@@ -635,7 +635,7 @@ class TestORMModels:
         assert ComplianceReportRecord.__tablename__ == "compliance_report_records"
 
     def test_all_new_tables_in_metadata(self):
-        from ciicerone.db.base import Base
+        from vorsyghta.db.base import Base
         tables = Base.metadata.tables
         assert "roe_check_records" in tables
         assert "roe_violation_records" in tables

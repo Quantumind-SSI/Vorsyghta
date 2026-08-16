@@ -59,9 +59,9 @@ Build the application-layer substrate that every other maintainer depends on. If
 
 ## Exit Criteria
 
-1. `from ciicerone.db import Base, get_session` works.
+1. `from vorsyghta.db import Base, get_session` works.
 2. `Simulator.execute_simulation()` persists results and emits events.
-3. `ciicerone exercise run --scenario templates/finance_bec.yaml --teams red,blue` runs end-to-end.
+3. `vorsyghta exercise run --scenario templates/finance_bec.yaml --teams red,blue` runs end-to-end.
 4. All API endpoints require auth and enforce tenant isolation.
 
 ---

@@ -1,6 +1,6 @@
-# Ciicerone Scenario Templates
+# Vorsyghta Scenario Templates
 
-This directory contains example threat scenario configurations demonstrating the full capabilities of the Ciicerone YAML schema.
+This directory contains example threat scenario configurations demonstrating the full capabilities of the Vorsyghta YAML schema.
 
 ## Template Categories
 
@@ -28,8 +28,8 @@ This directory contains example threat scenario configurations demonstrating the
 
 ## Usage
 
-1. **Validation**: Use `ciicerone validate <template.yaml>` to check schema compliance
-2. **Simulation**: Use `ciicerone simulate <template.yaml>` to run the scenario
+1. **Validation**: Use `vorsyghta validate <template.yaml>` to check schema compliance
+2. **Simulation**: Use `vorsyghta simulate <template.yaml>` to run the scenario
 3. **Customization**: Copy and modify templates for your specific organization
 
 ## Schema Features Demonstrated
@@ -47,8 +47,8 @@ Each template showcases different aspects of the YAML schema:
 ### Quick Start
 1. **Copy Sample Template**: `cp templates/sample_phishing_template.yaml templates/my_template.yaml`
 2. **Modify for Your Needs**: Edit the required fields
-3. **Validate**: `ciicerone simulate --dry-run -s templates/my_template.yaml`
-4. **Test**: `ciicerone simulate -s templates/my_template.yaml`
+3. **Validate**: `vorsyghta simulate --dry-run -s templates/my_template.yaml`
+4. **Test**: `vorsyghta simulate -s templates/my_template.yaml`
 
 ### Documentation
 - **TEMPLATE_CREATION_GUIDE.md** - Complete template creation guide with examples

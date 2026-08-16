@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Demo script for Ciicerone client-data enrichment.
+# Demo script for Vorsyghta client-data enrichment.
 # Runs a local HTTP server, syncs client data, and enriches a demo scenario.
 
 set -euo pipefail
@@ -12,9 +12,9 @@ RECON_FLAG=""
 
 if [[ "${1:-}" == "--recon" ]]; then
     RECON_FLAG="--recon"
-    echo "=== Ciicerone client-data demo (with company recon) ==="
+    echo "=== Vorsyghta client-data demo (with company recon) ==="
 else
-    echo "=== Ciicerone client-data demo ==="
+    echo "=== Vorsyghta client-data demo ==="
 fi
 echo "Project dir: ${PROJECT_DIR}"
 echo "Config:      ${CONFIG}"
@@ -50,19 +50,19 @@ for i in {1..30}; do
 done
 
 echo "=== 1. List configured client data sources ==="
-python -m ciicerone --config "${CONFIG}" client-data list
+python -m vorsyghta --config "${CONFIG}" client-data list
 
 echo ""
 echo "=== 2. Sync client data sources for tenant 'acme-demo' ==="
-python -m ciicerone --config "${CONFIG}" client-data sync --tenant acme-demo
+python -m vorsyghta --config "${CONFIG}" client-data sync --tenant acme-demo
 
 echo ""
 echo "=== 3. Show synced client profile ==="
-python -m ciicerone --config "${CONFIG}" client-data show --tenant acme-demo
+python -m vorsyghta --config "${CONFIG}" client-data show --tenant acme-demo
 
 echo ""
 echo "=== 4. Enrich demo scenario with client data ==="
-python -m ciicerone --config "${CONFIG}" client-data enrich \
+python -m vorsyghta --config "${CONFIG}" client-data enrich \
     --tenant acme-demo \
     --scenario "${SCRIPT_DIR}/demo_scenario.yaml" \
     --output "${SCRIPT_DIR}/enriched_scenario.json" \

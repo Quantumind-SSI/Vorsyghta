@@ -1,5 +1,5 @@
 """
-Ciicerone Enterprise Test Suite
+Vorsyghta Enterprise Test Suite
 ==================================
 
 A comprehensive, production-grade testing framework featuring:
@@ -29,4 +29,4 @@ Quality Gates:
 """
 
 __version__ = "1.0.0"
-__author__ = "Ciicerone Team"
+__author__ = "Vorsyghta Team"

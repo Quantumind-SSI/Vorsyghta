@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Ciicerone Pilot Demo -- Full 8-Team Color-Team Flow
+# Vorsyghta Pilot Demo -- Full 8-Team Color-Team Flow
 # =============================================================================
 # A highly technical demo for maintainers showing the entire application
 # in full flow: Yellow -> White -> Red -> Blue -> Purple -> Black -> Green -> Orange
@@ -64,7 +64,7 @@ echo ""
 echo -e "${BOLD}${PURPLE}"
 cat << 'BANNER'
  ========================================================================
-   Ciicerone -- Pilot Programme Full-Flow Technical Demo
+   Vorsyghta -- Pilot Programme Full-Flow Technical Demo
    8-Team Color-Team Exercise:
    Yellow -> White -> Red -> Blue -> Purple -> Black -> Green -> Orange
  ========================================================================
@@ -82,26 +82,26 @@ echo ""
 # ----------------------------------------------------------------------------
 section "PHASE 0 -- Pre-flight System Verification"
 
-subsection "Python & ciicerone import"
+subsection "Python & vorsyghta import"
 echo -e "  ${BOLD}\$ python3 --version${NC}"
 python3 --version 2>&1 | sed 's/^/    /'
 echo ""
 
-echo -e "  ${BOLD}\$ ciicerone import check${NC}"
+echo -e "  ${BOLD}\$ vorsyghta import check${NC}"
 python3 << 'PYEOF' 2>&1 | sed 's/^/    /'
-from ciicerone.core.exercise_orchestrator import ExerciseOrchestrator, ExerciseResult
-from ciicerone.core.white_team import WhiteTeamCoordinator
-from ciicerone.core.yellow_team import InfrastructureManager
-from ciicerone.core.green_team import TrainingAwarenessEngine
-from ciicerone.core.orange_team import ComplianceGovernanceEngine
-from ciicerone.core.aar_generator import AARGenerator
-from ciicerone.core.evaluation_engine import EvaluationEngine
-from ciicerone.core.attack_orchestrator import AttackOrchestrator
-from ciicerone.security.sso import OIDCProvider, SAMLProvider
-from ciicerone.security.sso_bridge import SSOBridge
-from ciicerone.security.secret_manager import SecretManager
-from ciicerone.client_data.credentials.hashi_vault import HashiCorpVaultProvider
-from ciicerone.client_data.credentials.aws_sm import AWSSecretsManagerProvider
+from vorsyghta.core.exercise_orchestrator import ExerciseOrchestrator, ExerciseResult
+from vorsyghta.core.white_team import WhiteTeamCoordinator
+from vorsyghta.core.yellow_team import InfrastructureManager
+from vorsyghta.core.green_team import TrainingAwarenessEngine
+from vorsyghta.core.orange_team import ComplianceGovernanceEngine
+from vorsyghta.core.aar_generator import AARGenerator
+from vorsyghta.core.evaluation_engine import EvaluationEngine
+from vorsyghta.core.attack_orchestrator import AttackOrchestrator
+from vorsyghta.security.sso import OIDCProvider, SAMLProvider
+from vorsyghta.security.sso_bridge import SSOBridge
+from vorsyghta.security.secret_manager import SecretManager
+from vorsyghta.client_data.credentials.hashi_vault import HashiCorpVaultProvider
+from vorsyghta.client_data.credentials.aws_sm import AWSSecretsManagerProvider
 print("All 8 color teams + SSO + Vault/KMS imports: OK")
 PYEOF
 echo ""
@@ -109,8 +109,8 @@ echo ""
 subsection "ORM models -- 31 tables"
 echo -e "  ${BOLD}\$ ORM table count${NC}"
 python3 << 'PYEOF' 2>&1 | sed 's/^/    /'
-import ciicerone.db.models
-from ciicerone.db.base import Base
+import vorsyghta.db.models
+from vorsyghta.db.base import Base
 tables = sorted(Base.metadata.tables.keys())
 print(f"Total ORM tables: {len(tables)}")
 for t in tables:
@@ -124,7 +124,7 @@ run_shell "Migration files" "ls -1 ${PROJECT_DIR}/migrations/versions/*.py | gre
 subsection "API OpenAPI schema"
 echo -e "  ${BOLD}\$ FastAPI router check${NC}"
 python3 << 'PYEOF' 2>&1 | sed 's/^/    /'
-from ciicerone.api.main import app
+from vorsyghta.api.main import app
 schema = app.openapi()
 paths = schema.get("paths", {})
 print(f"OpenAPI paths: {len(paths)}")
@@ -136,7 +136,7 @@ PYEOF
 echo ""
 
 subsection "CLI command groups"
-run_shell "All top-level commands" "python3 -m ciicerone --help 2>&1 | grep '^  [a-z]' | sed 's/^  //'"
+run_shell "All top-level commands" "python3 -m vorsyghta --help 2>&1 | grep '^  [a-z]' | sed 's/^  //'"
 
 echo ""
 echo -e "  ${GREEN}Pre-flight checks complete.${NC}"
@@ -150,7 +150,7 @@ subsection "Provisioning sandbox environment"
 echo -e "  ${BOLD}\$ Yellow Team provision${NC}"
 python3 << 'PYEOF' 2>&1 | sed 's/^/    /'
 import asyncio
-from ciicerone.core.yellow_team import InfrastructureManager
+from vorsyghta.core.yellow_team import InfrastructureManager
 from unittest.mock import MagicMock
 
 async def demo():
@@ -202,7 +202,7 @@ section "PHASE 2 -- White Team: Rules of Engagement & Scope"
 subsection "Loading ROE rules"
 echo -e "  ${BOLD}\$ White Team ROE rules${NC}"
 python3 << 'PYEOF' 2>&1 | sed 's/^/    /'
-from ciicerone.core.white_team import WhiteTeamCoordinator
+from vorsyghta.core.white_team import WhiteTeamCoordinator
 coord = WhiteTeamCoordinator()
 rules = coord.roe_rules
 print(f"Loaded {len(rules)} ROE rules:")
@@ -216,7 +216,7 @@ echo ""
 subsection "Scope approval"
 echo -e "  ${BOLD}\$ Scope check${NC}"
 python3 << 'PYEOF' 2>&1 | sed 's/^/    /'
-from ciicerone.core.white_team import WhiteTeamCoordinator
+from vorsyghta.core.white_team import WhiteTeamCoordinator
 coord = WhiteTeamCoordinator(
     approved_systems=["email-gateway", "finance-portal", "ad-controller", "test-lab-01"],
 )
@@ -231,7 +231,7 @@ echo ""
 subsection "ROE violation detection"
 echo -e "  ${BOLD}\$ ROE compliance check${NC}"
 python3 << 'PYEOF' 2>&1 | sed 's/^/    /'
-from ciicerone.core.white_team import WhiteTeamCoordinator
+from vorsyghta.core.white_team import WhiteTeamCoordinator
 coord = WhiteTeamCoordinator()
 stages = [{
     "payload": {
@@ -264,7 +264,7 @@ echo -e "  ${BOLD}Executing 8-team exercise (offline mode)...${NC}"
 echo ""
 
 if [ "$LIVE_MODE" = true ]; then
-    python3 -m ciicerone exercise run \
+    python3 -m vorsyghta exercise run \
         --teams yellow,white,red,blue,purple,black,green,orange \
         --tenant bank-abc \
         --json-output \
@@ -274,8 +274,8 @@ else
     python3 << 'PYEOF' 2>&1 | sed 's/^/    /'
 import asyncio, json, sys
 sys.path.insert(0, ".")
-from ciicerone.core.exercise_orchestrator import ExerciseOrchestrator
-from ciicerone.core.models import ThreatScenario
+from vorsyghta.core.exercise_orchestrator import ExerciseOrchestrator
+from vorsyghta.core.models import ThreatScenario
 
 async def run():
     orchestrator = ExerciseOrchestrator(tenant_id="bank-abc")
@@ -386,9 +386,9 @@ section "PHASE 4 -- Purple Team AAR Report Generation"
 
 if [ -f "${OUTPUT_DIR}/exercise_result.json" ]; then
 subsection "Generate AAR from exercise result"
-run_shell "Generate JSON AAR" "python3 -m ciicerone report -i ${OUTPUT_DIR}/exercise_result.json --format json -o ${OUTPUT_DIR}/aar_report.json 2>&1 | head -15"
-run_shell "Generate HTML AAR" "python3 -m ciicerone report -i ${OUTPUT_DIR}/exercise_result.json --format html -o ${OUTPUT_DIR}/aar_report.html 2>&1 | head -15"
-run_shell "Generate CSV AAR" "python3 -m ciicerone report -i ${OUTPUT_DIR}/exercise_result.json --format csv -o ${OUTPUT_DIR}/aar_report.csv 2>&1 | head -15"
+run_shell "Generate JSON AAR" "python3 -m vorsyghta report -i ${OUTPUT_DIR}/exercise_result.json --format json -o ${OUTPUT_DIR}/aar_report.json 2>&1 | head -15"
+run_shell "Generate HTML AAR" "python3 -m vorsyghta report -i ${OUTPUT_DIR}/exercise_result.json --format html -o ${OUTPUT_DIR}/aar_report.html 2>&1 | head -15"
+run_shell "Generate CSV AAR" "python3 -m vorsyghta report -i ${OUTPUT_DIR}/exercise_result.json --format csv -o ${OUTPUT_DIR}/aar_report.csv 2>&1 | head -15"
 
 subsection "AAR output files"
 run_shell "Output files" "ls -lh ${OUTPUT_DIR}/aar_report.* 2>/dev/null"
@@ -402,12 +402,12 @@ fi
 section "PHASE 5 -- Enterprise Integration Status"
 
 subsection "Available integrations"
-run_shell "Integration platforms" "python3 -m ciicerone integrations list 2>&1 | head -15"
+run_shell "Integration platforms" "python3 -m vorsyghta integrations list 2>&1 | head -15"
 
 subsection "Integration API endpoints"
 echo -e "  ${BOLD}\$ API integration routes${NC}"
 python3 << 'PYEOF' 2>&1 | sed 's/^/    /'
-from ciicerone.api.routers.integrations import router
+from vorsyghta.api.routers.integrations import router
 print(f"Integration API routes: {len(router.routes)}")
 for route in router.routes:
     methods = ",".join(route.methods) if hasattr(route, "methods") else "?"
@@ -423,7 +423,7 @@ section "PHASE 6 -- SSO Provider Configuration"
 subsection "SSO provider check"
 echo -e "  ${BOLD}\$ SSO providers${NC}"
 python3 << 'PYEOF' 2>&1 | sed 's/^/    /'
-from ciicerone.security.sso import get_configured_providers
+from vorsyghta.security.sso import get_configured_providers
 providers = get_configured_providers()
 if providers:
     for p in providers:
@@ -437,8 +437,8 @@ echo ""
 subsection "SSO group-to-role mapping"
 echo -e "  ${BOLD}\$ Role mapping${NC}"
 python3 << 'PYEOF' 2>&1 | sed 's/^/    /'
-from ciicerone.security.sso_bridge import default_role_mapping
-from ciicerone.security.rbac import Role
+from vorsyghta.security.sso_bridge import default_role_mapping
+from vorsyghta.security.rbac import Role
 print("Group -> Role mapping (SSO bridge):")
 print("  groups containing 'admin' or 'domain admins' -> admin")
 print("  groups containing 'pilot' or 'sponsor'       -> pilot_sponsor")
@@ -454,7 +454,7 @@ echo ""
 subsection "SSO API endpoints"
 echo -e "  ${BOLD}\$ SSO routes${NC}"
 python3 << 'PYEOF' 2>&1 | sed 's/^/    /'
-from ciicerone.api.routers.sso import router
+from vorsyghta.api.routers.sso import router
 print(f"SSO API routes: {len(router.routes)}")
 for route in router.routes:
     methods = ",".join(route.methods) if hasattr(route, "methods") else "?"
@@ -470,7 +470,7 @@ section "PHASE 7 -- Vault/KMS Secret Management"
 subsection "Secret manager provider chain"
 echo -e "  ${BOLD}\$ Provider chain from env${NC}"
 python3 << 'PYEOF' 2>&1 | sed 's/^/    /'
-from ciicerone.security.secret_manager import SecretManager
+from vorsyghta.security.secret_manager import SecretManager
 mgr = SecretManager.from_env()
 print(f"Provider chain ({len(mgr.providers)} providers):")
 for i, p in enumerate(mgr.providers):
@@ -481,7 +481,7 @@ echo ""
 subsection "Secret manager API endpoints"
 echo -e "  ${BOLD}\$ Secrets API routes${NC}"
 python3 << 'PYEOF' 2>&1 | sed 's/^/    /'
-from ciicerone.api.routers.secrets import router
+from vorsyghta.api.routers.secrets import router
 print(f"Secrets API routes: {len(router.routes)}")
 for route in router.routes:
     methods = ",".join(route.methods) if hasattr(route, "methods") else "?"
@@ -492,7 +492,7 @@ echo ""
 subsection "Credential providers"
 echo -e "  ${BOLD}\$ Available providers${NC}"
 python3 << 'PYEOF' 2>&1 | sed 's/^/    /'
-from ciicerone.client_data.credentials import (
+from vorsyghta.client_data.credentials import (
     EnvCredentialProvider, AzureKeyVaultProvider,
     HashiCorpVaultProvider, AWSSecretsManagerProvider,
 )
@@ -510,12 +510,12 @@ echo ""
 section "PHASE 8 -- Red Team CLI (AttackOrchestrator)"
 
 subsection "Red team commands"
-run_shell "Red-team help" "python3 -m ciicerone red-team --help 2>&1 | head -20"
+run_shell "Red-team help" "python3 -m vorsyghta red-team --help 2>&1 | head -20"
 
 subsection "Attack orchestrator (standalone)"
 echo -e "  ${BOLD}\$ AttackOrchestrator check${NC}"
 python3 << 'PYEOF' 2>&1 | sed 's/^/    /'
-from ciicerone.core.attack_orchestrator import AttackOrchestrator
+from vorsyghta.core.attack_orchestrator import AttackOrchestrator
 print(f"AttackOrchestrator: {AttackOrchestrator.__name__}")
 print("  - Standalone attack sequence creation")
 print("  - No external API dependency")
@@ -570,6 +570,6 @@ ls -1 "${OUTPUT_DIR}/" 2>/dev/null | sed 's/^/    /'
 
 echo ""
 echo -e "${BOLD}${GREEN}========================================================================${NC}"
-echo -e "${BOLD}${GREEN}  Ciicerone is pilot-ready. Full 8-team flow verified.                  ${NC}"
+echo -e "${BOLD}${GREEN}  Vorsyghta is pilot-ready. Full 8-team flow verified.                  ${NC}"
 echo -e "${BOLD}${GREEN}========================================================================${NC}"
 echo ""

@@ -1,17 +1,26 @@
-# Color Team Architecture: Making Ciicerone the One-Stop Shop for Agentic Cybersecurity
+# Color Team Architecture: Making Vorsyghta the One-Stop Shop for Agentic Cybersecurity
 
 **Date:** 2026-07-01
-**Status:** Proposed
+**Status:** Proposed — build target for the 8-team model.
 **Depends on:** `ATTACK_INTEGRATION_PLAN.md`, `rl-and-rlhf-improvement-plan.md`, `ui-engineering-plan.md`
+
+> **Canonical cross-reference.** `docs/architecture/TEAM_ARCHITECTURE.md` §1 is the authoritative,
+> code-anchored team taxonomy (with per-team **status** flags). This document is the **build target**
+> for the full eight-colour model: **Red, Blue, Purple, Yellow, Green (Remediation/Automation),
+> Orange (Code Review / Attack-Surface Governance), White (Referee), Black (Evaluation)** plus the
+> functional teams (SOC, DFIR, VulnMgmt, SecOps/DevSecOps, AppSec, CloudSec, IAM, GRC, Threat Intel,
+> TPRM). Where the *shipping* engines currently differ (Green today = training/awareness, Orange today
+> = compliance/governance), TEAM_ARCHITECTURE.md marks the exact status; this plan defines where they
+> are headed.
 
 ---
 
 ## 1. Vision
 
-Ciicerone becomes the single platform where an organization's entire cybersecurity operation lives — every color team (Blue, Red, Purple, White, Green, Yellow, Orange, Black) is an **agentic capability** backed by LLM-driven agents, MCP tools, RLHF-trained policies, and a unified CLI/API/UI surface. A user can launch a full-spectrum exercise (Red attacks → Blue defends → Purple coaches → Green remediates → Yellow rebuilds → Orange reviews code → White enforces rules → Black evaluates) from one command:
+Vorsyghta becomes the single platform where an organization's entire cybersecurity operation lives — every color team (Blue, Red, Purple, White, Green, Yellow, Orange, Black) is an **agentic capability** backed by LLM-driven agents, MCP tools, RLHF-trained policies, and a unified CLI/API/UI surface. A user can launch a full-spectrum exercise (Red attacks → Blue defends → Purple coaches → Green remediates → Yellow rebuilds → Orange reviews code → White enforces rules → Black evaluates) from one command:
 
 ```bash
-ciicerone exercise run --scenario templates/supply_chain_compromise.yaml --teams all
+vorsyghta exercise run --scenario templates/supply_chain_compromise.yaml --teams all
 ```
 
 ---
@@ -20,8 +29,8 @@ ciicerone exercise run --scenario templates/supply_chain_compromise.yaml --teams
 
 | Color Team | Config | CLI | Agent | Playbook Content | Defense Module | Status |
 |------------|--------|-----|-------|------------------|----------------|--------|
-| **Blue** | `config.yaml` | `ciicerone/cli/blue_team.py` | `EDRAgent` | `BLUE_TEAM_CONTENT` | `defense/blue_team/` (8 modules) | **Complete** |
-| **Red** | `config.yaml` | `ciicerone/cli/red_team.py` | `AIAttackAgent`, `ReActAgent` | `RED_TEAM_CONTENT` | — | **Complete** |
+| **Blue** | `config.yaml` | `vorsyghta/cli/blue_team.py` | `EDRAgent` | `BLUE_TEAM_CONTENT` | `defense/blue_team/` (8 modules) | **Complete** |
+| **Red** | `config.yaml` | `vorsyghta/cli/red_team.py` | `AIAttackAgent`, `ReActAgent` | `RED_TEAM_CONTENT` | — | **Complete** |
 | **Purple** | `config.yaml` (lines 330-335) | **Missing** | **Missing** | `PURPLE_TEAM_CONTENT` | — | **Partial** (content only) |
 | **Yellow** | `config.yaml` (lines 321-328) | **Missing** | **Missing** | `GRC_CONTENT` (adjacent) | — | **Partial** (config only) |
 | **Green** | **Missing** | **Missing** | **Missing** | **Missing** | — | **Absent** |
@@ -42,8 +51,8 @@ ciicerone exercise run --scenario templates/supply_chain_compromise.yaml --teams
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                     Ciicerone Exercise Orchestrator                  │
-│          (ciicerone/core/exercise_orchestrator.py — NEW)             │
+│                     Vorsyghta Exercise Orchestrator                  │
+│          (vorsyghta/core/exercise_orchestrator.py — NEW)             │
 ├─────────────────────────────────────────────────────────────────────┤
 │  White Team (Referee)    │  Black Team (Observer)                     │
 │  - Rules of engagement   │  - Non-interfering evaluation              │
@@ -65,7 +74,7 @@ ciicerone exercise run --scenario templates/supply_chain_compromise.yaml --teams
                               │
                    ┌──────────▼──────────┐
                    │  Shared Event Bus    │
-                   │  (ciicerone/core/    │
+                   │  (vorsyghta/core/    │
                    │   event_bus.py — NEW)│
                    └──────────┬──────────┘
                               │
@@ -91,7 +100,7 @@ ciicerone exercise run --scenario templates/supply_chain_compromise.yaml --teams
 - Add `blue-team playbook` — generate detection playbooks from MITRE techniques (leverages existing `ai_enhanced_playbooks.py`)
 
 **New files:**
-- `ciicerone/defense/blue_team/reactive_agent.py` — autonomous defensive agent
+- `vorsyghta/defense/blue_team/reactive_agent.py` — autonomous defensive agent
 
 **RBAC permissions:** `blue.team.read`, `blue.team.respond`, `blue.team.isolate`, `blue.team.forensics`
 
@@ -99,7 +108,7 @@ ciicerone exercise run --scenario templates/supply_chain_compromise.yaml --teams
 
 ### 4.2 Red Team (Offensive) — EXISTS, ENHANCE
 
-**Current:** Full CLI (`red-team attack/status/report/steer/stop/list/search/health`), `AIAttackAgent`, `ReActAgent`, Ciicerone Attack integration.
+**Current:** Full CLI (`red-team attack/status/report/steer/stop/list/search/health`), `AIAttackAgent`, `ReActAgent`, Vorsyghta Attack integration.
 
 **Enhancements:**
 - Add `red-team coordinate` — publish attack events to event bus for Blue/Purple consumption
@@ -107,7 +116,7 @@ ciicerone exercise run --scenario templates/supply_chain_compromise.yaml --teams
 - Wire `AttackIntegration.monitor_flow()` to emit events to the bus at each flow stage
 
 **New files:**
-- `ciicerone/integrations/attack_event_publisher.py` — publishes attack flow events to event bus
+- `vorsyghta/integrations/attack_event_publisher.py` — publishes attack flow events to event bus
 
 **RBAC permissions:** `red.team.attack`, `red.team.steer`, `red.team.report`, `red.team.evade`
 
@@ -119,17 +128,17 @@ ciicerone exercise run --scenario templates/supply_chain_compromise.yaml --teams
 
 **Implementation:**
 
-**New CLI:** `ciicerone/cli/purple_team.py`
+**New CLI:** `vorsyghta/cli/purple_team.py`
 ```
-ciicerone purple coordinate  --exercise <id>     # Orchestrate Red↔Blue exercise
-ciicerone purple aar          --exercise <id>     # Generate After Action Review
-ciicerone purple validate     --exercise <id>     # Validate detection coverage
-ciicerone purple feedback     --exercise <id>     # Generate improvement feedback
-ciicerone purple score        --exercise <id>     # Score both teams
-ciicerone purple rubric       --show              # Show scoring rubric
+vorsyghta purple coordinate  --exercise <id>     # Orchestrate Red↔Blue exercise
+vorsyghta purple aar          --exercise <id>     # Generate After Action Review
+vorsyghta purple validate     --exercise <id>     # Validate detection coverage
+vorsyghta purple feedback     --exercise <id>     # Generate improvement feedback
+vorsyghta purple score        --exercise <id>     # Score both teams
+vorsyghta purple rubric       --show              # Show scoring rubric
 ```
 
-**New agent:** `ciicerone/agents/purple_team_agent.py`
+**New agent:** `vorsyghta/agents/purple_team_agent.py`
 - `PurpleTeamAgent` subscribes to event bus
 - Correlates attack events (from Red) with detection events (from Blue)
 - Uses LLM to generate AAR with:
@@ -138,7 +147,7 @@ ciicerone purple rubric       --show              # Show scoring rubric
   - Improvement recommendations for both teams
 - Stores AAR in RAG for future exercises (leverages existing `store_aar_in_rag` config)
 
-**New module:** `ciicerone/core/aar_generator.py`
+**New module:** `vorsyghta/core/aar_generator.py`
 - Structured AAR generation using LLM
 - Scoring rubric: detection_rate, response_time, evasion_success, mitre_coverage
 - Feeds back into RLHF reward model (per `rl-and-rlhf-improvement-plan.md`)
@@ -169,17 +178,17 @@ purple_team:
 
 **Implementation:**
 
-**New CLI:** `ciicerone/cli/white_team.py`
+**New CLI:** `vorsyghta/cli/white_team.py`
 ```
-ciicerone white rules       --create/--show/--validate   # Manage rules of engagement
-ciicerone white scope       --add/--remove/--check        # Manage attack scope
-ciicerone white approve     --scenario <path>             # Approve scenario for execution
-ciicerone white monitor     --exercise <id>               # Monitor exercise for rule violations
-ciicerone white halt        --exercise <id> --reason      # Halt exercise (referee stop)
-ciicerone white compliance  --exercise <id>               # Check compliance frameworks
+vorsyghta white rules       --create/--show/--validate   # Manage rules of engagement
+vorsyghta white scope       --add/--remove/--check        # Manage attack scope
+vorsyghta white approve     --scenario <path>             # Approve scenario for execution
+vorsyghta white monitor     --exercise <id>               # Monitor exercise for rule violations
+vorsyghta white halt        --exercise <id> --reason      # Halt exercise (referee stop)
+vorsyghta white compliance  --exercise <id>               # Check compliance frameworks
 ```
 
-**New module:** `ciicerone/core/rules_of_engagement.py`
+**New module:** `vorsyghta/core/rules_of_engagement.py`
 - `RulesOfEngagement` dataclass:
   - `allowed_targets`: IP ranges, assets (integrates with existing `SafetyController.validate_network()`)
   - `forbidden_techniques`: MITRE technique IDs that are off-limits
@@ -189,7 +198,7 @@ ciicerone white compliance  --exercise <id>               # Check compliance fra
 - `RoEValidator` checks scenarios against rules before execution
 - Integrates with existing `SafetyController.validate_scenario()` for restricted scenario approval
 
-**New agent:** `ciicerone/agents/white_team_agent.py`
+**New agent:** `vorsyghta/agents/white_team_agent.py`
 - `WhiteTeamAgent` monitors event bus for rule violations
 - Can halt exercise via orchestrator if rules breached
 - Generates compliance report post-exercise
@@ -215,17 +224,17 @@ white_team:
 
 **Implementation:**
 
-**New CLI:** `ciicerone/cli/green_team.py`
+**New CLI:** `vorsyghta/cli/green_team.py`
 ```
-ciicerone green remediate     --exercise <id>          # Generate remediation plan from AAR
-ciicerone green patch-track   --exercise <id>          # Track patch status of findings
-ciicerone green auto-fix      --finding <id>           # Generate auto-fix code/config
-ciicerone green verify        --fix <id>               # Verify a fix resolves the finding
-ciicerone green backlog       --list/--prioritize      # Manage remediation backlog
-ciicerone green bridge        --to yellow              # Hand off to Yellow Team
+vorsyghta green remediate     --exercise <id>          # Generate remediation plan from AAR
+vorsyghta green patch-track   --exercise <id>          # Track patch status of findings
+vorsyghta green auto-fix      --finding <id>           # Generate auto-fix code/config
+vorsyghta green verify        --fix <id>               # Verify a fix resolves the finding
+vorsyghta green backlog       --list/--prioritize      # Manage remediation backlog
+vorsyghta green bridge        --to yellow              # Hand off to Yellow Team
 ```
 
-**New module:** `ciicerone/core/remediation_engine.py`
+**New module:** `vorsyghta/core/remediation_engine.py`
 - `RemediationEngine` ingests AAR findings and:
   - Maps each finding to a remediation action (leverages existing `mitigation_generator.py`)
   - Generates concrete fix code/config using LLM (patches, config changes, rule updates)
@@ -233,7 +242,7 @@ ciicerone green bridge        --to yellow              # Hand off to Yellow Team
   - Prioritizes by risk score and exploitability
 - `PatchTracker` maintains remediation backlog with integration to issue trackers
 
-**New agent:** `ciicerone/agents/green_team_agent.py`
+**New agent:** `vorsyghta/agents/green_team_agent.py`
 - `GreenTeamAgent` consumes AAR from Purple Team
 - Generates remediation playbooks
 - Can hand off to Yellow Team for infrastructure changes
@@ -259,17 +268,17 @@ green_team:
 
 **Implementation:**
 
-**New CLI:** `ciicerone/cli/yellow_team.py`
+**New CLI:** `vorsyghta/cli/yellow_team.py`
 ```
-ciicerone yellow build        --spec <path>            # Build secure infrastructure from spec
-ciicerone yellow harden       --asset <id>             # Apply hardening baseline
-ciicerone yellow review       --from-green <id>        # Review Green Team remediation handoff
-ciicerone yellow iac          --generate/--validate     # Infrastructure-as-Code generation
-ciicerone yellow compliance   --framework <name>       # Map config to compliance framework
-ciicerone yellow deploy       --spec <path>            # Deploy hardened infrastructure
+vorsyghta yellow build        --spec <path>            # Build secure infrastructure from spec
+vorsyghta yellow harden       --asset <id>             # Apply hardening baseline
+vorsyghta yellow review       --from-green <id>        # Review Green Team remediation handoff
+vorsyghta yellow iac          --generate/--validate     # Infrastructure-as-Code generation
+vorsyghta yellow compliance   --framework <name>       # Map config to compliance framework
+vorsyghta yellow deploy       --spec <path>            # Deploy hardened infrastructure
 ```
 
-**New module:** `ciicerone/core/secure_build_engine.py`
+**New module:** `vorsyghta/core/secure_build_engine.py`
 - `SecureBuildEngine`:
   - Generates IaC (Terraform/Ansible/Docker Compose) from security specs
   - Applies CIS benchmarks and hardening baselines
@@ -277,7 +286,7 @@ ciicerone yellow deploy       --spec <path>            # Deploy hardened infrast
   - Integrates with existing `docker-compose.yml` and `docker-compose.attack.yml` patterns
 - `HardeningProfile` dataclass with benchmark-specific rules
 
-**New agent:** `ciicerone/agents/yellow_team_agent.py`
+**New agent:** `vorsyghta/agents/yellow_team_agent.py`
 - `YellowTeamAgent` receives handoffs from Green Team
 - Generates secure infrastructure specs
 - Validates builds before deployment
@@ -304,17 +313,17 @@ yellow_team:
 
 **Implementation:**
 
-**New CLI:** `ciicerone/cli/orange_team.py`
+**New CLI:** `vorsyghta/cli/orange_team.py`
 ```
-ciicerone orange review       --code <path>            # Review code for vulnerabilities
-ciicerone orange surface      --reduce <asset>         # Attack surface reduction recommendations
-ciicerone orange threat-model --spec <path>            # Generate threat model from design
-ciicerone orange sast         --code <path>            # Static analysis with LLM enrichment
-ciicerone orange deps         --code <path>            # Dependency vulnerability scan
-ciicerone orange advise       --to yellow              # Advise Yellow Team on findings
+vorsyghta orange review       --code <path>            # Review code for vulnerabilities
+vorsyghta orange surface      --reduce <asset>         # Attack surface reduction recommendations
+vorsyghta orange threat-model --spec <path>            # Generate threat model from design
+vorsyghta orange sast         --code <path>            # Static analysis with LLM enrichment
+vorsyghta orange deps         --code <path>            # Dependency vulnerability scan
+vorsyghta orange advise       --to yellow              # Advise Yellow Team on findings
 ```
 
-**New module:** `ciicerone/core/code_review_engine.py`
+**New module:** `vorsyghta/core/code_review_engine.py`
 - `CodeReviewEngine`:
   - LLM-enriched static analysis (combines traditional SAST with LLM reasoning)
   - Threat modeling from architecture specs (STRIDE methodology)
@@ -323,7 +332,7 @@ ciicerone orange advise       --to yellow              # Advise Yellow Team on f
   - Maps findings to MITRE ATT&CK techniques (leverages existing `intelligence/mitre_attack.py`)
 - `ThreatModel` dataclass with STRIDE categories
 
-**New agent:** `ciicerone/agents/orange_team_agent.py`
+**New agent:** `vorsyghta/agents/orange_team_agent.py`
 - `OrangeTeamAgent` reviews code/designs proactively
 - Generates advisory reports for Yellow Team
 - Tracks attack surface metrics over time
@@ -349,16 +358,16 @@ orange_team:
 
 **Implementation:**
 
-**New CLI:** `ciicerone/cli/black_team.py`
+**New CLI:** `vorsyghta/cli/black_team.py`
 ```
-ciicerone black observe       --exercise <id>          # Observe exercise (read-only)
-ciicerone black evaluate      --exercise <id>          # Evaluate all teams' performance
-ciicerone black report        --exercise <id>          # Generate unbiased evaluation report
-ciicerone black benchmark     --exercise <id>          # Benchmark against historical exercises
-ciicerone black trends        --range <period>         # Show performance trends across exercises
+vorsyghta black observe       --exercise <id>          # Observe exercise (read-only)
+vorsyghta black evaluate      --exercise <id>          # Evaluate all teams' performance
+vorsyghta black report        --exercise <id>          # Generate unbiased evaluation report
+vorsyghta black benchmark     --exercise <id>          # Benchmark against historical exercises
+vorsyghta black trends        --range <period>         # Show performance trends across exercises
 ```
 
-**New module:** `ciicerone/core/evaluation_engine.py`
+**New module:** `vorsyghta/core/evaluation_engine.py`
 - `EvaluationEngine`:
   - Collects all events from event bus in read-only mode (no interference)
   - Evaluates each team against objective metrics:
@@ -373,7 +382,7 @@ ciicerone black trends        --range <period>         # Show performance trends
   - Generates trend analysis across exercises
 - `PerformanceBenchmark` dataclass with per-team metrics
 
-**New agent:** `ciicerone/agents/black_team_agent.py`
+**New agent:** `vorsyghta/agents/black_team_agent.py`
 - `BlackTeamAgent` subscribes to event bus in read-only mode
 - Cannot emit events or call orchestrator actions
 - Generates objective evaluation report post-exercise
@@ -401,9 +410,9 @@ black_team:
 
 ## 5. Exercise Orchestrator (NEW — Core Piece)
 
-**File:** `ciicerone/core/exercise_orchestrator.py`
+**File:** `vorsyghta/core/exercise_orchestrator.py`
 
-This is the central piece that makes Ciicerone a "one-stop shop." It coordinates all color teams in a single exercise.
+This is the central piece that makes Vorsyghta a "one-stop shop." It coordinates all color teams in a single exercise.
 
 ### Exercise Lifecycle
 
@@ -412,7 +421,7 @@ This is the central piece that makes Ciicerone a "one-stop shop." It coordinates
        ↓
 2. Orchestrator: Spin up event bus, initialize all enabled teams
        ↓
-3. Red Team: Launch attack (via Ciicerone Attack or VM agent)
+3. Red Team: Launch attack (via Vorsyghta Attack or VM agent)
        ↓ (events published to bus)
 4. Blue Team: Detect and respond (reactive agent + defense modules)
        ↓ (events published to bus)
@@ -454,22 +463,22 @@ class ExerciseOrchestrator:
 
 ### Exercise CLI
 
-**New CLI group:** `ciicerone/cli/exercise.py`
+**New CLI group:** `vorsyghta/cli/exercise.py`
 ```
-ciicerone exercise run       --scenario <path> [--teams all|red,blue,purple,...]
-ciicerone exercise status    --exercise <id>
-ciicerone exercise halt      --exercise <id> --reason
-ciicerone exercise list      [--filter status]
-ciicerone exercise report    --exercise <id> [--format json|html|pdf]
-ciicerone exercise replay    --exercise <id>   # Replay events from stored exercise
-ciicerone exercise compare   --exercises <id1> <id2>  # Compare two exercises
+vorsyghta exercise run       --scenario <path> [--teams all|red,blue,purple,...]
+vorsyghta exercise status    --exercise <id>
+vorsyghta exercise halt      --exercise <id> --reason
+vorsyghta exercise list      [--filter status]
+vorsyghta exercise report    --exercise <id> [--format json|html|pdf]
+vorsyghta exercise replay    --exercise <id>   # Replay events from stored exercise
+vorsyghta exercise compare   --exercises <id1> <id2>  # Compare two exercises
 ```
 
 ---
 
 ## 6. Shared Event Bus (NEW)
 
-**File:** `ciicerone/core/event_bus.py`
+**File:** `vorsyghta/core/event_bus.py`
 
 Enables real-time team-to-team communication. Built on the existing `event_sourcing.py` patterns.
 
@@ -504,9 +513,9 @@ All events persisted via existing `postgres_event_store.py` for replay and bench
 
 ## 7. RBAC System (NEW)
 
-**File:** `ciicerone/core/rbac.py`
+**File:** `vorsyghta/core/rbac.py`
 
-Currently Ciicerone has no RBAC. The UI engineering plan calls for `ciicerone/core/auth.py` with JWT. This plan extends that with color-team-based roles.
+Currently Vorsyghta has no RBAC. The UI engineering plan calls for `vorsyghta/core/auth.py` with JWT. This plan extends that with color-team-based roles.
 
 ### Role Definitions
 
@@ -612,13 +621,13 @@ Applied to:
 
 | New Agent | File | Color Team |
 |-----------|------|------------|
-| `PurpleTeamAgent` | `ciicerone/agents/purple_team_agent.py` | Purple |
-| `WhiteTeamAgent` | `ciicerone/agents/white_team_agent.py` | White |
-| `GreenTeamAgent` | `ciicerone/agents/green_team_agent.py` | Green |
-| `YellowTeamAgent` | `ciicerone/agents/yellow_team_agent.py` | Yellow |
-| `OrangeTeamAgent` | `ciicerone/agents/orange_team_agent.py` | Orange |
-| `BlackTeamAgent` | `ciicerone/agents/black_team_agent.py` | Black |
-| `ReactiveBlueAgent` | `ciicerone/defense/blue_team/reactive_agent.py` | Blue |
+| `PurpleTeamAgent` | `vorsyghta/agents/purple_team_agent.py` | Purple |
+| `WhiteTeamAgent` | `vorsyghta/agents/white_team_agent.py` | White |
+| `GreenTeamAgent` | `vorsyghta/agents/green_team_agent.py` | Green |
+| `YellowTeamAgent` | `vorsyghta/agents/yellow_team_agent.py` | Yellow |
+| `OrangeTeamAgent` | `vorsyghta/agents/orange_team_agent.py` | Orange |
+| `BlackTeamAgent` | `vorsyghta/agents/black_team_agent.py` | Black |
+| `ReactiveBlueAgent` | `vorsyghta/defense/blue_team/reactive_agent.py` | Blue |
 
 ### RLHF Integration
 
@@ -744,7 +753,7 @@ rbac:
 
 ## 10. CLI Command Registration
 
-Add to `ciicerone/cli/main.py`:
+Add to `vorsyghta/cli/main.py`:
 
 ```python
 # Add Purple Team commands
@@ -778,15 +787,15 @@ cli.add_command(exercise_group, name="exercise")
 
 Final CLI surface:
 ```
-ciicerone blue-team     # Defensive operations
-ciicerone red-team      # Offensive operations
-ciicerone purple-team   # Collaboration & coaching
-ciicerone white-team    # Rules of engagement & refereeing
-ciicerone green-team    # Remediation & engineering bridge
-ciicerone yellow-team   # Secure build & infrastructure
-ciicerone orange-team   # Code review & attack surface reduction
-ciicerone black-team    # Observation & evaluation
-ciicerone exercise      # Multi-team orchestration (one-stop shop)
+vorsyghta blue-team     # Defensive operations
+vorsyghta red-team      # Offensive operations
+vorsyghta purple-team   # Collaboration & coaching
+vorsyghta white-team    # Rules of engagement & refereeing
+vorsyghta green-team    # Remediation & engineering bridge
+vorsyghta yellow-team   # Secure build & infrastructure
+vorsyghta orange-team   # Code review & attack surface reduction
+vorsyghta black-team    # Observation & evaluation
+vorsyghta exercise      # Multi-team orchestration (one-stop shop)
 ```
 
 ---
@@ -796,10 +805,10 @@ ciicerone exercise      # Multi-team orchestration (one-stop shop)
 ### Phase 1: Foundation (Weeks 1-2)
 **Goal:** Event bus, exercise orchestrator, RBAC skeleton
 
-- [ ] `ciicerone/core/event_bus.py` — pub/sub event bus
-- [ ] `ciicerone/core/exercise_orchestrator.py` — orchestrator core
-- [ ] `ciicerone/core/rbac.py` — role/permission model
-- [ ] `ciicerone/cli/exercise.py` — exercise CLI (`run`, `status`, `halt`, `list`)
+- [ ] `vorsyghta/core/event_bus.py` — pub/sub event bus
+- [ ] `vorsyghta/core/exercise_orchestrator.py` — orchestrator core
+- [ ] `vorsyghta/core/rbac.py` — role/permission model
+- [ ] `vorsyghta/cli/exercise.py` — exercise CLI (`run`, `status`, `halt`, `list`)
 - [ ] Wire Red Team attack events → event bus (`attack_event_publisher.py`)
 - [ ] Wire Blue Team defense modules → event bus subscription
 - [ ] Config schema for `color_teams` and `exercise` sections
@@ -808,12 +817,12 @@ ciicerone exercise      # Multi-team orchestration (one-stop shop)
 ### Phase 2: Purple & White Teams (Weeks 3-4)
 **Goal:** Collaboration and governance layers
 
-- [ ] `ciicerone/core/aar_generator.py` — AAR generation
-- [ ] `ciicerone/agents/purple_team_agent.py` — Purple agent
-- [ ] `ciicerone/cli/purple_team.py` — Purple CLI
-- [ ] `ciicerone/core/rules_of_engagement.py` — RoE engine
-- [ ] `ciicerone/agents/white_team_agent.py` — White agent
-- [ ] `ciicerone/cli/white_team.py` — White CLI
+- [ ] `vorsyghta/core/aar_generator.py` — AAR generation
+- [ ] `vorsyghta/agents/purple_team_agent.py` — Purple agent
+- [ ] `vorsyghta/cli/purple_team.py` — Purple CLI
+- [ ] `vorsyghta/core/rules_of_engagement.py` — RoE engine
+- [ ] `vorsyghta/agents/white_team_agent.py` — White agent
+- [ ] `vorsyghta/cli/white_team.py` — White CLI
 - [ ] Integrate Purple AAR → RAG storage
 - [ ] Integrate White RoE → SafetyController
 - [ ] Tests: AAR generation, RoE validation, rule violation detection
@@ -821,24 +830,24 @@ ciicerone exercise      # Multi-team orchestration (one-stop shop)
 ### Phase 3: Green & Yellow Teams (Weeks 5-6)
 **Goal:** Remediation and secure rebuild
 
-- [ ] `ciicerone/core/remediation_engine.py` — remediation generation
-- [ ] `ciicerone/agents/green_team_agent.py` — Green agent
-- [ ] `ciicerone/cli/green_team.py` — Green CLI
-- [ ] `ciicerone/core/secure_build_engine.py` — IaC/hardening
-- [ ] `ciicerone/agents/yellow_team_agent.py` — Yellow agent
-- [ ] `ciicerone/cli/yellow_team.py` — Yellow CLI
+- [ ] `vorsyghta/core/remediation_engine.py` — remediation generation
+- [ ] `vorsyghta/agents/green_team_agent.py` — Green agent
+- [ ] `vorsyghta/cli/green_team.py` — Green CLI
+- [ ] `vorsyghta/core/secure_build_engine.py` — IaC/hardening
+- [ ] `vorsyghta/agents/yellow_team_agent.py` — Yellow agent
+- [ ] `vorsyghta/cli/yellow_team.py` — Yellow CLI
 - [ ] Green→Yellow handoff via event bus
 - [ ] Tests: remediation generation, build validation, handoff flow
 
 ### Phase 4: Orange & Black Teams (Weeks 7-8)
 **Goal:** Code review and evaluation
 
-- [ ] `ciicerone/core/code_review_engine.py` — LLM-enriched SAST
-- [ ] `ciicerone/agents/orange_team_agent.py` — Orange agent
-- [ ] `ciicerone/cli/orange_team.py` — Orange CLI
-- [ ] `ciicerone/core/evaluation_engine.py` — performance evaluation
-- [ ] `ciicerone/agents/black_team_agent.py` — Black agent
-- [ ] `ciicerone/cli/black_team.py` — Black CLI
+- [ ] `vorsyghta/core/code_review_engine.py` — LLM-enriched SAST
+- [ ] `vorsyghta/agents/orange_team_agent.py` — Orange agent
+- [ ] `vorsyghta/cli/orange_team.py` — Orange CLI
+- [ ] `vorsyghta/core/evaluation_engine.py` — performance evaluation
+- [ ] `vorsyghta/agents/black_team_agent.py` — Black agent
+- [ ] `vorsyghta/cli/black_team.py` — Black CLI
 - [ ] Orange→Yellow advisory handoff
 - [ ] Black Team benchmarking against RAG history
 - [ ] Tests: code review, threat modeling, evaluation metrics
@@ -856,7 +865,7 @@ ciicerone exercise      # Multi-team orchestration (one-stop shop)
 ### Phase 6: Full-Spectrum Exercise & Polish (Weeks 11-12)
 **Goal:** End-to-end multi-team exercises
 
-- [ ] `ciicerone exercise run --teams all` full lifecycle
+- [ ] `vorsyghta exercise run --teams all` full lifecycle
 - [ ] Exercise replay from stored events
 - [ ] Exercise comparison (historical benchmarking)
 - [ ] API endpoints for exercise management (per UI plan)
@@ -873,44 +882,44 @@ ciicerone exercise      # Multi-team orchestration (one-stop shop)
 
 | File | Phase | Purpose |
 |------|-------|---------|
-| `ciicerone/core/event_bus.py` | 1 | Pub/sub event bus |
-| `ciicerone/core/exercise_orchestrator.py` | 1 | Multi-team orchestration |
-| `ciicerone/core/rbac.py` | 1 | Role-based access control |
-| `ciicerone/cli/exercise.py` | 1 | Exercise CLI |
-| `ciicerone/integrations/attack_event_publisher.py` | 1 | Red Team event publishing |
-| `ciicerone/defense/blue_team/reactive_agent.py` | 1 | Autonomous Blue agent |
-| `ciicerone/core/aar_generator.py` | 2 | After Action Review generation |
-| `ciicerone/agents/purple_team_agent.py` | 2 | Purple Team agent |
-| `ciicerone/cli/purple_team.py` | 2 | Purple Team CLI |
-| `ciicerone/core/rules_of_engagement.py` | 2 | Rules of engagement engine |
-| `ciicerone/agents/white_team_agent.py` | 2 | White Team agent |
-| `ciicerone/cli/white_team.py` | 2 | White Team CLI |
-| `ciicerone/core/remediation_engine.py` | 3 | Remediation generation |
-| `ciicerone/agents/green_team_agent.py` | 3 | Green Team agent |
-| `ciicerone/cli/green_team.py` | 3 | Green Team CLI |
-| `ciicerone/core/secure_build_engine.py` | 3 | Secure build/IaC engine |
-| `ciicerone/agents/yellow_team_agent.py` | 3 | Yellow Team agent |
-| `ciicerone/cli/yellow_team.py` | 3 | Yellow Team CLI |
-| `ciicerone/core/code_review_engine.py` | 4 | LLM-enriched code review |
-| `ciicerone/agents/orange_team_agent.py` | 4 | Orange Team agent |
-| `ciicerone/cli/orange_team.py` | 4 | Orange Team CLI |
-| `ciicerone/core/evaluation_engine.py` | 4 | Performance evaluation |
-| `ciicerone/agents/black_team_agent.py` | 4 | Black Team agent |
-| `ciicerone/cli/black_team.py` | 4 | Black Team CLI |
-| `ciicerone/agents/__init__.py` | 2 | Agents package init |
+| `vorsyghta/core/event_bus.py` | 1 | Pub/sub event bus |
+| `vorsyghta/core/exercise_orchestrator.py` | 1 | Multi-team orchestration |
+| `vorsyghta/core/rbac.py` | 1 | Role-based access control |
+| `vorsyghta/cli/exercise.py` | 1 | Exercise CLI |
+| `vorsyghta/integrations/attack_event_publisher.py` | 1 | Red Team event publishing |
+| `vorsyghta/defense/blue_team/reactive_agent.py` | 1 | Autonomous Blue agent |
+| `vorsyghta/core/aar_generator.py` | 2 | After Action Review generation |
+| `vorsyghta/agents/purple_team_agent.py` | 2 | Purple Team agent |
+| `vorsyghta/cli/purple_team.py` | 2 | Purple Team CLI |
+| `vorsyghta/core/rules_of_engagement.py` | 2 | Rules of engagement engine |
+| `vorsyghta/agents/white_team_agent.py` | 2 | White Team agent |
+| `vorsyghta/cli/white_team.py` | 2 | White Team CLI |
+| `vorsyghta/core/remediation_engine.py` | 3 | Remediation generation |
+| `vorsyghta/agents/green_team_agent.py` | 3 | Green Team agent |
+| `vorsyghta/cli/green_team.py` | 3 | Green Team CLI |
+| `vorsyghta/core/secure_build_engine.py` | 3 | Secure build/IaC engine |
+| `vorsyghta/agents/yellow_team_agent.py` | 3 | Yellow Team agent |
+| `vorsyghta/cli/yellow_team.py` | 3 | Yellow Team CLI |
+| `vorsyghta/core/code_review_engine.py` | 4 | LLM-enriched code review |
+| `vorsyghta/agents/orange_team_agent.py` | 4 | Orange Team agent |
+| `vorsyghta/cli/orange_team.py` | 4 | Orange Team CLI |
+| `vorsyghta/core/evaluation_engine.py` | 4 | Performance evaluation |
+| `vorsyghta/agents/black_team_agent.py` | 4 | Black Team agent |
+| `vorsyghta/cli/black_team.py` | 4 | Black Team CLI |
+| `vorsyghta/agents/__init__.py` | 2 | Agents package init |
 
 ### Modified Files (8)
 
 | File | Phase | Changes |
 |------|-------|---------|
-| `ciicerone/cli/main.py` | 1-4 | Register 7 new CLI commands |
-| `ciicerone/core/team_playbooks.py` | 2-4 | Add GREEN, YELLOW, ORANGE, WHITE, BLACK content |
-| `ciicerone/llm/rlhf_multiagent.py` | 5 | Extend `AgentRole` with color team roles |
-| `ciicerone/integrations/attack.py` | 1 | Wire `monitor_flow()` to event bus |
-| `ciicerone/mcp/safety/controller.py` | 2 | Integrate RoE validation |
+| `vorsyghta/cli/main.py` | 1-4 | Register 7 new CLI commands |
+| `vorsyghta/core/team_playbooks.py` | 2-4 | Add GREEN, YELLOW, ORANGE, WHITE, BLACK content |
+| `vorsyghta/llm/rlhf_multiagent.py` | 5 | Extend `AgentRole` with color team roles |
+| `vorsyghta/integrations/attack.py` | 1 | Wire `monitor_flow()` to event bus |
+| `vorsyghta/mcp/safety/controller.py` | 2 | Integrate RoE validation |
 | `config.yaml` | 1 | Add `color_teams`, `exercise`, `rbac` sections |
-| `ciicerone/core/models.py` | 1 | Add `ColorTeam`, `TeamEvent`, `ExerciseResult` models |
-| `ciicerone/api/main.py` | 6 | Register exercise/team API routers |
+| `vorsyghta/core/models.py` | 1 | Add `ColorTeam`, `TeamEvent`, `ExerciseResult` models |
+| `vorsyghta/api/main.py` | 6 | Register exercise/team API routers |
 
 ### New Test Files (6)
 
@@ -925,7 +934,7 @@ ciicerone exercise      # Multi-team orchestration (one-stop shop)
 
 ---
 
-## 13. How This Makes Ciicerone the One-Stop Shop
+## 13. How This Makes Vorsyghta the One-Stop Shop
 
 | Capability | Before | After |
 |------------|--------|-------|
@@ -942,7 +951,7 @@ ciicerone exercise      # Multi-team orchestration (one-stop shop)
 | Agent training | Content-only RLHF | Per-team reward functions, gym env for Red/Blue |
 | Historical benchmarking | RAG search | Black Team trend analysis across exercises |
 
-**The single command `ciicerone exercise run --scenario <path> --teams all` runs a complete cybersecurity exercise: White sets rules → Red attacks → Blue defends → Purple coaches → Green remediates → Yellow rebuilds → Orange reviews → White verifies → Black evaluates → results stored in RAG.**
+**The single command `vorsyghta exercise run --scenario <path> --teams all` runs a complete cybersecurity exercise: White sets rules → Red attacks → Blue defends → Purple coaches → Green remediates → Yellow rebuilds → Orange reviews → White verifies → Black evaluates → results stored in RAG.**
 
 ---
 
@@ -950,7 +959,7 @@ ciicerone exercise      # Multi-team orchestration (one-stop shop)
 
 | Plan | Dependency |
 |------|------------|
-| `ATTACK_INTEGRATION_PLAN.md` | Red Team attack flows feed the event bus; Ciicerone Attack API is the offensive engine |
+| `ATTACK_INTEGRATION_PLAN.md` | Red Team attack flows feed the event bus; Vorsyghta Attack API is the offensive engine |
 | `rl-and-rlhf-improvement-plan.md` | Reward model improvements (Part A) are extended with per-team rewards; Gym env (Part B) trains Red/Blue agents |
 | `ui-engineering-plan.md` | Auth system (`core/auth.py`) is extended with RBAC; UI surfaces needed for each color team and exercise management |
 | `gap-analysis.md` | Quantum threat agent wires as a Red Team sub-capability; OPA policy engine maps to White Team RoE enforcement |

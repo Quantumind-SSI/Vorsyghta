@@ -1,8 +1,8 @@
-# Ciicerone — Blue Team End-to-End Demo
+# Vorsyghta — Blue Team End-to-End Demo
 
 **Narrative: "Operation Sentinel"** — a SOC analyst's night shift, from first
 dashboard check through confirmed intrusion, containment, forensics, and
-post-incident handoff. Every `ciicerone blue-team` subcommand is exercised
+post-incident handoff. Every `vorsyghta blue-team` subcommand is exercised
 in a coherent storyline.
 
 ---
@@ -152,7 +152,7 @@ and C2 alerts land at **P1 (critical)** with recommended action
 You create a formal critical intrusion incident:
 
 ```bash
-ciicerone blue-team incident create \
+vorsyghta blue-team incident create \
     -t "Operation Sentinel — Credential Dumping & C2" \
     -s critical -c intrusion \
     --systems web-01,dc-01 \

@@ -1,6 +1,6 @@
-# Ciicerone End-to-End Demo: "Project Nightfall"
+# Vorsyghta End-to-End Demo: "Project Nightfall"
 
-A single narrative-driven script that exercises **every** Ciicerone feature area
+A single narrative-driven script that exercises **every** Vorsyghta feature area
 in the context of one authorized red-team engagement against a fictional company,
 **Acme Corp**.
 
@@ -23,7 +23,7 @@ engagement across 19 phases:
 | 4 | `client-data enrich` | Enrich the scenario with real Acme employees and network assets |
 | 5 | `simulate` | Dry-run the execution plan; optionally generate live phishing content |
 | 6 | `llm` | Test configured LLM providers (connectivity + auth) |
-| 7 | `red-team` | Ciicerone Attack health check; map scenario → autonomous attack flow |
+| 7 | `red-team` | Vorsyghta Attack health check; map scenario → autonomous attack flow |
 | 8 | `detect` | Generate Sigma/Splunk/Elastic/Sentinel detection rules from the scenario |
 | 9 | `blue-team` | SIEM, IDS, EDR, incident response, threat hunting, log analysis, triage, forensics |
 | 10 | `rag` | Initialize RAG; ingest MITRE ATT&CK; generate a tactical response playbook |
@@ -57,16 +57,16 @@ demos/end_to_end/
 ### Prerequisites
 
 - Python 3.11+
-- Ciicerone installed: `pip install -e .` from the repo root
+- Vorsyghta installed: `pip install -e .` from the repo root
 
 ### Default (offline-safe)
 
 ```bash
-cd /Users/startferanmi/Documents/Ciicerone/Ciicerone
+cd /path/to/Vorsyghta   # repo root
 bash demos/end_to_end/run_e2e_demo.sh
 ```
 
-This runs every phase in dry-run / offline mode. Some commands (Ciicerone Attack,
+This runs every phase in dry-run / offline mode. Some commands (Vorsyghta Attack,
 Neo4j-backed RAG, real SIEM) will report "not configured" — this is expected
 and still demonstrates the full CLI surface.
 
@@ -117,7 +117,7 @@ in `output/`, which typically include:
 - The demo reuses the local HTTP server from `demos/client_data/` on port
   `8765` to serve the Acme Corp employee directory. The script starts and
   stops this server automatically.
-- Commands that depend on external services (Ciicerone Attack, Neo4j, real SIEM/SOAR)
+- Commands that depend on external services (Vorsyghta Attack, Neo4j, real SIEM/SOAR)
   will print a "not configured" message rather than failing the script.
 - The deployment campaign in Phase 17 always runs in `--test-mode` (safe, no
   real email delivery) regardless of flags.

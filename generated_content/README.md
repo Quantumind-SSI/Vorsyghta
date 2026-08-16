@@ -1,4 +1,4 @@
-# Ciicerone Generated Content
+# Vorsyghta Generated Content
 
 This folder contains AI-generated cybersecurity training content organized by category.
 

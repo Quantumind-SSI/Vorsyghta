@@ -6,13 +6,13 @@
 # insecure storage, compromised container images, and cloud credential theft.
 #
 # USAGE:
-#   ciicerone simulate -s templates/zestpayment/zestpayment_cloud_misconfig.yaml
+#   vorsyghta simulate -s templates/zestpayment/zestpayment_cloud_misconfig.yaml
 
 metadata:
   name: "ZestPayment Cloud Infrastructure Attack Simulation"
   description: "Simulates cloud misconfiguration and infrastructure attacks on ZestPayment's Huawei Cloud deployment"
   version: "1.0.0"
-  author: "Ciicerone Security Team"
+  author: "Vorsyghta Security Team"
   created_at: "2026-06-29T10:00:00Z"
   updated_at: "2026-06-29T10:00:00Z"
   tags: ["cloud_security", "misconfiguration", "huawei_cloud", "container_security", "zestpayment"]
@@ -165,14 +165,14 @@ custom_parameters:
       mitre: "T1578.004"
 
   network_topology:
-    vpc: "dedicated_vpc_for_ciicerone"
+    vpc: "dedicated_vpc_for_vorsyghta"
     subnets:
       - "payment_processing_subnet (isolated)"
       - "management_subnet (restricted)"
       - "public_subnet (ELB only)"
     security_groups:
-      - "ciicerone-sg (ingress: 8000, 443; egress: restricted)"
-      - "ollama-sg (ingress: 11434 from ciicerone-sg only)"
+      - "vorsyghta-sg (ingress: 8000, 443; egress: restricted)"
+      - "ollama-sg (ingress: 11434 from vorsyghta-sg only)"
 
   success_indicators:
     misconfiguration_detected: true

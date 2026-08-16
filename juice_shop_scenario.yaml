@@ -7,7 +7,7 @@ severity: "high"
 # Target information
 target_systems:
   - name: "OWASP Juice Shop"
-    url: "http://ciicerone-target-juice-shop:3000"
+    url: "http://vorsyghta-target-juice-shop:3000"
     type: "web_application"
     os: "nodejs"
 

@@ -1,6 +1,6 @@
 # ZestPayment Cloud Security Threat Simulation Configuration
 # Target: Huawei Cloud CCE deployment with PCI-DSS compliance
-# Domain: ciicerone.com
+# Domain: vorsyghta.com
 
 # ============================================================
 # Core Simulation Settings
@@ -135,7 +135,7 @@ logging:
       enabled: true
     - type: "file"
       enabled: true
-      path: "/var/log/ciicerone"
+      path: "/var/log/vorsyghta"
       rotation: "daily"
       retention_days: 90
     - type: "huawei_lts"
@@ -166,8 +166,8 @@ api:
   port: 8000
   workers: 4
   cors_origins:
-    - "https://ciicerone.com"
-    - "https://www.ciicerone.com"
+    - "https://vorsyghta.com"
+    - "https://www.vorsyghta.com"
   rate_limiting:
     enabled: true
     requests_per_minute: 100
@@ -187,7 +187,7 @@ email_delivery:
     client_id: "${M365_CLIENT_ID}"
     client_secret: "${M365_CLIENT_SECRET}"
     scopes: ["https://graph.microsoft.com/.default"]
-    mail_from: "admin@ciicerone.com"
+    mail_from: "admin@vorsyghta.com"
     permissions:
       - "Mail.Send"
       - "User.Read.All"
@@ -244,9 +244,9 @@ directory:
 # ============================================================
 deployment:
   platform: "huawei_cloud_cce"
-  cluster_name: "ciicerone-zestpayment"
+  cluster_name: "vorsyghta-zestpayment"
   cluster_size: 2
-  namespace: "ciicerone"
+  namespace: "vorsyghta"
   instance_specs:
     cpu: 4
     memory: "8Gi"
@@ -259,7 +259,7 @@ deployment:
   container_registry:
     type: "huawei_swr"
     endpoint: "${SWR_ENDPOINT}"
-    namespace: "ciicerone"
+    namespace: "vorsyghta"
   storage:
     primary:
       type: "huawei_evs"
@@ -271,7 +271,7 @@ deployment:
       mount_path: "/datasets"
     logs:
       type: "huawei_obs"
-      bucket: "ciicerone-logs"
+      bucket: "vorsyghta-logs"
       retention_days: 90
   load_balancer:
     type: "huawei_elb"
@@ -308,9 +308,9 @@ secrets:
 # SSL/TLS & DNS
 # ============================================================
 ssl:
-  domain: "ciicerone.com"
+  domain: "vorsyghta.com"
   alternate_domains:
-    - "www.ciicerone.com"
+    - "www.vorsyghta.com"
   certificate_source: "company_pki"
   termination: "elb"
   auto_renewal: true
@@ -319,14 +319,14 @@ ssl:
 dns:
   records:
     - type: "A"
-      name: "ciicerone.com"
+      name: "vorsyghta.com"
       target: "elb_ip_address"
     - type: "CNAME"
-      name: "www.ciicerone.com"
-      target: "ciicerone.com"
+      name: "www.vorsyghta.com"
+      target: "vorsyghta.com"
     - type: "MX"
-      name: "ciicerone.com"
-      target: "ciicerone-com.mail.protection.outlook.com"
+      name: "vorsyghta.com"
+      target: "vorsyghta-com.mail.protection.outlook.com"
 
 # ============================================================
 # Quantum Threat Simulation (ZestPayment-specific)

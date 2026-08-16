@@ -1,5 +1,5 @@
 # ================================
-# Ciicerone - Essential Requirements
+# Vorsyghta - Essential Requirements
 # ================================
 # Core dependencies for Docker deployment
 # Last Updated: November 22, 2025

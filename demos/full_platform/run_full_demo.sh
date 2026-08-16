@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Full-platform demo script for Ciicerone.
+# Full-platform demo script for Vorsyghta.
 # Showcases all major feature areas: client-data, red-team, blue-team,
 # intel, detect, feedback, rag, datasets, vm, mcp, logs, templates, validate, status.
 
@@ -13,9 +13,9 @@ DEMO_PORT=8765
 RECON_FLAG=""
 if [[ "${1:-}" == "--recon" ]]; then
     RECON_FLAG="--recon"
-    echo "=== Ciicerone full-platform demo (with company recon) ==="
+    echo "=== Vorsyghta full-platform demo (with company recon) ==="
 else
-    echo "=== Ciicerone full-platform demo ==="
+    echo "=== Vorsyghta full-platform demo ==="
 fi
 echo "Config: ${CONFIG}"
 echo ""
@@ -51,42 +51,42 @@ run_cmd() {
 
 # 1. Core platform
 run_cmd "1. Platform status" \
-    python -m ciicerone --config "${CONFIG}" status
+    python -m vorsyghta --config "${CONFIG}" status
 
 # 2. Templates
 run_cmd "2. List scenario templates" \
-    python -m ciicerone --config "${CONFIG}" templates list-all
+    python -m vorsyghta --config "${CONFIG}" templates list-all
 
 # 3. Validation
 run_cmd "3. Validate a demo playbook" \
-    python -m ciicerone --config "${CONFIG}" validate playbook \
+    python -m vorsyghta --config "${CONFIG}" validate playbook \
         "${SCRIPT_DIR}/sample_data/demo_playbook.md"
 
 # 4. Client data
 run_cmd "4a. List client data sources" \
-    python -m ciicerone --config "${CONFIG}" client-data list --tenant acme-demo
+    python -m vorsyghta --config "${CONFIG}" client-data list --tenant acme-demo
 
 run_cmd "4b. Sync client data sources" \
-    python -m ciicerone --config "${CONFIG}" client-data sync --tenant acme-demo
+    python -m vorsyghta --config "${CONFIG}" client-data sync --tenant acme-demo
 
 run_cmd "4c. Show synced client profile" \
-    python -m ciicerone --config "${CONFIG}" client-data show --tenant acme-demo
+    python -m vorsyghta --config "${CONFIG}" client-data show --tenant acme-demo
 
 run_cmd "4d. Enrich demo scenario" \
-    python -m ciicerone --config "${CONFIG}" client-data enrich \
+    python -m vorsyghta --config "${CONFIG}" client-data enrich \
         --tenant acme-demo \
         --scenario "${CLIENT_DATA_DIR}/demo_scenario.yaml" \
         --output "${SCRIPT_DIR}/enriched_scenario.json" \
         ${RECON_FLAG}
 
-# 5. Red team (Ciicerone Attack integration)
+# 5. Red team (Vorsyghta Attack integration)
 run_cmd "5. Red team health" \
-    python -m ciicerone --config "${CONFIG}" red-team health
+    python -m vorsyghta --config "${CONFIG}" red-team health
 
-run_cmd "5b. Ciicerone Attack task mapping" \
+run_cmd "5b. Vorsyghta Attack task mapping" \
     python - <<PY
 import json
-from ciicerone.integrations.attack_mapper import AttackMapper
+from vorsyghta.integrations.attack_mapper import AttackMapper
 
 scenario = {
     "name": "Executive Spear-Phishing",
@@ -115,60 +115,60 @@ PY
 
 # 6. Blue team
 run_cmd "6a. Blue team dashboard" \
-    python -m ciicerone --config "${CONFIG}" blue-team dashboard
+    python -m vorsyghta --config "${CONFIG}" blue-team dashboard
 
 run_cmd "6b. IDS rules" \
-    python -m ciicerone --config "${CONFIG}" blue-team ids rules
+    python -m vorsyghta --config "${CONFIG}" blue-team ids rules
 
 run_cmd "6c. IDS inspect sample alert" \
-    python -m ciicerone --config "${CONFIG}" blue-team ids inspect \
+    python -m vorsyghta --config "${CONFIG}" blue-team ids inspect \
         --protocol tcp --src-ip 10.0.0.5 --dest-port 22 \
         --payload "Failed password for admin"
 
 run_cmd "6d. EDR monitor sample process" \
-    python -m ciicerone --config "${CONFIG}" blue-team edr monitor \
+    python -m vorsyghta --config "${CONFIG}" blue-team edr monitor \
         --process powershell.exe --cmd "powershell -enc SGVsbG8=" --user admin
 
 run_cmd "6e. Create incident response" \
-    python -m ciicerone --config "${CONFIG}" blue-team incident create \
+    python -m vorsyghta --config "${CONFIG}" blue-team incident create \
         -t "Credential Dumping Attack" -s critical -c intrusion \
         --systems DC-01,WEB-02 --mitre T1003,T1059 --auto
 
 # 7. Intelligence
 run_cmd "7. Intelligence sources" \
-    python -m ciicerone --config "${CONFIG}" intel sources
+    python -m vorsyghta --config "${CONFIG}" intel sources
 
 # 8. Detection engineering
 run_cmd "8. Detection rule formats" \
-    python -m ciicerone --config "${CONFIG}" detect list-formats
+    python -m vorsyghta --config "${CONFIG}" detect list-formats
 
 # 9. RAG
 run_cmd "9. RAG status" \
-    python -m ciicerone --config "${CONFIG}" rag status
+    python -m vorsyghta --config "${CONFIG}" rag status
 
 # 10. Feedback
 run_cmd "10. Feedback loop help" \
-    python -m ciicerone --config "${CONFIG}" feedback --help
+    python -m vorsyghta --config "${CONFIG}" feedback --help
 
 # 11. Datasets
 run_cmd "11. Dataset catalog" \
-    python -m ciicerone --config "${CONFIG}" datasets list
+    python -m vorsyghta --config "${CONFIG}" datasets list
 
 # 12. VM
 run_cmd "12. VM lab status" \
-    python -m ciicerone --config "${CONFIG}" vm status
+    python -m vorsyghta --config "${CONFIG}" vm status
 
 # 13. MCP
 run_cmd "13. MCP server status" \
-    python -m ciicerone --config "${CONFIG}" mcp status
+    python -m vorsyghta --config "${CONFIG}" mcp status
 
 # 14. Logs
 run_cmd "14. Simulation logs" \
-    python -m ciicerone --config "${CONFIG}" logs list
+    python -m vorsyghta --config "${CONFIG}" logs list
 
 # 15. Safety
 run_cmd "15. Safety check" \
-    python -m ciicerone --config "${CONFIG}" safety --help
+    python -m vorsyghta --config "${CONFIG}" safety --help
 
 # 16. Preview enriched scenario
 if [[ -f "${SCRIPT_DIR}/enriched_scenario.json" ]]; then

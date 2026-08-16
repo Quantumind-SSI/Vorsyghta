@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Ciicerone Live API Acceptance Gate
+# Vorsyghta Live API Acceptance Gate
 # =============================================================================
 # Drives the full pilot flow against the DEPLOYED Azure Container App API
 # (not the local offline path). This is the final acceptance gate per §7 #7
@@ -19,11 +19,11 @@
 # =============================================================================
 set -uo pipefail
 
-BASE="${1:-https://ciicerone-api.kindground-215c5e33.eastus2.azurecontainerapps.io}"
+BASE="${1:-https://vorsyghta-api.kindground-215c5e33.eastus2.azurecontainerapps.io}"
 SANDBOX_IP="20.242.43.111"
 PASS=0
 FAIL=0
-EMAIL="acceptance_$(date +%s)@ciicerone.local"
+EMAIL="acceptance_$(date +%s)@vorsyghta.local"
 PASSWORD="Password123!"
 
 GREEN='\033[0;32m'
@@ -35,7 +35,7 @@ ok()   { echo -e "  ${GREEN}PASS${NC}  $1"; PASS=$((PASS+1)); }
 fail() { echo -e "  ${RED}FAIL${NC}  $1"; FAIL=$((FAIL+1)); }
 section() { echo -e "\n${BOLD}=== $1 ===${NC}"; }
 
-echo "Ciicerone Live API Acceptance Gate"
+echo "Vorsyghta Live API Acceptance Gate"
 echo "  Target: $BASE"
 echo "  Time:   $(date -u)"
 echo ""

@@ -1,4 +1,4 @@
-"""Global test fixtures for Ciicerone test suite."""
+"""Global test fixtures for Vorsyghta test suite."""
 
 import pytest
 import asyncio
@@ -14,12 +14,12 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from ciicerone.core.models import (
+from vorsyghta.core.models import (
     ThreatScenario,
     ThreatType,
     SimulationStatus
 )
-from ciicerone.llm.base import BaseLLMProvider, LLMResponse
+from vorsyghta.llm.base import BaseLLMProvider, LLMResponse
 
 
 # ==========================================
@@ -101,7 +101,7 @@ def mock_llm_provider():
 def mock_llm_manager(mock_llm_provider):
     """Provide mock LLM manager."""
     try:
-        from src.ciicerone.llm.manager import LLMManager
+        from src.vorsyghta.llm.manager import LLMManager
         manager = LLMManager(config={"default_provider": "mock"})
         manager._providers = {"mock": mock_llm_provider}
         manager._active_provider = mock_llm_provider
@@ -228,7 +228,7 @@ logging:
 @pytest.fixture
 def test_database_url() -> str:
     """Test database URL."""
-    return "sqlite:///test_ciicerone.db"
+    return "sqlite:///test_vorsyghta.db"
 
 
 @pytest.fixture
@@ -313,8 +313,8 @@ def reset_logging():
     import logging
     yield
     # Reset logging to prevent test interference
-    logging.getLogger("ciicerone").handlers = []
-    logging.getLogger("ciicerone").setLevel(logging.WARNING)
+    logging.getLogger("vorsyghta").handlers = []
+    logging.getLogger("vorsyghta").setLevel(logging.WARNING)
 
 
 # Test markers

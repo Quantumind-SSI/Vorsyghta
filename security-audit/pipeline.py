@@ -129,9 +129,9 @@ class SecurityAuditPipeline:
         components = []
         
         # Look for main Python modules
-        ciicerone_dir = self.repo_root / "ciicerone"
-        if ciicerone_dir.exists():
-            for item in ciicerone_dir.iterdir():
+        vorsyghta_dir = self.repo_root / "vorsyghta"
+        if vorsyghta_dir.exists():
+            for item in vorsyghta_dir.iterdir():
                 if item.is_dir() and not item.name.startswith('__'):
                     components.append({
                         "name": item.name,
@@ -141,12 +141,12 @@ class SecurityAuditPipeline:
                     })
 
         # Look for API routers
-        api_dir = self.repo_root / "ciicerone" / "api"
+        api_dir = self.repo_root / "vorsyghta" / "api"
         if api_dir.exists():
             components.append({
                 "name": "api",
                 "type": "api_layer",
-                "path": "ciicerone/api",
+                "path": "vorsyghta/api",
                 "routers": [f.name for f in (api_dir / "routers").glob('*.py')] if (api_dir / "routers").exists() else []
             })
 
@@ -172,7 +172,7 @@ class SecurityAuditPipeline:
         flows = []
         
         # Look for database models
-        db_dir = self.repo_root / "ciicerone" / "db"
+        db_dir = self.repo_root / "vorsyghta" / "db"
         if db_dir.exists():
             models_dir = db_dir / "models"
             if models_dir.exists():
@@ -194,17 +194,17 @@ class SecurityAuditPipeline:
         boundaries.append({
             "type": "api_boundary",
             "description": "External API interface",
-            "entry_points": ["ciicerone/api/"],
+            "entry_points": ["vorsyghta/api/"],
             "trust_level": "untrusted_to_trusted"
         })
 
         # CLI boundary
-        cli_dir = self.repo_root / "ciicerone" / "cli"
+        cli_dir = self.repo_root / "vorsyghta" / "cli"
         if cli_dir.exists():
             boundaries.append({
                 "type": "cli_boundary",
                 "description": "Command-line interface",
-                "entry_points": ["ciicerone/cli/"],
+                "entry_points": ["vorsyghta/cli/"],
                 "trust_level": "user_to_system"
             })
 
@@ -229,7 +229,7 @@ class SecurityAuditPipeline:
         entry_points = []
 
         # API endpoints
-        api_routers = self.repo_root / "ciicerone" / "api" / "routers"
+        api_routers = self.repo_root / "vorsyghta" / "api" / "routers"
         if api_routers.exists():
             for router_file in api_routers.glob("*.py"):
                 entry_points.append({
@@ -239,7 +239,7 @@ class SecurityAuditPipeline:
                 })
 
         # CLI commands
-        cli_dir = self.repo_root / "ciicerone" / "cli"
+        cli_dir = self.repo_root / "vorsyghta" / "cli"
         if cli_dir.exists():
             for cli_file in cli_dir.glob("*.py"):
                 entry_points.append({
@@ -515,7 +515,7 @@ Return JSON with this structure:
                     "title": "Unvalidated API Input",
                     "description": "API endpoints may not properly validate input leading to information disclosure",
                     "component": "api",
-                    "file_path": "ciicerone/api/routers/",
+                    "file_path": "vorsyghta/api/routers/",
                     "impact": "Medium",
                     "likelihood": "Medium",
                     "mitigation": "Implement input validation and sanitization"

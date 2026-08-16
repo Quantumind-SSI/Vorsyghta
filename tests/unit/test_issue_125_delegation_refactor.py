@@ -15,7 +15,7 @@ from uuid import uuid4
 
 import sys
 
-from ciicerone.analytics import (
+from vorsyghta.analytics import (
     CampaignAnalyticsEngine,
     CampaignAnalytics,
     AnalyticsEventType,

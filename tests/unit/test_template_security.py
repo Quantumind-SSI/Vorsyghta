@@ -21,7 +21,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any
 
-from ciicerone.security.template_validator import (
+from vorsyghta.security.template_validator import (
     TemplateSecurityValidator,
     SecurityValidationResult,
     SecurityFinding,

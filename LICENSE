@@ -1,18 +1,18 @@
-Ciicerone — Dual License (Open Core)
+Vorsyghta — Dual License (Open Core)
 =====================================
 
-Copyright (c) 2025-2026 Ciicerone Team
+Copyright (c) 2025-2026 Vorsyghta Team
 
-Ciicerone is distributed under an **open-core** licensing model. The
+Vorsyghta is distributed under an **open-core** licensing model. The
 open-source core is licensed under the Apache License, Version 2.0
-("Apache 2.0"). The commercial modules are licensed under the Ciicerone
+("Apache 2.0"). The commercial modules are licensed under the Vorsyghta
 Commercial License and require a separate commercial license agreement.
 
 This LICENSE file contains the Apache 2.0 terms that apply to the
 open-source core. For the full component-by-component breakdown of what
 is open source and what is commercial, see
 `docs/licensing/COMPONENT_MATRIX.md`. For commercial licensing inquiries,
-contact commercial@ciicerone.io.
+contact commercial@vorsyghta.io.
 
 
 How to determine which license applies
@@ -25,10 +25,10 @@ How to determine which license applies
 2. Each commercial source file additionally carries a header notice of
    the form:
 
-       # Ciicerone Commercial Module
-       # Licensed under the Ciicerone Commercial License.
+       # Vorsyghta Commercial Module
+       # Licensed under the Vorsyghta Commercial License.
        # See docs/licensing/COMPONENT_MATRIX.md
-       # Contact commercial@ciicerone.io for licensing.
+       # Contact commercial@vorsyghta.io for licensing.
 
    Such files are NOT covered by the Apache 2.0 terms below and may not
    be used, copied, modified, or distributed without a valid commercial
@@ -245,12 +245,12 @@ Apache License, Version 2.0
    permissions and limitations under the License.
 
 
-Ciicerone Commercial License
+Vorsyghta Commercial License
 =============================
 
 The following modules and capabilities are NOT covered by the Apache 2.0
 license above and require a separate commercial license agreement with
-Ciicerone:
+Vorsyghta:
 
   - Intelligence stack (OSINT engine, dark web monitor, MITRE ATT&CK engine)
   - Event-sourced audit trail and PostgreSQL event store
@@ -272,7 +272,7 @@ For the authoritative component-by-component classification, see
 
 Commercial license terms are available on request. Contact:
 
-    commercial@ciicerone.io
+    commercial@vorsyghta.io
 
 Use of any commercial module without a valid commercial license agreement
 is strictly prohibited and constitutes copyright infringement.

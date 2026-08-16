@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Ciicerone — Blue Team End-to-End Demo
+# Vorsyghta — Blue Team End-to-End Demo
 # =============================================================================
 # Narrative: "Operation Sentinel" — a SOC analyst's night shift
 #
 # An analyst at Acme Corp's SOC works through a real intrusion from initial
 # detection through forensics and post-incident review, exercising every
-# `ciicerone blue-team` subcommand along the way:
+# `vorsyghta blue-team` subcommand along the way:
 #
 #   dashboard, siem (connect/search/alerts/stats),
 #   ids (inspect/rules/stats), edr (monitor/stats),
@@ -31,11 +31,11 @@ OUTPUT_DIR="${SCRIPT_DIR}/output"
 mkdir -p "${OUTPUT_DIR}"
 
 # --- CLI selection -----------------------------------------------------------
-# Prefer the `ciicerone` entry point; fall back to `python -m ciicerone`.
-if command -v ciicerone >/dev/null 2>&1; then
-    CLI="ciicerone"
+# Prefer the `vorsyghta` entry point; fall back to `python -m vorsyghta`.
+if command -v vorsyghta >/dev/null 2>&1; then
+    CLI="vorsyghta"
 else
-    CLI="python -m ciicerone"
+    CLI="python -m vorsyghta"
 fi
 
 # --- Flags -------------------------------------------------------------------
@@ -105,7 +105,7 @@ narrate "It's 02:30 UTC. You're the on-call SOC analyst for Acme Corp.
 The pager has been quiet, but the SIEM dashboard is your first stop
 to confirm the estate is healthy before you grab coffee."
 
-run "Check Ciicerone blue-team CLI is available" \
+run "Check Vorsyghta blue-team CLI is available" \
     ${CLI} blue-team --help
 
 # =============================================================================

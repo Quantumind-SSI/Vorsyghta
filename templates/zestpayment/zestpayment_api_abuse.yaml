@@ -6,13 +6,13 @@
 # limiting bypass, MITM attacks, and API key compromise.
 #
 # USAGE:
-#   ciicerone simulate -s templates/zestpayment/zestpayment_api_abuse.yaml
+#   vorsyghta simulate -s templates/zestpayment/zestpayment_api_abuse.yaml
 
 metadata:
   name: "ZestPayment API Security Simulation"
   description: "Simulates API abuse and security attacks against ZestPayment's developer API ecosystem"
   version: "1.0.0"
-  author: "Ciicerone Security Team"
+  author: "Vorsyghta Security Team"
   created_at: "2026-06-29T10:00:00Z"
   updated_at: "2026-06-29T10:00:00Z"
   tags: ["api_security", "api_abuse", "zestpayment", "developer_ecosystem", "owasp_api"]

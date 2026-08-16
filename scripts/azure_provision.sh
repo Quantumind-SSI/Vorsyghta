@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Azure Provisioning Script for Ciicerone Sandbox
+# Azure Provisioning Script for Vorsyghta Sandbox
 #
 # Provisions an Ubuntu VM with Docker, deploys:
 #   - Phantom Kali sandbox tool-server (port 8080)
@@ -8,22 +8,22 @@
 #
 # Usage: bash azure_provision.sh
 # Environment variables:
-#   CIICERONE_LOCATION   - Azure region (default: eastus2)
-#   CIICERONE_VM_SIZE    - VM size (default: Standard_D4s_v3)
+#   VORSYGHTA_LOCATION   - Azure region (default: eastus2)
+#   VORSYGHTA_VM_SIZE    - VM size (default: Standard_D4s_v3)
 #
 
 set -euo pipefail
 
-LOCATION="${CIICERONE_LOCATION:-eastus2}"
-VM_SIZE="${CIICERONE_VM_SIZE:-Standard_D8s_v3}"  # 8 vCPUs, 32GB RAM for Ciicerone Attack + targets
-RESOURCE_GROUP="ciicerone-rg"
-VNET_NAME="ciicerone-vnet"
-SUBNET_NAME="ciicerone-subnet"
-NSG_NAME="ciicerone-nsg"
-PUBLIC_IP_NAME="ciicerone-pip"
-NIC_NAME="ciicerone-nic"
-VM_NAME="ciicerone-sandbox"
-ADMIN_USER="ciicerone"
+LOCATION="${VORSYGHTA_LOCATION:-eastus2}"
+VM_SIZE="${VORSYGHTA_VM_SIZE:-Standard_D8s_v3}"  # 8 vCPUs, 32GB RAM for Vorsyghta Attack + targets
+RESOURCE_GROUP="vorsyghta-rg"
+VNET_NAME="vorsyghta-vnet"
+SUBNET_NAME="vorsyghta-subnet"
+NSG_NAME="vorsyghta-nsg"
+PUBLIC_IP_NAME="vorsyghta-pip"
+NIC_NAME="vorsyghta-nic"
+VM_NAME="vorsyghta-sandbox"
+ADMIN_USER="vorsyghta"
 
 ok()   { echo -e "\033[32m[OK]\033[0m   $1"; }
 info() { echo -e "\033[36m[INFO]\033[0m $1"; }
@@ -117,7 +117,7 @@ az network nsg rule create \
     --direction Inbound \
     -o table 2>/dev/null || true
 
-# Ciicerone Attack Web UI (port 3000)
+# Vorsyghta Attack Web UI (port 3000)
 az network nsg rule create \
     --resource-group "$RESOURCE_GROUP" \
     --nsg-name "$NSG_NAME" \
@@ -130,8 +130,8 @@ az network nsg rule create \
     --direction Inbound \
     -o table 2>/dev/null || true
 
-# Ciicerone Attack REST API (port 8080 - already allowed above, Ciicerone Attack uses same port)
-# Ciicerone Attack GraphQL API (port 8081)
+# Vorsyghta Attack REST API (port 8080 - already allowed above, Vorsyghta Attack uses same port)
+# Vorsyghta Attack GraphQL API (port 8081)
 az network nsg rule create \
     --resource-group "$RESOURCE_GROUP" \
     --nsg-name "$NSG_NAME" \
@@ -143,7 +143,7 @@ az network nsg rule create \
     --protocol Tcp \
     --direction Inbound \
     -o table 2>/dev/null || true
-ok "NSG rules configured (SSH, Tool Server, Ciicerone Attack UI, Ciicerone Attack GraphQL)"
+ok "NSG rules configured (SSH, Tool Server, Vorsyghta Attack UI, Vorsyghta Attack GraphQL)"
 
 # ---------------------------------------------------------------------------
 # 4. Public IP + NIC
@@ -196,7 +196,7 @@ packages:
 runcmd:
   - systemctl enable docker
   - systemctl start docker
-  - usermod -aG docker ciicerone
+  - usermod -aG docker vorsyghta
   - pip3 install fastapi uvicorn pydantic
   - |
     cat > /opt/tool_server.py << 'PYEOF'
@@ -204,7 +204,7 @@ runcmd:
     from pydantic import BaseModel
     import subprocess, shlex
 
-    app = FastAPI(title="Ciicerone Tool Server")
+    app = FastAPI(title="Vorsyghta Tool Server")
 
     ALLOWED = ["nmap", "whois", "dig", "curl", "wget", "ping", "traceroute",
                "nikto", "dirb", "gobuster", "hydra", "sqlmap", "masscan",
@@ -244,7 +244,7 @@ runcmd:
   - |
     cat > /etc/systemd/system/tool-server.service << 'SVCEOF'
     [Unit]
-    Description=Ciicerone Tool Server
+    Description=Vorsyghta Tool Server
     After=network.target
     [Service]
     Type=simple
@@ -260,18 +260,18 @@ runcmd:
   - chmod 666 /var/run/docker.sock
   - docker run -d --name dvwa -p 80:80 vulnerables/web-dvwa
   - |
-    # Deploy Ciicerone Attack stack
+    # Deploy Vorsyghta Attack stack
     mkdir -p /opt/attack
     cat > /opt/attack/.env << 'ENVEOF'
     AZURE_OPENAI_API_KEY=9WZrpwTXNYg8pP5Ly30SbfqRpRDYyLzrzlO6pjNlV092LeGgD9ARJQQJ99CFACHYHv6XJ3w3AAABACOGddkc
-    AZURE_OPENAI_ENDPOINT=https://ciicerone-openai.openai.azure.com/
+    AZURE_OPENAI_ENDPOINT=https://vorsyghta-openai.openai.azure.com/
     AZURE_OPENAI_DEPLOYMENT=gpt-4o
     ENVEOF
     cat > /opt/attack/docker-compose.yml << 'DCEOF'
     services:
       attack:
-        image: ciiceroneacr1782424350.azurecr.io/ciicerone-attack:latest
-        container_name: ciicerone-attack
+        image: vorsyghtaacr1782424350.azurecr.io/vorsyghta-attack:latest
+        container_name: vorsyghta-attack
         ports:
           - "8080:8080"
         env_file:
@@ -282,8 +282,8 @@ runcmd:
           - OPENAI_MODEL=${AZURE_OPENAI_DEPLOYMENT:-gpt-4o}
           - DATABASE_URL=postgres://attack:attack@attack-db:5432/attack?sslmode=disable
           - REDIS_URL=redis://attack-redis:6379
-          - SECRET_KEY=ciicerone-attack-secret-2024
-          - API_TOKEN=ciicerone-attack-token
+          - SECRET_KEY=vorsyghta-attack-secret-2024
+          - API_TOKEN=vorsyghta-attack-token
           - DOCKER_HOST=unix:///var/run/docker.sock
         volumes:
           - /var/run/docker.sock:/var/run/docker.sock
@@ -296,7 +296,7 @@ runcmd:
           - attack-net
       attack-db:
         image: vxcontrol/pgvector:latest
-        container_name: ciicerone-attack-db
+        container_name: vorsyghta-attack-db
         environment:
           - POSTGRES_DB=attack
           - POSTGRES_USER=attack
@@ -313,7 +313,7 @@ runcmd:
           - attack-net
       attack-redis:
         image: redis:7-alpine
-        container_name: ciicerone-attack-redis
+        container_name: vorsyghta-attack-redis
         volumes:
           - attack-redis-data:/data
         restart: unless-stopped
@@ -327,7 +327,7 @@ runcmd:
       attack-net:
         driver: bridge
     DCEOF
-  - az acr login --name ciiceroneacr1782424350
+  - az acr login --name vorsyghtaacr1782424350
   - docker-compose -f /opt/attack/docker-compose.yml up -d
 CLOUDINIT
 )
@@ -360,7 +360,7 @@ fi
 # ---------------------------------------------------------------------------
 info "Assigning AcrPull role to VM for ACR access..."
 VM_PRINCIPAL=$(az vm show --resource-group "$RESOURCE_GROUP" --name "$VM_NAME" --query identity.principalId -o tsv 2>/dev/null || echo "")
-ACR_ID=$(az acr show --name ciiceroneacr1782424350 --query id -o tsv 2>/dev/null || echo "")
+ACR_ID=$(az acr show --name vorsyghtaacr1782424350 --query id -o tsv 2>/dev/null || echo "")
 if [ -n "$VM_PRINCIPAL" ] && [ -n "$ACR_ID" ]; then
     az role assignment create --assignee "$VM_PRINCIPAL" --role AcrPull --scope "$ACR_ID" -o table 2>/dev/null || true
     ok "AcrPull role assigned to VM"
@@ -384,15 +384,15 @@ echo ""
 echo "  SSH:           ssh ${ADMIN_USER}@${PUBLIC_IP}"
 echo "  Tool Server:   http://${PUBLIC_IP}:8080"
 echo "  DVWA Target:   http://${PUBLIC_IP}"
-echo "  Ciicerone Attack UI:    http://${PUBLIC_IP}:3000"
-echo "  Ciicerone Attack API:   http://${PUBLIC_IP}:8080"
-echo "  Ciicerone Attack GQL:   http://${PUBLIC_IP}:8081"
+echo "  Vorsyghta Attack UI:    http://${PUBLIC_IP}:3000"
+echo "  Vorsyghta Attack API:   http://${PUBLIC_IP}:8080"
+echo "  Vorsyghta Attack GQL:   http://${PUBLIC_IP}:8081"
 echo ""
 echo "  Set in .env:"
-echo "    CIICERONE_TOOL_SERVER_URL=http://${PUBLIC_IP}:8080"
-echo "    CIICERONE_ATTACK_API_URL=http://${PUBLIC_IP}:8080"
-echo "    CIICERONE_ATTACK_GRAPHQL_URL=http://${PUBLIC_IP}:8081"
-echo "    CIICERONE_ATTACK_API_TOKEN=ciicerone-attack-token"
+echo "    VORSYGHTA_TOOL_SERVER_URL=http://${PUBLIC_IP}:8080"
+echo "    VORSYGHTA_ATTACK_API_URL=http://${PUBLIC_IP}:8080"
+echo "    VORSYGHTA_ATTACK_GRAPHQL_URL=http://${PUBLIC_IP}:8081"
+echo "    VORSYGHTA_ATTACK_API_TOKEN=vorsyghta-attack-token"
 echo ""
 echo "  Cleanup:"
 echo "    az group delete --name ${RESOURCE_GROUP} --yes --no-wait"

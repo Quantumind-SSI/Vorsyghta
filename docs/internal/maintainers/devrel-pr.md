@@ -49,7 +49,7 @@ Deliver the end-to-end integration test, rewrite the demo as a single command, p
 ## Exit Criteria
 
 1. `pytest tests/full/test_e2e_exercise.py` passes.
-2. Demo runs as a single `ciicerone exercise run` command and fails on errors.
+2. Demo runs as a single `vorsyghta exercise run` command and fails on errors.
 3. Cold email and README accurately reflect capabilities.
 4. Black Team produces exercise scores and benchmark reports.
 

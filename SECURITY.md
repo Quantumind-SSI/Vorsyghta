@@ -4,7 +4,7 @@
 
 ## Supported Versions
 
-We provide security updates for the following versions of Ciicerone:
+We provide security updates for the following versions of Vorsyghta:
 
 | Version | Supported          | End of Support |
 | ------- | ------------------ | -------------- |
@@ -14,15 +14,15 @@ We provide security updates for the following versions of Ciicerone:
 
 ## Reporting a Vulnerability
 
-The Ciicerone team takes security seriously. We appreciate your efforts to responsibly disclose your findings.
+The Vorsyghta team takes security seriously. We appreciate your efforts to responsibly disclose your findings.
 
 ### How to Report
 
 **IMPORTANT: Do NOT use GitHub Issues for security vulnerabilities**
 
 Instead, please report security vulnerabilities to:
-- **Email**: ciicerone@hotmail.com
-- **Subject**: `[SECURITY] Ciicerone Vulnerability Report`
+- **Email**: vorsyghta@hotmail.com
+- **Subject**: `[SECURITY] Vorsyghta Vulnerability Report`
 
 ### What to Include
 
@@ -44,7 +44,7 @@ Please include the following information in your security report:
 
 ### Security Measures
 
-Ciicerone implements several security measures:
+Vorsyghta implements several security measures:
 
 #### Code Security
 - Static code analysis with Bandit
@@ -111,11 +111,11 @@ We will not pursue legal action against security researchers who:
 
 ### Recognition
 
-We believe in recognizing security researchers who help improve Ciicerone:
+We believe in recognizing security researchers who help improve Vorsyghta:
 
 - **Hall of Fame**: Recognition in our security acknowledgments
 - **Credits**: Listed in release notes and documentation
-- **Swag**: Ciicerone merchandise for significant findings
+- **Swag**: Vorsyghta merchandise for significant findings
 
 ### Security Updates
 
@@ -128,7 +128,7 @@ When security updates are released:
 
 ### Best Practices for Users
 
-To use Ciicerone securely:
+To use Vorsyghta securely:
 
 #### API Keys
 - Store API keys in environment variables
@@ -143,7 +143,7 @@ To use Ciicerone securely:
 - Implement proper content filtering
 
 #### Infrastructure
-- Keep Ciicerone updated to latest version
+- Keep Vorsyghta updated to latest version
 - Monitor for security advisories
 - Use secure hosting environments
 - Implement proper access controls
@@ -156,7 +156,7 @@ To use Ciicerone securely:
 
 ### Compliance
 
-Ciicerone is designed to comply with:
+Vorsyghta is designed to comply with:
 - GDPR (General Data Protection Regulation)
 - CCPA (California Consumer Privacy Act)
 - SOC 2 principles
@@ -165,10 +165,10 @@ Ciicerone is designed to comply with:
 ### Contact Information
 
 For security-related questions:
-- **Security Email**: security@ciicerone.com
-- **General Issues**: [GitHub Issues](https://github.com/ciicerone/ciicerone/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/ciicerone/ciicerone/discussions)
+- **Security Email**: security@vorsyghta.com
+- **General Issues**: [GitHub Issues](https://github.com/QuantumindSSI/Vorsyghta/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/QuantumindSSI/Vorsyghta/discussions)
 
 ---
 
-**Note**: This security policy applies only to the Ciicerone codebase. For security issues with dependencies or third-party services, please report to the respective maintainers.
+**Note**: This security policy applies only to the Vorsyghta codebase. For security issues with dependencies or third-party services, please report to the respective maintainers.

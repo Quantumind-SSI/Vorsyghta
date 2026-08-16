@@ -1,5 +1,5 @@
 # ================================
-# Ciicerone API - Production Dockerfile
+# Vorsyghta API - Production Dockerfile
 # ================================
 # Multi-stage build for optimized container size
 
@@ -32,8 +32,8 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
 FROM python:3.11-slim
 
 # Set labels
-LABEL maintainer="Ciicerone Team"
-LABEL description="Ciicerone - AI-Powered Threat Simulation Platform"
+LABEL maintainer="Vorsyghta Team"
+LABEL description="Vorsyghta - AI-Powered Threat Simulation Platform"
 LABEL version="1.0.0"
 
 # Set environment variables
@@ -44,7 +44,7 @@ ENV PYTHONUNBUFFERED=1 \
     HOME="/app"
 
 # Create app user
-RUN groupadd -r ciicerone && useradd -r -g ciicerone ciicerone
+RUN groupadd -r vorsyghta && useradd -r -g vorsyghta vorsyghta
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -59,21 +59,21 @@ WORKDIR /app
 COPY --from=builder /opt/venv /opt/venv
 
 # Copy application code
-COPY --chown=ciicerone:ciicerone ciicerone/ /app/ciicerone/
-COPY --chown=ciicerone:ciicerone templates/ /app/templates/
-COPY --chown=ciicerone:ciicerone config.yaml /app/
-COPY --chown=ciicerone:ciicerone pyproject.toml /app/
-COPY --chown=ciicerone:ciicerone migrations/ /app/migrations/
-COPY --chown=ciicerone:ciicerone demos/ /app/demos/
-COPY --chown=ciicerone:ciicerone tests/ /app/tests/
-COPY --chown=ciicerone:ciicerone alembic.ini /app/
+COPY --chown=vorsyghta:vorsyghta vorsyghta/ /app/vorsyghta/
+COPY --chown=vorsyghta:vorsyghta templates/ /app/templates/
+COPY --chown=vorsyghta:vorsyghta config.yaml /app/
+COPY --chown=vorsyghta:vorsyghta pyproject.toml /app/
+COPY --chown=vorsyghta:vorsyghta migrations/ /app/migrations/
+COPY --chown=vorsyghta:vorsyghta demos/ /app/demos/
+COPY --chown=vorsyghta:vorsyghta tests/ /app/tests/
+COPY --chown=vorsyghta:vorsyghta alembic.ini /app/
 
 # Create necessary directories
 RUN mkdir -p /app/data /app/logs /app/generated_content /app/reports /app/output && \
-    chown -R ciicerone:ciicerone /app
+    chown -R vorsyghta:vorsyghta /app
 
 # Switch to app user
-USER ciicerone
+USER vorsyghta
 
 # Expose port
 EXPOSE 8000
@@ -83,4 +83,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
 # Default command - run API server
-CMD ["python", "-m", "uvicorn", "ciicerone.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
+CMD ["python", "-m", "uvicorn", "vorsyghta.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]

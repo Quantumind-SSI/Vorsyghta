@@ -1,4 +1,4 @@
-"""Alembic migrations configuration for Ciicerone.
+"""Alembic migrations configuration for Vorsyghta.
 
 This file configures Alembic for managing database schema migrations.
 """
@@ -22,7 +22,7 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # Database URL from environment
-database_url = os.getenv("DATABASE_URL", "postgresql://localhost/ciicerone")
+database_url = os.getenv("DATABASE_URL", "postgresql://localhost/vorsyghta")
 config.set_main_option("sqlalchemy.url", database_url)
 
 # Target metadata (not using SQLAlchemy ORM, so None)

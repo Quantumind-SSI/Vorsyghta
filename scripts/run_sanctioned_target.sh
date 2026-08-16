@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Ciicerone — Sanctioned Target Pentest Harness
+# Vorsyghta — Sanctioned Target Pentest Harness
 # =============================================================================
-# Brings up the Ciicerone stack PLUS a sanctioned, intentionally-vulnerable
+# Brings up the Vorsyghta stack PLUS a sanctioned, intentionally-vulnerable
 # target container (OWASP Juice Shop by default), waits for both to be
 # healthy, then either:
-#   * prints the exact `ciicerone red-team attack` command to point the
+#   * prints the exact `vorsyghta red-team attack` command to point the
 #     attack agent at the target (--dry-run, the default), OR
 #   * launches the attack directly (--attack) if a tool server is reachable.
 #
@@ -23,7 +23,7 @@
 # Flow:
 #   1. Validate .env (same vars as run_docker_integration.sh)
 #   2. Bring up the stack + sanctioned target via docker compose
-#   3. Wait for Ciicerone API health (localhost:API_PORT)
+#   3. Wait for Vorsyghta API health (localhost:API_PORT)
 #   4. Wait for Juice Shop health (localhost:JUICE_SHOP_PORT)
 #   5. Print / launch the red-team attack command against the target
 #
@@ -36,14 +36,14 @@
 #   bash scripts/run_sanctioned_target.sh --client-image           # use ghcr.io image
 #
 # Required .env entries (same as run_docker_integration.sh):
-#   CIICERONE_SECRET_KEY, POSTGRES_PASSWORD, GRAFANA_ADMIN_PASSWORD
+#   VORSYGHTA_SECRET_KEY, POSTGRES_PASSWORD, GRAFANA_ADMIN_PASSWORD
 #   (+ AZURE_OPENAI_* if you want real LLM-backed exercise runs)
 #
 # Optional .env entries:
 #   JUICE_SHOP_PORT=3000          (host port for the Juice Shop target)
 #   JUICE_SHOP_IMAGE_TAG=latest   (Juice Shop image tag)
-#   API_PORT=8001                 (host port for the Ciicerone API)
-#   CIICERONE_TOOL_SERVER_URL     (tool server for --attack mode)
+#   API_PORT=8001                 (host port for the Vorsyghta API)
+#   VORSYGHTA_TOOL_SERVER_URL     (tool server for --attack mode)
 # =============================================================================
 set -uo pipefail
 
@@ -144,21 +144,21 @@ require_var() {
         your_*_here|changeme*) die "$name is still the placeholder value — set a real value in .env." ;;
     esac
 }
-require_var CIICERONE_SECRET_KEY
+require_var VORSYGHTA_SECRET_KEY
 require_var POSTGRES_PASSWORD
 require_var GRAFANA_ADMIN_PASSWORD
 
 mkdir -p "$RUN_DIR"
 
 # ---- Bring up the stack + target ------------------------------------------
-info "Bringing up the Ciicerone stack + sanctioned target ($TARGET_NAME)..."
+info "Bringing up the Vorsyghta stack + sanctioned target ($TARGET_NAME)..."
 if [ "$CLIENT_IMAGE" -eq 1 ]; then
-    info "  using pre-built client image (ghcr.io/quantumindssi/ciicerone:${CLIENT_IMAGE_TAG})"
+    info "  using pre-built client image (ghcr.io/quantumindssi/vorsyghta:${CLIENT_IMAGE_TAG})"
 fi
 "${COMPOSE[@]}" up -d 2>&1 | tee "$RUN_DIR/up.log"
 
-# ---- Wait for Ciicerone API health ----------------------------------------
-info "Waiting for Ciicerone API at $API_BASE/health ..."
+# ---- Wait for Vorsyghta API health ----------------------------------------
+info "Waiting for Vorsyghta API at $API_BASE/health ..."
 API_HEALTHY=0
 for i in $(seq 1 60); do
     STATUS=$(curl -s --max-time 5 "$API_BASE/health" 2>/dev/null | python3 -c "import sys,json
@@ -166,14 +166,14 @@ try: print(json.load(sys.stdin).get('status',''))
 except Exception: print('')" 2>/dev/null || true)
     if [ "$STATUS" = "healthy" ]; then
         API_HEALTHY=1
-        info "Ciicerone API healthy after ${i}0s."
+        info "Vorsyghta API healthy after ${i}0s."
         break
     fi
     sleep 10
 done
 if [ "$API_HEALTHY" -eq 0 ]; then
-    err "Ciicerone API did not become healthy in time."
-    "${COMPOSE[@]}" logs --tail=50 ciicerone-api >&2 || true
+    err "Vorsyghta API did not become healthy in time."
+    "${COMPOSE[@]}" logs --tail=50 vorsyghta-api >&2 || true
     die "Stack came up but API is not healthy."
 fi
 
@@ -201,13 +201,13 @@ curl -s "$TARGET_BASE/" > "$RUN_DIR/target_index.html" 2>/dev/null || true
 "${COMPOSE[@]}" ps > "$RUN_DIR/compose_ps.txt" 2>&1 || true
 
 # ---- Build the red-team attack command ------------------------------------
-ATTACK_CMD="ciicerone red-team attack -s \"$SCENARIO\" -t \"$TARGET_BASE\" -o \"$RUN_DIR/findings.json\""
+ATTACK_CMD="vorsyghta red-team attack -s \"$SCENARIO\" -t \"$TARGET_BASE\" -o \"$RUN_DIR/findings.json\""
 
 echo ""
 echo -e "${BOLD}========================================================================${NC}"
 echo -e "${BOLD}  SANCTIONED TARGET READY — $TARGET_NAME${NC}"
 echo -e "${BOLD}========================================================================${NC}"
-echo -e "  Ciicerone API:  $API_BASE"
+echo -e "  Vorsyghta API:  $API_BASE"
 echo -e "  Target:         $TARGET_BASE  ($TARGET_NAME)"
 echo -e "  Scenario:       $SCENARIO"
 echo -e "  Artifacts:      $RUN_DIR"
@@ -220,9 +220,9 @@ echo ""
 if [ "$ATTACK" -eq 1 ]; then
     info "Launching red-team attack (--attack)..."
     # Ensure the tool server URL is exported for the orchestrator client.
-    export CIICERONE_TOOL_SERVER_URL="${CIICERONE_TOOL_SERVER_URL:-}"
-    if [ -z "$CIICERONE_TOOL_SERVER_URL" ]; then
-        warn "CIICERONE_TOOL_SERVER_URL is not set — the orchestrator will fall back to"
+    export VORSYGHTA_TOOL_SERVER_URL="${VORSYGHTA_TOOL_SERVER_URL:-}"
+    if [ -z "$VORSYGHTA_TOOL_SERVER_URL" ]; then
+        warn "VORSYGHTA_TOOL_SERVER_URL is not set — the orchestrator will fall back to"
         warn "the default tool server. If it is unreachable, the attack steps will fail."
     fi
     if eval "$ATTACK_CMD" 2>&1 | tee "$RUN_DIR/attack.log"; then

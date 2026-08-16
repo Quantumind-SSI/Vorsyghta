@@ -1,4 +1,4 @@
-**Ciicerone Breach Notification Templates**
+**Vorsyghta Breach Notification Templates**
 
 **Version:** 1.0  
 **Last Updated:** January 20, 2026  
@@ -25,11 +25,11 @@ Pursuant to Article 33 of the General Data Protection Regulation
 
 SECTION A: DATA CONTROLLER INFORMATION
 
-1. Controller Name: Ciicerone Project
+1. Controller Name: Vorsyghta Project
 2. Contact Person: [Name], [Title]
-3. Email: privacy@Ciicerone.io
+3. Email: privacy@Vorsyghta.io
 4. Phone: [Phone Number]
-5. Data Protection Officer: dpo@Ciicerone.io
+5. Data Protection Officer: dpo@Vorsyghta.io
 
 SECTION B: BREACH DETAILS
 
@@ -211,7 +211,7 @@ DECLARATION
 **Section Template 2A: Individual Notification Email**
 
 ```
-Subject: Important Security Notice from Ciicerone
+Subject: Important Security Notice from Vorsyghta
 
 Dear [User Name],
 
@@ -263,8 +263,8 @@ MORE INFORMATION
 
 For more information about this incident:
 - Visit our security notice page: [URL]
-- Contact our privacy team: privacy@Ciicerone.io
-- Contact our DPO: dpo@Ciicerone.io
+- Contact our privacy team: privacy@Vorsyghta.io
+- Contact our DPO: dpo@Vorsyghta.io
 
 We sincerely apologize for any concern this may cause. Protecting your 
 data is our top priority, and we are committed to preventing incidents 
@@ -274,10 +274,10 @@ Sincerely,
 
 [Name]
 [Title]
-Ciicerone Security Team
+Vorsyghta Security Team
 
 ---
-Data Protection Officer: dpo@Ciicerone.io
+Data Protection Officer: dpo@Vorsyghta.io
 You have the right to lodge a complaint with a supervisory authority.
 ```
 
@@ -289,7 +289,7 @@ SECURITY INCIDENT NOTICE
 Posted: [Date]
 Last Updated: [Date]
 
-Ciicerone is providing notice of a security incident that occurred 
+Vorsyghta is providing notice of a security incident that occurred 
 on [date].
 
 SUMMARY
@@ -330,8 +330,8 @@ If you believe you may be affected:
 
 CONTACT INFORMATION
 
-Questions: privacy@Ciicerone.io
-Data Protection Officer: dpo@Ciicerone.io
+Questions: privacy@Vorsyghta.io
+Data Protection Officer: dpo@Vorsyghta.io
 
 You have the right to lodge a complaint with your local data protection
 supervisory authority.
@@ -583,10 +583,10 @@ SECTION 10: ATTACHMENTS
 
 | Role | Name | Email | Phone |
 |------|------|-------|-------|
-| DPO | [Name] | dpo@Ciicerone.io | [Number] |
-| Security Lead | [Name] | security@Ciicerone.io | [Number] |
-| Legal | [Name] | legal@Ciicerone.io | [Number] |
-| Communications | [Name] | comms@Ciicerone.io | [Number] |
+| DPO | [Name] | dpo@Vorsyghta.io | [Number] |
+| Security Lead | [Name] | security@Vorsyghta.io | [Number] |
+| Legal | [Name] | legal@Vorsyghta.io | [Number] |
+| Communications | [Name] | comms@Vorsyghta.io | [Number] |
 
 **Section External Contacts**
 

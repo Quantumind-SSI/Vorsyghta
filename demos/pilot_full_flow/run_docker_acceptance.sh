@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Ciicerone Docker-Native Acceptance Gate
+# Vorsyghta Docker-Native Acceptance Gate
 # =============================================================================
-# Drives the full pilot acceptance flow against the Ciicerone API running in
+# Drives the full pilot acceptance flow against the Vorsyghta API running in
 # the LOCAL Docker stack (brought up by scripts/run_docker_integration.sh).
 # This produces REAL, proven results against real PostgreSQL + Redis + Azure
 # OpenAI — no mocks.
@@ -23,17 +23,17 @@
 #       [ANALYST_EMAIL] [ANALYST_PASSWORD]
 #
 # Defaults target the docker-compose port mapping (localhost:8001) and the
-# analyst seeded by `python -m ciicerone.db.seed`.
+# analyst seeded by `python -m vorsyghta.db.seed`.
 # =============================================================================
 set -uo pipefail
 
 BASE="${1:-http://localhost:8001}"
-ANALYST_EMAIL="${2:-analyst@ciicerone.local}"
+ANALYST_EMAIL="${2:-analyst@vorsyghta.local}"
 ANALYST_PASSWORD="${3:-Analyst123!}"
 PASS=0
 FAIL=0
 TS=$(date +%s)
-EMAIL="acceptance_${TS}@ciicerone.local"
+EMAIL="acceptance_${TS}@vorsyghta.local"
 PASSWORD="Password123!"
 
 GREEN='\033[0;32m'
@@ -56,7 +56,7 @@ except Exception:
     print('')" 2>/dev/null
 }
 
-echo "Ciicerone Docker-Native Acceptance Gate"
+echo "Vorsyghta Docker-Native Acceptance Gate"
 echo "  Target API:  $BASE"
 echo "  Analyst:     $ANALYST_EMAIL"
 echo "  Time (UTC):  $(date -u)"
@@ -197,7 +197,7 @@ except Exception:
     if { [ "$EX_CODE" = "201" ] || [ "$EX_CODE" = "200" ]; } && [ -n "$EX_ID" ]; then
         ok "POST /api/exercises/run -> $EX_CODE exercise_id=$EX_ID (REAL LLM-backed run)"
         # Stash the raw exercise result for proven-results artifact collection.
-        echo "$EX_BODY" > /tmp/ciicerone_exercise_${TS}.json
+        echo "$EX_BODY" > /tmp/vorsyghta_exercise_${TS}.json
         # -----------------------------------------------------------------
         section "7. REAL AAR generation for the exercise"
         # -----------------------------------------------------------------
@@ -209,7 +209,7 @@ except Exception:
         AAR_BODY=$(echo "$AAR_RESP" | head -n -1)
         if [ "$AAR_CODE" = "201" ] || [ "$AAR_CODE" = "200" ]; then
             ok "POST /api/exercises/$EX_ID/aar -> $AAR_CODE (AAR generated)"
-            echo "$AAR_BODY" > /tmp/ciicerone_aar_${TS}.json
+            echo "$AAR_BODY" > /tmp/vorsyghta_aar_${TS}.json
             # Confirm the AAR actually contains computed metrics (not empty).
             HAS_METRICS=$(echo "$AAR_BODY" | python3 -c "import sys,json
 try:

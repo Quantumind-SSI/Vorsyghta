@@ -1,8 +1,8 @@
-# Ciicerone Client Data Demo
+# Vorsyghta Client Data Demo
 
-This demo shows how Ciicerone can ingest client data from multiple sources and use it to enrich threat scenarios and target profiles.
+This demo shows how Vorsyghta can ingest client data from multiple sources and use it to enrich threat scenarios and target profiles.
 
-For a walkthrough of **all** Ciicerone features (red team, blue team, intel, RAG, etc.), see [`demos/full_platform/`](../full_platform).
+For a walkthrough of **all** Vorsyghta features (red team, blue team, intel, RAG, etc.), see [`demos/full_platform/`](../full_platform).
 
 ## What it demonstrates
 
@@ -24,7 +24,7 @@ For a walkthrough of **all** Ciicerone features (red team, blue team, intel, RAG
 ## Run the demo
 
 ```bash
-cd /Users/startferanmi/Documents/Ciicerone/Ciicerone/demos/client_data
+cd /path/to/Vorsyghta/demos/client_data   # repo root
 bash run_demo.sh
 ```
 
@@ -47,7 +47,7 @@ This triggers the `CompanyReconAgent` to gather OSINT on the target domain deriv
 ## Run the API server demo
 
 ```bash
-python -m ciicerone.api.main --config demos/client_data/demo_config.yaml
+python -m vorsyghta.api.main --config demos/client_data/demo_config.yaml
 ```
 
 Then use the client-data endpoints:

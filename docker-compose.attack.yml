@@ -1,13 +1,13 @@
-# Ciicerone Attack Docker Compose Stack
-# Deploys Ciicerone Attack autonomous penetration testing system
+# Vorsyghta Attack Docker Compose Stack
+# Deploys Vorsyghta Attack autonomous penetration testing system
 # Usage: docker-compose -f docker-compose.attack.yml up -d
 #
 # Requirements: 16GB RAM, 100GB disk, Docker + Docker Compose
 
 services:
   attack:
-    image: ciiceroneacr1782424350.azurecr.io/ciicerone-attack:latest
-    container_name: ciicerone-attack
+    image: vorsyghtaacr1782424350.azurecr.io/vorsyghta-attack:latest
+    container_name: vorsyghta-attack
     ports:
       - "3000:3000"   # Web UI
       - "8080:8080"   # REST API
@@ -19,14 +19,14 @@ services:
       - OPENAI_MODEL=${AZURE_OPENAI_DEPLOYMENT:-gpt-4o}
 
       # Database
-      - DATABASE_URL=postgres://attack:${CIICERONE_ATTACK_DB_PASSWORD:-attack}@attack-db:5432/attack
+      - DATABASE_URL=postgres://attack:${VORSYGHTA_ATTACK_DB_PASSWORD:-attack}@attack-db:5432/attack
 
       # Redis
       - REDIS_URL=redis://attack-redis:6379
 
       # Security
-      - SECRET_KEY=${CIICERONE_ATTACK_SECRET_KEY:-changeme-in-production}
-      - API_TOKEN=${CIICERONE_ATTACK_API_TOKEN:-ciicerone-attack-token}
+      - SECRET_KEY=${VORSYGHTA_ATTACK_SECRET_KEY:-changeme-in-production}
+      - API_TOKEN=${VORSYGHTA_ATTACK_API_TOKEN:-vorsyghta-attack-token}
 
       # Docker access for sandboxed tool execution
       - DOCKER_HOST=unix:///var/run/docker.sock
@@ -53,11 +53,11 @@ services:
 
   attack-db:
     image: vxcontrol/pgvector:latest
-    container_name: ciicerone-attack-db
+    container_name: vorsyghta-attack-db
     environment:
       - POSTGRES_DB=attack
       - POSTGRES_USER=attack
-      - POSTGRES_PASSWORD=${CIICERONE_ATTACK_DB_PASSWORD:-attack}
+      - POSTGRES_PASSWORD=${VORSYGHTA_ATTACK_DB_PASSWORD:-attack}
     volumes:
       - attack-db-data:/var/lib/postgresql/data
     healthcheck:
@@ -71,7 +71,7 @@ services:
 
   attack-redis:
     image: redis:7-alpine
-    container_name: ciicerone-attack-redis
+    container_name: vorsyghta-attack-redis
     volumes:
       - attack-redis-data:/data
     restart: unless-stopped
@@ -81,7 +81,7 @@ services:
   # Optional: Scraper for web intelligence
   attack-scraper:
     image: vxcontrol/scraper:latest
-    container_name: ciicerone-attack-scraper
+    container_name: vorsyghta-attack-scraper
     restart: unless-stopped
     networks:
       - attack-net

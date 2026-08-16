@@ -5,7 +5,7 @@ VENV := .venv
 ACTIVATE := . $(VENV)/bin/activate
 
 help:
-	@echo "Ciicerone Developer Commands"
+	@echo "Vorsyghta Developer Commands"
 	@echo ""
 	@echo "make dev       → Create venv and install dev dependencies"
 	@echo "make install   → Install project in editable mode"

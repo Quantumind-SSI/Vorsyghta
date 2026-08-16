@@ -1,11 +1,11 @@
 blank_issues_enabled: false
 contact_links:
   - name: 🔐 Security Vulnerability
-    url: mailto:ciicerone@hotmail.com
+    url: mailto:vorsyghta@hotmail.com
     about: Please report security vulnerabilities via email. Do NOT create a public issue.
   - name: 💬 Community Discussions
-    url: https://github.com/Ciicerone/Ciicerone/discussions
+    url: https://github.com/QuantumindSSI/Vorsyghta/discussions
     about: For questions, ideas, and general discussions
   - name: 📖 Documentation
-    url: https://github.com/Ciicerone/Ciicerone/tree/main/docs
+    url: https://github.com/QuantumindSSI/Vorsyghta/tree/main/docs
     about: Check the documentation before opening an issue

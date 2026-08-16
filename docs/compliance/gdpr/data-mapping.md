@@ -1,4 +1,4 @@
-**Ciicerone GDPR Data Mapping**
+**Vorsyghta GDPR Data Mapping**
 
 **Version:** 1.0  
 **Last Updated:** January 20, 2026  
@@ -8,7 +8,7 @@
 
 **Overview**
 
-This document provides a detailed mapping of all personal data processed by Ciicerone, including data flows, storage locations, and processing purposes.
+This document provides a detailed mapping of all personal data processed by Vorsyghta, including data flows, storage locations, and processing purposes.
 
 ---
 
@@ -58,7 +58,7 @@ This document provides a detailed mapping of all personal data processed by Ciic
 **2. Data Flow Diagram**
 
 ```
-                                    Ciicerone Data Flows
+                                    Vorsyghta Data Flows
 ┌──────────────────────────────────────────────────────────────────────────────────────┐
 │                                                                                      │
 │    ┌─────────┐         ┌──────────────┐         ┌─────────────┐                     │
@@ -135,7 +135,7 @@ Legend:
 
 **Section 5.1 Assessment**
 
-Ciicerone does **not** intentionally collect special category data (Article 9).
+Vorsyghta does **not** intentionally collect special category data (Article 9).
 
 However, user-provided simulation content **may** contain such data. Mitigations:
 
@@ -147,7 +147,7 @@ However, user-provided simulation content **may** contain such data. Mitigations
 
 **Section 5.2 Children's Data**
 
-Ciicerone is not intended for users under 16. Verification via terms acceptance.
+Vorsyghta is not intended for users under 16. Verification via terms acceptance.
 
 ---
 
@@ -193,7 +193,7 @@ For US transfers (if applicable):
 ```python
 **Automated retention enforcement**
 
-from Ciicerone.gdpr import RetentionManager
+from Vorsyghta.gdpr import RetentionManager
 
 retention = RetentionManager()
 
@@ -328,5 +328,5 @@ erasure_request:
 
 ---
 
-*Document maintained by Ciicerone Compliance Team*  
+*Document maintained by Vorsyghta Compliance Team*  
 *Next review: July 2026*

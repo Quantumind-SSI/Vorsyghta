@@ -3,7 +3,7 @@
 import pytest
 from click.testing import CliRunner
 
-from ciicerone.cli.main import cli
+from vorsyghta.cli.main import cli
 
 
 class TestCLI:
@@ -14,7 +14,7 @@ class TestCLI:
         runner = CliRunner()
         result = runner.invoke(cli, ["--version"])
         assert result.exit_code == 0
-        assert "Ciicerone" in result.output
+        assert "Vorsyghta" in result.output
     
     def test_cli_help(self):
         """Test CLI help command."""
@@ -43,4 +43,4 @@ class TestCLI:
         runner = CliRunner()
         result = runner.invoke(cli, ["status"])
         assert result.exit_code == 0
-        assert "Ciicerone System Status" in result.output
+        assert "Vorsyghta System Status" in result.output

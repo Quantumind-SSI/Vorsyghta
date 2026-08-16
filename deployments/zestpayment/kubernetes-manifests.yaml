@@ -1,14 +1,14 @@
-# ZestPayment Ciicerone Deployment - Kubernetes Manifests
+# ZestPayment Vorsyghta Deployment - Kubernetes Manifests
 # Target: Huawei Cloud CCE (Cloud Container Engine)
-# Namespace: ciicerone
+# Namespace: vorsyghta
 
 ---
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: ciicerone
+  name: vorsyghta
   labels:
-    app.kubernetes.io/name: ciicerone
+    app.kubernetes.io/name: vorsyghta
     environment: production
     compliance: pci-dss
 
@@ -17,20 +17,20 @@ metadata:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ciicerone-config
-  namespace: ciicerone
+  name: vorsyghta-config
+  namespace: vorsyghta
 data:
-  CIICERONE_ENV: "production"
-  CIICERONE_LOG_LEVEL: "INFO"
-  CIICERONE_LOG_FORMAT: "json"
-  CIICERONE_API_HOST: "0.0.0.0"
-  CIICERONE_API_PORT: "8000"
-  CIICERONE_METRICS_ENABLED: "true"
-  CIICERONE_METRICS_ENDPOINT: "/metrics"
-  CIICERONE_PCI_DSS_MODE: "true"
-  CIICERONE_DATA_RESIDENCY: "ng"
-  CIICERONE_REDACT_PII: "true"
-  CIICERONE_REDACT_PAN: "true"
+  VORSYGHTA_ENV: "production"
+  VORSYGHTA_LOG_LEVEL: "INFO"
+  VORSYGHTA_LOG_FORMAT: "json"
+  VORSYGHTA_API_HOST: "0.0.0.0"
+  VORSYGHTA_API_PORT: "8000"
+  VORSYGHTA_METRICS_ENABLED: "true"
+  VORSYGHTA_METRICS_ENDPOINT: "/metrics"
+  VORSYGHTA_PCI_DSS_MODE: "true"
+  VORSYGHTA_DATA_RESIDENCY: "ng"
+  VORSYGHTA_REDACT_PII: "true"
+  VORSYGHTA_REDACT_PAN: "true"
   OLLAMA_BASE_URL: "http://ollama-service:11434"
   OLLAMA_MODEL: "llama3:70b"
 
@@ -39,10 +39,10 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: ciicerone-secrets
-  namespace: ciicerone
+  name: vorsyghta-secrets
+  namespace: vorsyghta
   labels:
-    app.kubernetes.io/name: ciicerone
+    app.kubernetes.io/name: vorsyghta
 type: Opaque
 stringData:
   # LLM API keys (populate via Huawei DEW or kubectl create secret)
@@ -78,10 +78,10 @@ stringData:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: ciicerone-data
-  namespace: ciicerone
+  name: vorsyghta-data
+  namespace: vorsyghta
   labels:
-    app.kubernetes.io/name: ciicerone
+    app.kubernetes.io/name: vorsyghta
 spec:
   accessModes:
     - ReadWriteOnce
@@ -95,10 +95,10 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: ciicerone-datasets
-  namespace: ciicerone
+  name: vorsyghta-datasets
+  namespace: vorsyghta
   labels:
-    app.kubernetes.io/name: ciicerone
+    app.kubernetes.io/name: vorsyghta
 spec:
   accessModes:
     - ReadWriteMany
@@ -108,39 +108,39 @@ spec:
   storageClassName: huawei-sfs-turbo
 
 ---
-# Ciicerone API Deployment
+# Vorsyghta API Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ciicerone-api
-  namespace: ciicerone
+  name: vorsyghta-api
+  namespace: vorsyghta
   labels:
-    app.kubernetes.io/name: ciicerone
+    app.kubernetes.io/name: vorsyghta
     app.kubernetes.io/component: api
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app.kubernetes.io/name: ciicerone
+      app.kubernetes.io/name: vorsyghta
       app.kubernetes.io/component: api
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: ciicerone
+        app.kubernetes.io/name: vorsyghta
         app.kubernetes.io/component: api
     spec:
       containers:
-        - name: ciicerone-api
-          image: swr.ng-west-1.myhuaweicloud.com/ciicerone/ciicerone:latest
+        - name: vorsyghta-api
+          image: swr.ng-west-1.myhuaweicloud.com/vorsyghta/vorsyghta:latest
           ports:
             - containerPort: 8000
               name: http
               protocol: TCP
           envFrom:
             - configMapRef:
-                name: ciicerone-config
+                name: vorsyghta-config
             - secretRef:
-                name: ciicerone-secrets
+                name: vorsyghta-secrets
           volumeMounts:
             - name: data
               mountPath: /data
@@ -182,13 +182,13 @@ spec:
       volumes:
         - name: data
           persistentVolumeClaim:
-            claimName: ciicerone-data
+            claimName: vorsyghta-data
         - name: datasets
           persistentVolumeClaim:
-            claimName: ciicerone-datasets
+            claimName: vorsyghta-datasets
         - name: config
           configMap:
-            name: ciicerone-config-file
+            name: vorsyghta-config-file
       imagePullSecrets:
         - name: swr-credentials
 
@@ -197,8 +197,8 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ciicerone-config-file
-  namespace: ciicerone
+  name: vorsyghta-config-file
+  namespace: vorsyghta
 data:
   config.yaml: |
     # Inline config.yaml content - mounted to /app/config.yaml
@@ -230,7 +230,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ollama
-  namespace: ciicerone
+  namespace: vorsyghta
   labels:
     app.kubernetes.io/name: ollama
     app.kubernetes.io/component: llm
@@ -290,7 +290,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: ollama-models
-  namespace: ciicerone
+  namespace: vorsyghta
 spec:
   accessModes:
     - ReadWriteOnce
@@ -305,7 +305,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: ollama-service
-  namespace: ciicerone
+  namespace: vorsyghta
 spec:
   selector:
     app.kubernetes.io/name: ollama
@@ -316,18 +316,18 @@ spec:
   type: ClusterIP
 
 ---
-# Ciicerone API Service
+# Vorsyghta API Service
 apiVersion: v1
 kind: Service
 metadata:
-  name: ciicerone-api
-  namespace: ciicerone
+  name: vorsyghta-api
+  namespace: vorsyghta
   annotations:
     service.beta.kubernetes.io/huaweicloud-load-balancer-type: "elb"
     service.beta.kubernetes.io/huaweicloud-elb-protocol: "https"
 spec:
   selector:
-    app.kubernetes.io/name: ciicerone
+    app.kubernetes.io/name: vorsyghta
     app.kubernetes.io/component: api
   ports:
     - port: 443
@@ -340,13 +340,13 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: ciicerone-api-hpa
-  namespace: ciicerone
+  name: vorsyghta-api-hpa
+  namespace: vorsyghta
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: ciicerone-api
+    name: vorsyghta-api
   minReplicas: 2
   maxReplicas: 6
   metrics:
@@ -368,12 +368,12 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: ciicerone-network-policy
-  namespace: ciicerone
+  name: vorsyghta-network-policy
+  namespace: vorsyghta
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: ciicerone
+      app.kubernetes.io/name: vorsyghta
   policyTypes:
     - Ingress
     - Egress
@@ -388,7 +388,7 @@ spec:
     - from:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: ciicerone
+              app.kubernetes.io/name: vorsyghta
   egress:
     # DNS
     - to:
@@ -428,8 +428,8 @@ spec:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: ciicerone
-  namespace: ciicerone
+  name: vorsyghta
+  namespace: vorsyghta
   annotations:
     eks.amazonaws.com/role-arn: ""
 ---
@@ -437,11 +437,11 @@ metadata:
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: ciicerone-api-pdb
-  namespace: ciicerone
+  name: vorsyghta-api-pdb
+  namespace: vorsyghta
 spec:
   minAvailable: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: ciicerone
+      app.kubernetes.io/name: vorsyghta
       app.kubernetes.io/component: api

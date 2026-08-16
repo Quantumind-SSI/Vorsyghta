@@ -1,4 +1,4 @@
-**Ciicerone Data Protection Impact Assessment (DPIA) Template**
+**Vorsyghta Data Protection Impact Assessment (DPIA) Template**
 
 **Version:** 1.0  
 **Last Updated:** January 20, 2026  
@@ -9,7 +9,7 @@
 
 **Overview**
 
-This document provides the Data Protection Impact Assessment framework for Ciicerone. DPIAs are mandatory for processing likely to result in high risk to individuals' rights and freedoms.
+This document provides the Data Protection Impact Assessment framework for Vorsyghta. DPIAs are mandatory for processing likely to result in high risk to individuals' rights and freedoms.
 
 ---
 
@@ -19,7 +19,7 @@ This document provides the Data Protection Impact Assessment framework for Ciice
 
 A DPIA **MUST** be conducted when processing involves:
 
-| Criterion | GDPR Reference | Ciicerone Relevance |
+| Criterion | GDPR Reference | Vorsyghta Relevance |
 |-----------|----------------|------------------------|
 | Systematic and extensive profiling with significant effects | Article 35(3)(a) | Not applicable |
 | Large-scale processing of special categories | Article 35(3)(b) | Possible in simulations |
@@ -33,23 +33,23 @@ A DPIA **MUST** be conducted when processing involves:
 
 **Section 1.2 DPIA Threshold Assessment**
 
-**Result:** DPIA is **REQUIRED** for Ciicerone due to:
+**Result:** DPIA is **REQUIRED** for Vorsyghta due to:
 1. New/innovative technology (AI-powered threat simulation)
 2. Large-scale processing capability (batch processing)
 3. Potential for special category data in user inputs
 
 ---
 
-**2. DPIA: Ciicerone Core Platform**
+**2. DPIA: Vorsyghta Core Platform**
 
 **Section 2.1 Project Information**
 
 | Field | Value |
 |-------|-------|
 | **Assessment ID** | DPIA-TSG-001 |
-| **Project Name** | Ciicerone Core Platform |
-| **Project Owner** | Ciicerone Project Team |
-| **DPO** | dpo@ciicerone.io |
+| **Project Name** | Vorsyghta Core Platform |
+| **Project Owner** | Vorsyghta Project Team |
+| **DPO** | dpo@vorsyghta.io |
 | **Assessment Date** | January 20, 2026 |
 | **Assessment Author** | Jeremiah Okino (okino007) |
 | **Review Date** | January 20, 2027 |
@@ -59,14 +59,14 @@ A DPIA **MUST** be conducted when processing involves:
 
 **Section 2.2.1 Nature of Processing**
 
-Ciicerone processes data to:
+Vorsyghta processes data to:
 
 1. **User Account Management**
    - Registration and authentication
    - Profile management
    - API key generation and management
 
-2. **Ciiceroneulation Execution**
+2. **Vorsyghtaulation Execution**
    - User-provided scenario parameters
    - AI-generated threat simulations
    - MITRE ATT&CK framework mapping
@@ -332,8 +332,8 @@ Processing may proceed because:
 
 | Role | Name | Date | Approval |
 |------|------|------|----------|
-| Project Owner | Ciicerone Team | 2026-01-20 | Approved |
-| DPO | dpo@ciicerone.io | 2026-01-20 | Approved |
+| Project Owner | Vorsyghta Team | 2026-01-20 | Approved |
+| DPO | dpo@vorsyghta.io | 2026-01-20 | Approved |
 | Security Lead | Lara (laradipupo) | 2026-01-20 | Approved |
 | Compliance Lead | Jerry (okino007) | 2026-01-20 | Approved |
 
@@ -415,5 +415,5 @@ Use this checklist to determine if a DPIA is required:
 
 ---
 
-*Document maintained by Ciicerone Compliance Team*  
+*Document maintained by Vorsyghta Compliance Team*  
 *Related: [GDPR Overview](README.md) | [Data Mapping](data-mapping.md)*

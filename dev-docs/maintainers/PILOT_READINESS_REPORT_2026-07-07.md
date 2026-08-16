@@ -1,4 +1,4 @@
-# Ciicerone — Pilot Programme Readiness Report
+# Vorsyghta — Pilot Programme Readiness Report
 
 **From:** Founding Engineer
 **To:** Maintainer Roster
@@ -22,7 +22,7 @@ Realistic status: **~95% of the critical path is done.** The remaining 5% is com
 
 | Metric | Value |
 |---|---|
-| Python source (production) | ~104,000 lines across `ciicerone/` |
+| Python source (production) | ~104,000 lines across `vorsyghta/` |
 | Test source | ~13,500 lines across `tests/` |
 | Top-level packages | 25 (`analytics`, `api`, `cli`, `core`, `db`, `defense`, `llm`, `mcp`, `research`, `vm`, ...) |
 | API routers | 16 (100+ OpenAPI paths) |
@@ -54,7 +54,7 @@ Realistic status: **~95% of the critical path is done.** The remaining 5% is com
 ## 3. Progress Against the 2026-07-03 P0 Blockers — ALL RESOLVED
 
 ### P0-1 — No end-to-end orchestration → **RESOLVED**
-- `ciicerone/core/exercise_orchestrator.py` chains Yellow → White → Red → Blue → Purple → Black → Green → Orange via the shared `EventBus`.
+- `vorsyghta/core/exercise_orchestrator.py` chains Yellow → White → Red → Blue → Purple → Black → Green → Orange via the shared `EventBus`.
 - `ExerciseResult` now includes `white_team_report`, `yellow_team_report`, `green_team_report`, and `orange_team_report` fields.
 - 24 e2e tests pass with mocked LLMs.
 
@@ -120,7 +120,7 @@ Each new team has:
 ### P1-5 — Report generation prints "coming soon" → **RESOLVED**
 - `cli/main.py` `report` command now calls `AARGenerator` and supports JSON, HTML, and CSV output formats via `--input-file` and `--format` options.
 
-### P1-6 — Red Team requires external "Ciicerone Attack" API → **RESOLVED**
+### P1-6 — Red Team requires external "Vorsyghta Attack" API → **RESOLVED**
 - `cli/red_team.py` now uses `AttackOrchestrator` by default.
 - External API functionality retained under `--legacy` flag.
 - New `red-team sequences` and `red-team sequence-status` commands query the database directly.
@@ -135,7 +135,7 @@ Each new team has:
 
 - **OIDC Provider** — discovers endpoints from `.well-known/openid-configuration`, performs Authorization Code flow via httpx, decodes id_token claims, merges userinfo endpoint data.
 - **SAML 2.0 Provider** — builds SAML AuthnRequest (deflate+base64 for HTTP-Redirect), parses SAML responses via xml.etree.ElementTree, extracts NameID/attributes/groups.
-- **SSO-to-RBAC Bridge** — looks up or creates users, maps SSO groups to Ciicerone roles (admin→ADMIN, pilot/sponsor→PILOT_SPONSOR, analyst/security→ANALYST, default→VIEWER), issues JWT via existing `create_access_token`.
+- **SSO-to-RBAC Bridge** — looks up or creates users, maps SSO groups to Vorsyghta roles (admin→ADMIN, pilot/sponsor→PILOT_SPONSOR, analyst/security→ANALYST, default→VIEWER), issues JWT via existing `create_access_token`.
 - **API Endpoints:** `GET /api/sso/providers`, `GET /api/sso/{provider}/authorize`, `POST /api/sso/{provider}/callback`, `GET /api/sso/{provider}/metadata`.
 
 ### 5.2 — Vault/KMS Secret Management

@@ -1,4 +1,4 @@
-**Ciicerone GDPR Compliance**
+**Vorsyghta GDPR Compliance**
 
 **Version:** 1.1  
 **Effective Date:** January 20, 2026  
@@ -10,7 +10,7 @@
 
 **Executive Summary**
 
-This document outlines Ciicerone's compliance with the General Data Protection Regulation (GDPR) (EU) 2016/679. It covers data processing activities, lawful bases, data subject rights, and technical/organizational measures implemented to ensure compliance.
+This document outlines Vorsyghta's compliance with the General Data Protection Regulation (GDPR) (EU) 2016/679. It covers data processing activities, lawful bases, data subject rights, and technical/organizational measures implemented to ensure compliance.
 
 **Compliance Status:** COMPLIANT
 
@@ -52,7 +52,7 @@ This document outlines Ciicerone's compliance with the General Data Protection R
 
 **Section 1.1 When GDPR Applies**
 
-Ciicerone processes personal data subject to GDPR when:
+Vorsyghta processes personal data subject to GDPR when:
 
 | Scenario | GDPR Applies | Notes |
 |----------|--------------|-------|
@@ -72,8 +72,8 @@ Ciicerone processes personal data subject to GDPR when:
 **Section 1.3 Legal Entity**
 
 **Data Controller:**  
-Ciicerone Project  
-Contact: compliance@ciicerone.io
+Vorsyghta Project  
+Contact: compliance@vorsyghta.io
 
 ---
 
@@ -93,7 +93,7 @@ Contact: compliance@ciicerone.io
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    Ciicerone Data Flow                       │
+│                    Vorsyghta Data Flow                       │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  User Input ──► API Gateway ──► Processing Engine ──► Output   │
@@ -340,7 +340,7 @@ Where consent is the legal basis:
 ```python
 **Example: Data handling with GDPR compliance**
 
-from ciicerone.gdpr import GDPRCompliance
+from vorsyghta.gdpr import GDPRCompliance
 
 class UserDataHandler:
     def __init__(self):
@@ -420,7 +420,7 @@ retention_policies:
 | Field | Details |
 |-------|---------|
 | **Appointed** | Yes (voluntary) |
-| **Contact** | dpo@ciicerone.io |
+| **Contact** | dpo@vorsyghta.io |
 | **Independence** | Reports to leadership |
 | **Tasks** | Monitoring, advice, contact point |
 
@@ -511,9 +511,9 @@ All breaches logged with:
 
 | Field | Value |
 |-------|-------|
-| Controller name | Ciicerone Project |
-| Contact | compliance@ciicerone.io |
-| DPO | dpo@ciicerone.io |
+| Controller name | Vorsyghta Project |
+| Contact | compliance@vorsyghta.io |
+| DPO | dpo@vorsyghta.io |
 | Processing purposes | Service delivery, security, support |
 | Data categories | Account, usage, simulations |
 | Recipients | Internal, authorized processors |
@@ -538,10 +538,10 @@ Maintained electronically with:
 
 | Type | Contact |
 |------|---------|
-| General GDPR questions | gdpr@ciicerone.io |
-| Data subject requests | privacy@ciicerone.io |
-| DPO | dpo@ciicerone.io |
-| Complaints | compliance@ciicerone.io |
+| General GDPR questions | gdpr@vorsyghta.io |
+| Data subject requests | privacy@vorsyghta.io |
+| DPO | dpo@vorsyghta.io |
+| Complaints | compliance@vorsyghta.io |
 
 **Section Supervisory Authority**
 
@@ -580,5 +580,5 @@ To be determined based on main establishment location.
 
 ---
 
-*This document is part of the Ciicerone Compliance Documentation.*  
+*This document is part of the Vorsyghta Compliance Documentation.*  
 *Related: [Acceptable Use Policy](../policies/acceptable-use-policy.md)*

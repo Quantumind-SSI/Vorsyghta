@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-07 (supersedes the 2026-07-03 blocker-audit version)
 **Status:** Authoritative — reflects the true state of the live Azure deployment, not local codebase inspection
-**Method:** `az` CLI authenticated to subscription `59346494-43d4-4ef7-b364-6a688d9eb445` (tenant `adminquantumindssi.onmicrosoft.com`), resource group `ciicerone-rg` (eastus2). Live HTTP probes against the running Container App and sandbox VM. Live log inspection from the active replica.
+**Method:** `az` CLI authenticated to subscription `59346494-43d4-4ef7-b364-6a688d9eb445` (tenant `adminquantumindssi.onmicrosoft.com`), resource group `vorsyghta-rg` (eastus2). Live HTTP probes against the running Container App and sandbox VM. Live log inspection from the active replica.
 **Acceptance gate:** `demos/pilot_full_flow/run_live_acceptance.sh` — 16/16 checks passed against the live API on 2026-07-07 18:58 UTC.
 
 ---
@@ -19,20 +19,20 @@ The 20-week phased timeline from the previous version of this document is no lon
 
 | Resource | Type | State | Notes |
 |---|---|---|---|
-| `ciicerone-api` | Microsoft.App/containerApps | **Running** | 1 replica ready, 0 restarts. FQDN: `ciicerone-api.kindground-215c5e33.eastus2.azurecontainerapps.io`. Image: `ciiceroneacr1782425895.azurecr.io/ciicerone:master-v2` (rebuilt from `master` on 2026-07-07) |
-| `ciicerone-env` | Microsoft.App/managedEnvironments | Succeeded | Container Apps environment |
-| `ciicerone-postgres` | DBforPostgreSQL flexibleServer | **Ready** | PG 15, `Standard_D2ds_v4`, 64 GB storage, **HA: ZoneRedundant (Healthy)** — standby in zone 1, primary in zone 2. Enabled 2026-07-07. |
-| `ciicerone-redis` | Microsoft.Cache/redisEnterprise | Succeeded | Redis Enterprise (cluster mode). Note: `az redis show` will 404; use `az redisenterprise`. |
-| `ciicerone-falkordb` | Microsoft.ContainerInstance/containerGroups | Succeeded | FalkorDB running as ACI |
-| `ciicerone-kv` | Microsoft.KeyVault/vaults | Succeeded | Standard SKU. Secrets wired to container app via system-assigned identity. |
-| `ciicerone-openai` | CognitiveServices/OpenAI | Succeeded | S0 tier; 1 deployment: `gpt-4o`, capacity 30. Endpoint `https://ciicerone-openai.openai.azure.com/` |
-| `ciicerone-sandbox` | Microsoft.Compute/virtualMachines | **Running** | `Standard_E8s_v3`, public IP `20.242.43.111`. Tool-server on port 9090. |
-| `ciicerone-blueteam-db` | Microsoft.DocumentDB/databaseAccounts | Succeeded | Cosmos DB |
-| `ciiceroneforensics001` | Microsoft.Storage/storageAccounts | Succeeded | Forensics storage |
-| `ciicerone-logs` | Microsoft.OperationalInsights/workspaces | Succeeded | Log Analytics |
-| `ciiceroneacr1782425895` | Microsoft.ContainerRegistry/registries | Succeeded | **The only ACR remaining.** 5 orphaned ACRs were deleted 2026-07-07. |
+| `vorsyghta-api` | Microsoft.App/containerApps | **Running** | 1 replica ready, 0 restarts. FQDN: `vorsyghta-api.kindground-215c5e33.eastus2.azurecontainerapps.io`. Image: `vorsyghtaacr1782425895.azurecr.io/vorsyghta:master-v2` (rebuilt from `master` on 2026-07-07) |
+| `vorsyghta-env` | Microsoft.App/managedEnvironments | Succeeded | Container Apps environment |
+| `vorsyghta-postgres` | DBforPostgreSQL flexibleServer | **Ready** | PG 15, `Standard_D2ds_v4`, 64 GB storage, **HA: ZoneRedundant (Healthy)** — standby in zone 1, primary in zone 2. Enabled 2026-07-07. |
+| `vorsyghta-redis` | Microsoft.Cache/redisEnterprise | Succeeded | Redis Enterprise (cluster mode). Note: `az redis show` will 404; use `az redisenterprise`. |
+| `vorsyghta-falkordb` | Microsoft.ContainerInstance/containerGroups | Succeeded | FalkorDB running as ACI |
+| `vorsyghta-kv` | Microsoft.KeyVault/vaults | Succeeded | Standard SKU. Secrets wired to container app via system-assigned identity. |
+| `vorsyghta-openai` | CognitiveServices/OpenAI | Succeeded | S0 tier; 1 deployment: `gpt-4o`, capacity 30. Endpoint `https://vorsyghta-openai.openai.azure.com/` |
+| `vorsyghta-sandbox` | Microsoft.Compute/virtualMachines | **Running** | `Standard_E8s_v3`, public IP `20.242.43.111`. Tool-server on port 9090. |
+| `vorsyghta-blueteam-db` | Microsoft.DocumentDB/databaseAccounts | Succeeded | Cosmos DB |
+| `vorsyghtaforensics001` | Microsoft.Storage/storageAccounts | Succeeded | Forensics storage |
+| `vorsyghta-logs` | Microsoft.OperationalInsights/workspaces | Succeeded | Log Analytics |
+| `vorsyghtaacr1782425895` | Microsoft.ContainerRegistry/registries | Succeeded | **The only ACR remaining.** 5 orphaned ACRs were deleted 2026-07-07. |
 
-**NSG (`ciicerone-nsg`) inbound rules — verified:**
+**NSG (`vorsyghta-nsg`) inbound rules — verified:**
 - 22 (SSH): Allow from any — **open to the internet; DEFERRED — not yet locked to maintainer IPs (see Remaining Items)**
 - 9090 (tool-server): Allow from any — intentionally public, confirmed serving
 - 8080 (tool-server alt): Allow from `10.0.0.0/16` only (VNet-internal)
@@ -44,7 +44,7 @@ The 20-week phased timeline from the previous version of this document is no lon
 
 | Probe | Result |
 |---|---|
-| `GET /` | **200** `{"message":"Ciicerone API","version":"0.1.0","status":"operational"}` |
+| `GET /` | **200** `{"message":"Vorsyghta API","version":"0.1.0","status":"operational"}` |
 | `GET /health` | **200** all components healthy: `api, simulator, llm_manager, database, audit` |
 | `GET /docs` | **200** Swagger UI served |
 | `GET /openapi.json` | **200** — **104 paths** (was 69 before redeploy; the 35-path gap is closed) |
@@ -113,9 +113,9 @@ Every P0 and P1 blocker from the 2026-07-03 audit has been resolved. The table b
 | # | Bug | Status | Fix |
 |---|---|---|---|
 | LIVE-1 | Self-registration accepts client-supplied `role`/`tenant` (privilege escalation + tenant isolation break) | **RESOLVED** | Commit `7f18fa7`: `/auth/register` now ignores client-supplied `role`/`tenant_id` and forces `viewer`/`default`. Verified live: admin self-reg produces `role=viewer, tenant=default`. |
-| LIVE-2 | `get_vectorstore` import broken in deployed image (vectorstore insertion silently fails) | **RESOLVED** | Commit `7f18fa7`: added `get_vectorstore()` async singleton factory + `add_document()` method to `ciicerone/rag/vectorstore.py`. Verified live: `POST /api/knowledge/entries` → 201. |
+| LIVE-2 | `get_vectorstore` import broken in deployed image (vectorstore insertion silently fails) | **RESOLVED** | Commit `7f18fa7`: added `get_vectorstore()` async singleton factory + `add_document()` method to `vorsyghta/rag/vectorstore.py`. Verified live: `POST /api/knowledge/entries` → 201. |
 | LIVE-3 | `HybridRetriever.__init__()` missing `vector_store_manager` arg (manual generation falls back to non-RAG) | **RESOLVED** | Commit `7f18fa7`: fixed `manuals.py` to pass `vector_store_manager` and call `initialize()`. |
-| LIVE-4 | `PermissionError: [Errno 13] Permission denied: '/home/ciicerone'` on `DisclosureManager` init | **RESOLVED** | Commit `fcb4f59`: set `HOME=/app` in Dockerfile so `~/` storage paths resolve to the writable `/app` directory. Verified live: `GET /api/disclosures` → 200. |
+| LIVE-4 | `PermissionError: [Errno 13] Permission denied: '/home/vorsyghta'` on `DisclosureManager` init | **RESOLVED** | Commit `fcb4f59`: set `HOME=/app` in Dockerfile so `~/` storage paths resolve to the writable `/app` directory. Verified live: `GET /api/disclosures` → 200. |
 
 ---
 
@@ -165,7 +165,7 @@ These are hardening items that should be addressed but do not block pilot onboar
 
 | # | Item | Priority | Status | Notes |
 |---|---|---|---|---|
-| 1 | **Lock down SSH on sandbox NSG** | High (security) | **DEFERRED** | The `AllowSSH` rule allows port 22 from `*` (any). Should be restricted to maintainer egress IPs. Skipped by maintainer decision on 2026-07-07. Fix: `az network nsg rule update -g ciicerone-rg --nsg-name ciicerone-nsg -n AllowSSH --source-address-prefixes <MAINTAINER_IP>/32` |
+| 1 | **Lock down SSH on sandbox NSG** | High (security) | **DEFERRED** | The `AllowSSH` rule allows port 22 from `*` (any). Should be restricted to maintainer egress IPs. Skipped by maintainer decision on 2026-07-07. Fix: `az network nsg rule update -g vorsyghta-rg --nsg-name vorsyghta-nsg -n AllowSSH --source-address-prefixes <MAINTAINER_IP>/32` |
 | 2 | **Expand MITRE technique coverage in detection rules** | Medium | Ongoing | Detection rules work and are fed by simulation output, but coverage beyond the initial set is an ongoing enhancement, not a pilot blocker. |
 | 3 | **Pilot demo runs in offline/fallback mode locally** | Low | Accepted | The local demo (`run_pilot_demo.sh`) uses `is_real_ai: false` (fallback mode). In production, Azure OpenAI `gpt-4o` is wired up, so live exercises get real AI content. The demo does not exercise the live LLM path by default (use `--live` flag). |
 | 4 | **Geo-redundant backup for Postgres** | Low | Not enabled | `geoRedundantBackup: Disabled`. Consider enabling before onboarding a paying customer with data residency requirements. |

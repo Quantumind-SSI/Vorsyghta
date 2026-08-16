@@ -1,4 +1,4 @@
-**Ciicerone Audit Trail Integrity**
+**Vorsyghta Audit Trail Integrity**
 
 **Version:** 1.0
 **Effective Date:** January 20, 2026
@@ -10,7 +10,7 @@
 
 **Overview**
 
-This document defines the controls and procedures for ensuring the integrity of audit trails in Ciicerone. It establishes tamper-evident logging mechanisms, integrity verification procedures, and incident response for integrity violations.
+This document defines the controls and procedures for ensuring the integrity of audit trails in Vorsyghta. It establishes tamper-evident logging mechanisms, integrity verification procedures, and incident response for integrity violations.
 
 ---
 

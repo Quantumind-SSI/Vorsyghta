@@ -1,6 +1,6 @@
-# Ciicerone Pilot Demo — Full 8-Team Color-Team Flow
+# Vorsyghta Pilot Demo — Full 8-Team Color-Team Flow
 
-A highly technical demo for maintainers showing the entire Ciicerone application
+A highly technical demo for maintainers showing the entire Vorsyghta application
 in full flow across all 8 color teams.
 
 ## Quick Start
@@ -9,18 +9,18 @@ in full flow across all 8 color teams.
 
 ```bash
 # Pull from GitHub Container Registry
-docker pull ghcr.io/quantumindssi/ciicerone:latest
+docker pull ghcr.io/quantumindssi/vorsyghta:latest
 
 # Run the full pilot demo inside the container
-docker run --rm ghcr.io/quantumindssi/ciicerone:latest \
+docker run --rm ghcr.io/quantumindssi/vorsyghta:latest \
     bash demos/pilot_full_flow/run_pilot_demo.sh
 
 # Quick mode (skips the 8-team exercise run)
-docker run --rm ghcr.io/quantumindssi/ciicerone:latest \
+docker run --rm ghcr.io/quantumindssi/vorsyghta:latest \
     bash demos/pilot_full_flow/run_pilot_demo.sh --quick
 
 # Start the API server (port 8000)
-docker run --rm -p 8000:8000 ghcr.io/quantumindssi/ciicerone:latest
+docker run --rm -p 8000:8000 ghcr.io/quantumindssi/vorsyghta:latest
 
 # Full stack with docker-compose (API + PostgreSQL + Redis + Ollama + monitoring)
 export POSTGRES_PASSWORD=yourpassword
@@ -70,7 +70,7 @@ The demo writes to `demos/pilot_full_flow/output/`:
 ## Requirements
 
 - Python 3.11+
-- ciicerone installed (`pip install -e .`)
+- vorsyghta installed (`pip install -e .`)
 - No API keys required for offline mode (LLM calls are mocked)
 - For `--live` mode: Ollama running locally or `OPENROUTER_API_KEY` / `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` set
 

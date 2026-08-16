@@ -1,8 +1,8 @@
-**Ciicerone Compliance Documentation**
+**Vorsyghta Compliance Documentation**
 
 **Overview**
 
-This directory contains compliance documentation, policies, and framework mappings for Ciicerone. These documents ensure the platform meets regulatory requirements and industry standards for security simulation tools.
+This directory contains compliance documentation, policies, and framework mappings for Vorsyghta. These documents ensure the platform meets regulatory requirements and industry standards for security simulation tools.
 
 **Document Index**
 
@@ -33,7 +33,7 @@ This directory contains compliance documentation, policies, and framework mappin
 |------|---------|
 | Compliance Lead | Jerry (okino007) |
 | Security Lead | Lara (laradipupo) |
-| DPO Contact | compliance@ciicerone.io |
+| DPO Contact | compliance@vorsyghta.io |
 
 **Related Documents**
 
@@ -43,4 +43,4 @@ This directory contains compliance documentation, policies, and framework mappin
 
 ---
 
-*Maintained by the Ciicerone Compliance Team*
+*Maintained by the Vorsyghta Compliance Team*

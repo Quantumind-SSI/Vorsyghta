@@ -1,4 +1,4 @@
-**Ciicerone Evidence Collection Procedures**
+**Vorsyghta Evidence Collection Procedures**
 
 **Version:** 1.0
 **Effective Date:** January 20, 2026
@@ -10,7 +10,7 @@
 
 **Overview**
 
-This document establishes standardized procedures for collecting, preserving, and presenting evidence for compliance audits, regulatory examinations, and internal reviews of Ciicerone.
+This document establishes standardized procedures for collecting, preserving, and presenting evidence for compliance audits, regulatory examinations, and internal reviews of Vorsyghta.
 
 ---
 

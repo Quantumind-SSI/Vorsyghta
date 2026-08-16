@@ -1,7 +1,7 @@
 metadata:
   name: 'Demo: CFO Spear Phishing'
   description: Demonstration of client-data enrichment targeting the Acme Corp CFO
-  author: Ciicerone Demo
+  author: Vorsyghta Demo
   version: 1.0.0
   tags:
     - demo

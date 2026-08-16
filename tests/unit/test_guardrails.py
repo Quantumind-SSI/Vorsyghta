@@ -19,7 +19,7 @@ Owner: Lanre Adetola
 import pytest
 import asyncio
 import re
-from ciicerone.llm.guardrails import (
+from vorsyghta.llm.guardrails import (
     GuardrailsEngine,
     Rule,
     Action,
@@ -306,7 +306,7 @@ class TestAllowDenyLists:
         engine.rules = []  # Clear defaults
         
         # Add a LOW severity rule
-        from ciicerone.llm.guardrails import Rule, Severity
+        from vorsyghta.llm.guardrails import Rule, Severity
         low_rule = Rule.from_regex(
             "low-test", "Low severity test", r"test-pattern",
             severity=Severity.LOW, action=Action.LOG
@@ -722,7 +722,7 @@ class TestP0SecurityFixes:
     @pytest.mark.asyncio
     async def test_rate_limiting(self):
         """P0 Fix: Test rate limiting functionality."""
-        from ciicerone.llm.guardrails import RateLimitExceeded
+        from vorsyghta.llm.guardrails import RateLimitExceeded
         
         engine = GuardrailsEngine(
             enable_rate_limiting=True,
@@ -766,7 +766,7 @@ class TestP0SecurityFixes:
     @pytest.mark.asyncio
     async def test_circuit_breaker_memory_limit(self):
         """P0 Fix: Circuit breaker should not grow unbounded."""
-        from ciicerone.llm.guardrails import CircuitBreaker, MAX_TRACKED_VALIDATORS
+        from vorsyghta.llm.guardrails import CircuitBreaker, MAX_TRACKED_VALIDATORS
         
         cb = CircuitBreaker(max_tracked=10)
         
@@ -780,7 +780,7 @@ class TestP0SecurityFixes:
     @pytest.mark.asyncio
     async def test_regex_timeout_is_short(self):
         """P0 Fix: Regex timeout should be 100ms, not 2 seconds."""
-        from ciicerone.llm.guardrails import REGEX_TIMEOUT_SECONDS
+        from vorsyghta.llm.guardrails import REGEX_TIMEOUT_SECONDS
         
         assert REGEX_TIMEOUT_SECONDS <= 0.5, "Regex timeout should be <= 500ms for DoS protection"
 
@@ -792,7 +792,7 @@ class TestEngineeringFixes:
     async def test_rate_limiter_uses_deque(self):
         """Engineering Fix: RateLimiter should use deque for O(1) operations."""
         from collections import deque, OrderedDict
-        from ciicerone.llm.guardrails import RateLimiter
+        from vorsyghta.llm.guardrails import RateLimiter
         
         rl = RateLimiter(per_user_rpm=100, burst=10)
         
@@ -803,7 +803,7 @@ class TestEngineeringFixes:
     @pytest.mark.asyncio
     async def test_rate_limiter_lru_eviction(self):
         """Engineering Fix: RateLimiter should evict LRU users when at capacity."""
-        from ciicerone.llm.guardrails import RateLimiter
+        from vorsyghta.llm.guardrails import RateLimiter
         
         # Create rate limiter with small max_tracked_users
         rl = RateLimiter(per_user_rpm=100, max_tracked_users=5)
@@ -825,7 +825,7 @@ class TestEngineeringFixes:
     async def test_circuit_breaker_uses_ordered_dict(self):
         """Engineering Fix: CircuitBreaker should use OrderedDict for LRU."""
         from collections import OrderedDict
-        from ciicerone.llm.guardrails import CircuitBreaker
+        from vorsyghta.llm.guardrails import CircuitBreaker
         
         cb = CircuitBreaker(max_tracked=10)
         
@@ -834,7 +834,7 @@ class TestEngineeringFixes:
     @pytest.mark.asyncio
     async def test_circuit_breaker_lru_access_updates(self):
         """Engineering Fix: Accessing a validator should move it to end (LRU)."""
-        from ciicerone.llm.guardrails import CircuitBreaker
+        from vorsyghta.llm.guardrails import CircuitBreaker
         
         cb = CircuitBreaker(max_tracked=5, failure_threshold=10)
         
@@ -854,7 +854,7 @@ class TestEngineeringFixes:
     async def test_rate_limiter_atomicity(self):
         """Engineering Fix: All rate limiter operations should be atomic."""
         import asyncio
-        from ciicerone.llm.guardrails import RateLimiter
+        from vorsyghta.llm.guardrails import RateLimiter
         
         rl = RateLimiter(per_user_rpm=1000, burst=0, global_rpm=10000)
         

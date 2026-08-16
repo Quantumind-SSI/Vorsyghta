@@ -1,4 +1,4 @@
-**Ciicerone GDPR Consent Management**
+**Vorsyghta GDPR Consent Management**
 
 **Version:** 1.0  
 **Last Updated:** January 20, 2026  
@@ -8,7 +8,7 @@
 
 **Overview**
 
-This document describes Ciicerone's consent management system, ensuring GDPR-compliant consent collection, storage, and withdrawal mechanisms.
+This document describes Vorsyghta's consent management system, ensuring GDPR-compliant consent collection, storage, and withdrawal mechanisms.
 
 ---
 
@@ -50,7 +50,7 @@ from datetime import datetime
 from typing import Optional
 
 class ConsentCategory(Enum):
-    """GDPR consent categories for Ciicerone."""
+    """GDPR consent categories for Vorsyghta."""
     
     MARKETING_EMAIL = "marketing_email"
     MARKETING_PUSH = "marketing_push"
@@ -92,7 +92,7 @@ consent_texts:
     effective_date: "2026-01-20"
     title: "Marketing Communications"
     description: |
-      I agree to receive marketing emails from Ciicerone, including:
+      I agree to receive marketing emails from Vorsyghta, including:
       - Product updates and new features
       - Security tips and best practices
       - Special offers and promotions
@@ -105,7 +105,7 @@ consent_texts:
     effective_date: "2026-01-20"
     title: "Identified Analytics"
     description: |
-      I agree to allow Ciicerone to analyze my usage patterns
+      I agree to allow Vorsyghta to analyze my usage patterns
       to provide personalized recommendations and improve the service.
       
       This includes:
@@ -120,7 +120,7 @@ consent_texts:
     effective_date: "2026-01-20"
     title: "Beta Features Program"
     description: |
-      I agree to participate in the Ciicerone Beta Features Program.
+      I agree to participate in the Vorsyghta Beta Features Program.
       
       This includes:
       - Early access to new features
@@ -606,7 +606,7 @@ const ConsentSettings: React.FC = () => {
   return (
     <div className="consent-settings">
       <h2>Privacy & Consent Settings</h2>
-      <p>Manage how Ciicerone uses your data</p>
+      <p>Manage how Vorsyghta uses your data</p>
       
       {Object.values(ConsentCategory).map(category => (
         <ConsentToggle
@@ -831,4 +831,4 @@ async def check_consent_validity(
 
 ---
 
-*Document maintained by Ciicerone Compliance Team*
+*Document maintained by Vorsyghta Compliance Team*

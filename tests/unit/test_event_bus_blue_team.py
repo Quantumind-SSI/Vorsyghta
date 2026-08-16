@@ -6,8 +6,8 @@ Covers DAVID-001: wire blue team modules to event bus.
 import asyncio
 import pytest
 
-from ciicerone.core.event_bus import EventBus
-from ciicerone.core.event_types import (
+from vorsyghta.core.event_bus import EventBus
+from vorsyghta.core.event_types import (
     BlueTeamAlertEvent,
     BlueTeamHuntEvent,
     BlueTeamIncidentCreatedEvent,
@@ -15,7 +15,7 @@ from ciicerone.core.event_types import (
     EventType,
     RedTeamAttackStageEvent,
 )
-from ciicerone.defense.blue_team import BlueTeamBusIntegration
+from vorsyghta.defense.blue_team import BlueTeamBusIntegration
 
 
 @pytest.fixture

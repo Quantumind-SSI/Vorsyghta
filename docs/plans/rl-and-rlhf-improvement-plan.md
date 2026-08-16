@@ -11,7 +11,7 @@ Concrete, file-by-file implementation plan for two efforts:
 
 ### Problem
 
-`ciicerone/llm/rlhf_multiagent.py` `RLHFOptimizer` (lines 44-336) uses a handcrafted linear reward model:
+`vorsyghta/llm/rlhf_multiagent.py` `RLHFOptimizer` (lines 44-336) uses a handcrafted linear reward model:
 
 - `_extract_content_features` (lines 148-196): counts keywords like "company", "urgent", "deadline" to produce feature scores.
 - `_calculate_reward` (lines 198-206): dot product of features with hand-tuned weights.
@@ -22,11 +22,11 @@ This is not a learned reward model. It cannot generalize beyond the hardcoded ke
 
 ### Approach: Dual reward model (LLM-as-judge + scikit-learn fallback)
 
-The codebase already has LLM providers (`ciicerone/llm/base.py` `BaseLLMProvider`) and the multi-agent system already uses LLM evaluation (`_agent_evaluate`, lines 604-654). The cleanest path is to reuse that infrastructure for the reward model, with a scikit-learn classifier as an offline-trained fallback when no LLM is available.
+The codebase already has LLM providers (`vorsyghta/llm/base.py` `BaseLLMProvider`) and the multi-agent system already uses LLM evaluation (`_agent_evaluate`, lines 604-654). The cleanest path is to reuse that infrastructure for the reward model, with a scikit-learn classifier as an offline-trained fallback when no LLM is available.
 
 ### File-by-file changes
 
-#### 1. New file: `ciicerone/llm/reward_model.py`
+#### 1. New file: `vorsyghta/llm/reward_model.py`
 
 A `RewardModel` abstraction with two implementations:
 
@@ -64,7 +64,7 @@ Key design decisions:
 - Reuse the existing dimension names from `_initialize_reward_weights` (lines 61-82) as the LLM rubric dimensions, so downstream code that reads `reward_model_weights` still works.
 - `scikit-learn` is already in `requirements.txt` (line 36). No new dependencies for the fallback path.
 
-#### 2. Edit: `ciicerone/llm/rlhf_multiagent.py`
+#### 2. Edit: `vorsyghta/llm/rlhf_multiagent.py`
 
 Modify `RLHFOptimizer`:
 
@@ -79,7 +79,7 @@ Make `_calculate_reward` async (it now calls the LLM). Update callers:
 - `optimize_prompt_template` line 235: `predicted_score = await self._calculate_reward(features)` → `predicted_score = await self.reward_model.score(variation, current_template, content_type)`. The feature extraction moves inside the reward model.
 - `advanced_integration.py` `_generate_with_rlhf` (around line 354): update to await the now-async reward calculation.
 
-#### 3. Edit: `ciicerone/llm/advanced_integration.py`
+#### 3. Edit: `vorsyghta/llm/advanced_integration.py`
 
 - **`__init__` (line 57):** Pass `llm_provider` to `RLHFOptimizer` so it can construct the `HybridRewardModel`. The `AdvancedPromptEngineering` class doesn't currently hold an LLM provider — it receives one per-call in `generate_advanced_content`. Two options:
   - **Option 1 (preferred):** Pass `llm_provider` to `RLHFOptimizer` lazily in `_generate_with_rlhf` by setting `self.rlhf_optimizer.set_llm_provider(llm_provider)` at the start of that method.
@@ -108,15 +108,15 @@ Test patterns following `tests/unit/test_model_fallback_chain.py` conventions (M
 ```bash
 pytest tests/unit/test_reward_model.py -v
 pytest tests/unit/ -k "rlhf or reward" -v
-ruff check ciicerone/llm/reward_model.py ciicerone/llm/rlhf_multiagent.py
-mypy ciicerone/llm/reward_model.py
+ruff check vorsyghta/llm/reward_model.py vorsyghta/llm/rlhf_multiagent.py
+mypy vorsyghta/llm/reward_model.py
 ```
 
 ### Scope estimate
 
-- 1 new file (~250 lines): `ciicerone/llm/reward_model.py`
-- 1 edited file: `ciicerone/llm/rlhf_multiagent.py` (~80 lines changed)
-- 1 edited file: `ciicerone/llm/advanced_integration.py` (~15 lines changed)
+- 1 new file (~250 lines): `vorsyghta/llm/reward_model.py`
+- 1 edited file: `vorsyghta/llm/rlhf_multiagent.py` (~80 lines changed)
+- 1 edited file: `vorsyghta/llm/advanced_integration.py` (~15 lines changed)
 - 1 new test file (~300 lines): `tests/unit/test_reward_model.py`
 
 ---
@@ -125,7 +125,7 @@ mypy ciicerone/llm/reward_model.py
 
 ### Problem
 
-`ciicerone/vm/agent.py` `AIAttackAgent` executes attacks via LLM reasoning on real VMs. It has no gym-style interface — no `reset()`, `step()`, state vector, action space, or reward function. There's no way to run training episodes or learn a policy. The agent's "policy" is an LLM prompt, not a learned function.
+`vorsyghta/vm/agent.py` `AIAttackAgent` executes attacks via LLM reasoning on real VMs. It has no gym-style interface — no `reset()`, `step()`, state vector, action space, or reward function. There's no way to run training episodes or learn a policy. The agent's "policy" is an LLM prompt, not a learned function.
 
 The existing data models are close to what's needed but not structured for RL:
 
@@ -164,7 +164,7 @@ Add to `requirements.txt`:
 
 Keep these optional — the env wrapper works without them by exposing a minimal interface that doesn't inherit from `gymnasium.Env` (see below).
 
-#### 2. New file: `ciicerone/vm/rl/__init__.py`
+#### 2. New file: `vorsyghta/vm/rl/__init__.py`
 
 ```
 from .environment import CyberAttackEnv, CyberAttackEnvConfig
@@ -180,7 +180,7 @@ __all__ = [
 ]
 ```
 
-#### 3. New file: `ciicerone/vm/rl/action.py`
+#### 3. New file: `vorsyghta/vm/rl/action.py`
 
 Define the action space. Actions map to attack commands the agent can execute on the VM.
 
@@ -202,7 +202,7 @@ class ActionSpace:
     Phase 2: Extend with LLM-generated actions (the agent proposes a command,
     the action space validates it against the safety controller).
     
-    The catalog is loaded from a YAML file (ciicerone/vm/rl/action_catalog.yaml)
+    The catalog is loaded from a YAML file (vorsyghta/vm/rl/action_catalog.yaml)
     so it's extensible without code changes.
     """
     def __init__(self, catalog_path: str, safety_controller: VMSafetyController)
@@ -213,7 +213,7 @@ class ActionSpace:
 
 Design decision: start with a **discrete** action space (a catalog of commands) rather than continuous. This matches how the existing agent works (it executes discrete commands) and is compatible with DQN/PPO out of the box. Continuous action generation (free-form LLM commands) is a Phase 2 extension.
 
-#### 4. New file: `ciicerone/vm/rl/action_catalog.yaml`
+#### 4. New file: `vorsyghta/vm/rl/action_catalog.yaml`
 
 YAML catalog of attack commands mapped to MITRE techniques. Structure:
 
@@ -238,7 +238,7 @@ actions:
   # collection, exfiltration
 ```
 
-#### 5. New file: `ciicerone/vm/rl/observation.py`
+#### 5. New file: `vorsyghta/vm/rl/observation.py`
 
 Encode `AgentState` into a fixed-size observation vector.
 
@@ -266,7 +266,7 @@ class ObservationEncoder:
 
 Design decision: start with a **handcrafted feature vector** (like the existing `_extract_content_features` approach but for attack state). This is fast, debuggable, and works with any RL algorithm. A learned observation encoder (e.g., embedding command outputs via an LLM) is a Phase 2 extension.
 
-#### 6. New file: `ciicerone/vm/rl/reward.py`
+#### 6. New file: `vorsyghta/vm/rl/reward.py`
 
 ```
 @dataclass
@@ -317,7 +317,7 @@ class RewardFunction:
 
 Design decision: reward shaping is the hardest part of RL for cybersecurity. Start with a **simple dense reward** (per-step deltas) with clear positive signals for progress (hosts compromised, creds found) and negative signals for detection (alerts generated). The `alerts_generated` and `detection_coverage` fields in `AttackResult` (models.py lines 231-232) provide the detection signal — but these are only populated at episode end in the current code. **This requires modifying `AIAttackAgent._analyze_and_adapt` to populate detection indicators per-step** (see file change #8 below).
 
-#### 7. New file: `ciicerone/vm/rl/environment.py`
+#### 7. New file: `vorsyghta/vm/rl/environment.py`
 
 The main environment class.
 
@@ -381,7 +381,7 @@ Key design decisions:
 - **Snapshot-based reset:** The existing `AIAttackAgent.execute_attack` already creates pre-attack snapshots (agent.py lines 269-273). `reset()` restores these snapshots to get a clean state. This is critical for RL — each episode must start from the same (or similar) state.
 - **Action execution:** `step()` calls `AIAttackAgent._execute_step` with a single-step `AttackStep` constructed from the `AttackAction`. This reuses all the existing command refinement, safety validation, and result analysis logic.
 
-#### 8. Edit: `ciicerone/vm/agent.py`
+#### 8. Edit: `vorsyghta/vm/agent.py`
 
 Modify `AIAttackAgent` to support single-step execution and per-step detection tracking:
 
@@ -390,7 +390,7 @@ Modify `AIAttackAgent` to support single-step execution and per-step detection t
 - **New method `get_state_snapshot() -> AgentState`:** Returns a deep copy of the current `AgentState`. The env needs this to compute reward deltas (prev vs curr state).
 - **New method `reset_state() -> None`:** Clears `self.state`, `self.attack_log`, `self._current_plan`. Used by `CyberAttackEnv.reset()`.
 
-#### 9. Edit: `ciicerone/vm/models.py`
+#### 9. Edit: `vorsyghta/vm/models.py`
 
 Add `detection_indicators` field to `AgentState`:
 
@@ -401,7 +401,7 @@ class AgentState:
     detection_indicators: List[str] = field(default_factory=list)  # NEW
 ```
 
-#### 10. New file: `ciicerone/vm/rl/async_wrapper.py`
+#### 10. New file: `vorsyghta/vm/rl/async_wrapper.py`
 
 ```
 class AsyncToSyncEnv:
@@ -418,7 +418,7 @@ class AsyncToSyncEnv:
     """
 ```
 
-#### 11. New file: `ciicerone/vm/rl/training.py` (Phase 2)
+#### 11. New file: `vorsyghta/vm/rl/training.py` (Phase 2)
 
 ```
 class AttackAgentTrainer:
@@ -467,8 +467,8 @@ Test patterns following `test_model_fallback_chain.py` (MockProvider, AsyncMock)
 ```bash
 # Phase 1 (env + random agent baseline)
 pytest tests/unit/test_cyber_attack_env.py -v
-ruff check ciicerone/vm/rl/
-mypy ciicerone/vm/rl/environment.py
+ruff check vorsyghta/vm/rl/
+mypy vorsyghta/vm/rl/environment.py
 
 # Phase 2 (with RL training, requires optional deps)
 pip install gymnasium stable-baselines3
@@ -478,14 +478,14 @@ pytest tests/unit/test_cyber_attack_env.py -v -k "training or ppo or dqn"
 ### Scope estimate
 
 **Phase 1 (env + observation + action + reward + random baseline):**
-- 7 new files (~1200 lines total): `ciicerone/vm/rl/{__init__,action,observation,reward,environment,async_wrapper}.py` + `action_catalog.yaml`
-- 1 edited file: `ciicerone/vm/agent.py` (~60 lines changed)
-- 1 edited file: `ciicerone/vm/models.py` (~3 lines added)
+- 7 new files (~1200 lines total): `vorsyghta/vm/rl/{__init__,action,observation,reward,environment,async_wrapper}.py` + `action_catalog.yaml`
+- 1 edited file: `vorsyghta/vm/agent.py` (~60 lines changed)
+- 1 edited file: `vorsyghta/vm/models.py` (~3 lines added)
 - 1 new test file (~400 lines): `tests/unit/test_cyber_attack_env.py`
 - 2 edited files: `pyproject.toml`, `requirements.txt` (optional deps)
 
 **Phase 2 (RL training with stable-baselines3):**
-- 1 new file (~200 lines): `ciicerone/vm/rl/training.py`
+- 1 new file (~200 lines): `vorsyghta/vm/rl/training.py`
 - Extended tests in `test_cyber_attack_env.py` (~150 lines added)
 
 ---

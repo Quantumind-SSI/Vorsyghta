@@ -1,4 +1,4 @@
-Ciicerone CLI Command Masterclass
+Vorsyghta CLI Command Masterclass
 
 Prereqs / environment
 - Create venv & install:
@@ -11,46 +11,46 @@ Prereqs / environment
   ./scripts/verify_flow.sh
 - Important env vars:
   PROXMOX_HOST, PROXMOX_TOKEN_VALUE, PROXMOX_TOKEN_ID / PROXMOX_USER, PROXMOX_TOKEN_NAME
-  CIICERONE_VM_USERNAME, CIICERONE_VM_PASSWORD
+  VORSYGHTA_VM_USERNAME, VORSYGHTA_VM_PASSWORD
   Use config/mcp.example.yaml or demos/client_data/demo_config.yaml for --config
 
 Template exploration & simulation (safe first)
 - List templates:
-  python -m ciicerone --config demos/client_data/demo_config.yaml templates list-all
+  python -m vorsyghta --config demos/client_data/demo_config.yaml templates list-all
 - Show/validate a template:
-  python -m ciicerone --config demos/client_data/demo_config.yaml templates show templates/executive_phishing.yaml --validate
+  python -m vorsyghta --config demos/client_data/demo_config.yaml templates show templates/executive_phishing.yaml --validate
 - Validate all templates in folder:
-  python -m ciicerone --config demos/client_data/demo_config.yaml validate -d templates/
+  python -m vorsyghta --config demos/client_data/demo_config.yaml validate -d templates/
 - Dry-run simulate (no LLM generation unless --live):
-  python -m ciicerone --config demos/client_data/demo_config.yaml simulate -s templates/executive_phishing.yaml --dry-run --preview
+  python -m vorsyghta --config demos/client_data/demo_config.yaml simulate -s templates/executive_phishing.yaml --dry-run --preview
 - Live simulate (may call LLM provider; set keys or run ollama):
-  python -m ciicerone --config demos/client_data/demo_config.yaml simulate -s templates/executive_phishing.yaml --live -o output.json
+  python -m vorsyghta --config demos/client_data/demo_config.yaml simulate -s templates/executive_phishing.yaml --live -o output.json
 - Enrich template with client data:
-  python -m ciicerone --config demos/client_data/demo_config.yaml client-data enrich --tenant acme-demo --scenario templates/executive_phishing.yaml --output output/enriched.json
+  python -m vorsyghta --config demos/client_data/demo_config.yaml client-data enrich --tenant acme-demo --scenario templates/executive_phishing.yaml --output output/enriched.json
 - Batch dry-run all templates:
-  for t in templates/**/*.yaml; do python -m ciicerone --config demos/client_data/demo_config.yaml simulate -s "$t" --dry-run --preview || echo "failed $t"; done
+  for t in templates/**/*.yaml; do python -m vorsyghta --config demos/client_data/demo_config.yaml simulate -s "$t" --dry-run --preview || echo "failed $t"; done
 
 MCP server / toolserver & VM flow (template → VM → execute)
 - Export MCP tools schema:
-  python -m ciicerone mcp export_schema -o /tmp/mcp_schema.json
+  python -m vorsyghta mcp export_schema -o /tmp/mcp_schema.json
 - List MCP tools:
-  python -m ciicerone mcp tools
+  python -m vorsyghta mcp tools
 - Start MCP server (stdio transport):
   export PROXMOX_HOST=...; export PROXMOX_TOKEN_VALUE="..."
-  python -m ciicerone mcp start --config config/mcp.example.yaml
+  python -m vorsyghta mcp start --config config/mcp.example.yaml
 - Show MCP status:
-  python -m ciicerone mcp status
+  python -m vorsyghta mcp status
 - Describe a specific tool:
-  python -m ciicerone mcp describe vm_execute
+  python -m vorsyghta mcp describe vm_execute
 
 Atomic (programmatic) template→VM→execute example (safe)
 - Programmatic create/execute (MCP server or Proxmox credentials required):
-  export CIICERONE_VM_USERNAME=admin
-  export CIICERONE_VM_PASSWORD=vulnerable123
+  export VORSYGHTA_VM_USERNAME=admin
+  export VORSYGHTA_VM_PASSWORD=vulnerable123
   python - <<'PY'
 import asyncio,json
-from ciicerone.mcp.server import CiiceroneMCPServer
-s = CiiceroneMCPServer()
+from vorsyghta.mcp.server import VorsyghtaMCPServer
+s = VorsyghtaMCPServer()
 async def run():
   await s.connect_proxmox()
   # If template already mapped (e.g., ubuntu-target vmid 9001), run:
@@ -63,7 +63,7 @@ Direct SSH test (bypass MCP, useful to confirm ssh/ip/creds)
 - Quick SSH execute test:
   python - <<'PY'
 import asyncio,json
-from ciicerone.mcp.tools.vm_execute import execute_ssh_command
+from vorsyghta.mcp.tools.vm_execute import execute_ssh_command
 print(json.dumps(asyncio.run(execute_ssh_command('10.0.100.5','uname -a',username='admin',password='vulnerable123')),indent=2))
 PY
 
@@ -79,7 +79,7 @@ VM lifecycle tool names (MCP tool calls)
 Attack mapping & orchestration (programmatic)
 - Map scenario → attack flow (AttackMapper):
   python - <<'PY'
-from ciicerone.integrations.attack_mapper import AttackMapper
+from vorsyghta.integrations.attack_mapper import AttackMapper
 mapper=AttackMapper()
 scenario={'name':'Demo','threat_type':'spear_phishing','mitre_techniques':['T1566.001','T1003']}
 flow=mapper.scenario_to_flow(scenario,target_info={'ip':'10.0.100.5','services':['http']})
@@ -88,7 +88,7 @@ PY
 - Create an attack sequence (AttackOrchestrator):
   python - <<'PY'
 import asyncio
-from ciicerone.core.attack_orchestrator import AttackOrchestrator
+from vorsyghta.core.attack_orchestrator import AttackOrchestrator
 orch=AttackOrchestrator()
 async def run():
   seq=await orch.create_attack_sequence_from_scenario('demo','10.0.100.5',['T1595','T1110'])
@@ -100,9 +100,9 @@ PY
 
 Detection rule generation
 - Generate detection rules from scenario/template:
-  python -m ciicerone --config demos/client_data/demo_config.yaml detect generate -s templates/executive_phishing.yaml -f all -o output/detection_rules/
+  python -m vorsyghta --config demos/client_data/demo_config.yaml detect generate -s templates/executive_phishing.yaml -f all -o output/detection_rules/
 - Generate rule from MITRE technique:
-  python -m ciicerone --config demos/client_data/demo_config.yaml detect from-technique T1566.001 -f sigma -o output/T1566.001_sigma.yaml
+  python -m vorsyghta --config demos/client_data/demo_config.yaml detect from-technique T1566.001 -f sigma -o output/T1566.001_sigma.yaml
 
 End-to-end demos (dry-run safe)
 - Dry-run e2e demo (Project Nightfall):
@@ -129,11 +129,11 @@ Safe atomic runnable checklist (authorized lab, one-liner checklist)
 2. Start local demo server (for client-data):
    bash demos/client_data/run_demo.sh
 3. Dry-run simulate a template:
-   python -m ciicerone --config demos/client_data/demo_config.yaml simulate -s templates/sample_phishing_template.yaml --dry-run --preview
+   python -m vorsyghta --config demos/client_data/demo_config.yaml simulate -s templates/sample_phishing_template.yaml --dry-run --preview
 4. Start MCP server (if Proxmox integration needed):
-   export PROXMOX_HOST=...; export PROXMOX_TOKEN_VALUE=...; python -m ciicerone mcp start --config config/mcp.example.yaml
+   export PROXMOX_HOST=...; export PROXMOX_TOKEN_VALUE=...; python -m vorsyghta mcp start --config config/mcp.example.yaml
 5. Confirm MCP tools available:
-   python -m ciicerone mcp tools
+   python -m vorsyghta mcp tools
 6. Create VM from template (via Proxmox template mapping) or use existing vmid:
    (Programmatic example in Atomic section above)
 7. Confirm VM reachable over SSH (direct test):

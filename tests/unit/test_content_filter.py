@@ -9,7 +9,7 @@ Hardened: 13 January 2026 (Security improvements)
 import pytest
 import time
 from pathlib import Path
-from ciicerone.safety.content_filter import (
+from vorsyghta.safety.content_filter import (
     ContentFilter,
     FilterConfig,
     FilterResult,
@@ -20,7 +20,7 @@ from ciicerone.safety.content_filter import (
     RateLimiter,
     get_global_filter,
 )
-from ciicerone.safety.exceptions import SafetyViolationError, ContentFilterError
+from vorsyghta.safety.exceptions import SafetyViolationError, ContentFilterError
 
 
 class TestContentFilter:

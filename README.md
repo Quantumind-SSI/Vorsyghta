@@ -1,4 +1,4 @@
-# Ciicerone
+# Vorsyghta
 
 **The agentic cyber platform that unifies threat simulation, red team operations, and zero-day vulnerability research — closing the loop between offense, defense, and intelligence.**
 
@@ -8,33 +8,33 @@
 [![MITRE ATT&CK](https://img.shields.io/badge/MITRE-ATT%26CK%20v14-red.svg)](https://attack.mitre.org/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](docs/community/CONTRIBUTING.md)
 
-> **Ciicerone** (noun) — *a guide who leads the way.* We guide security teams from "we ran a phishing test once a year" to "we continuously simulate, detect, hunt, discover zero-days, and prove our controls against realistic adversaries."
+> **Vorsyghta** (noun) — *a guide who leads the way.* We guide security teams from "we ran a phishing test once a year" to "we continuously simulate, detect, hunt, discover zero-days, and prove our controls against realistic adversaries."
 
 ---
 
-## What Ciicerone Actually Is
+## What Vorsyghta Actually Is
 
-Ciicerone is not just a phishing simulator or a training platform. It is a **full-spectrum agentic cyber operations platform** with three core pillars:
+Vorsyghta is not just a phishing simulator or a training platform. It is a **full-spectrum agentic cyber operations platform** with three core pillars:
 
 ### 1. Threat Simulation & Red Team Operations
 
 LLM-driven agents plan and execute multi-stage attacks across the MITRE ATT&CK kill chain — phishing, BEC, smishing, supply-chain compromise, credential stuffing, lateral movement — on isolated VM infrastructure. The AI attack agent adapts its strategy based on live results, mirroring the OODA loop of real adversaries.
 
 **What's implemented:**
-- AI attack agent (`ciicerone/vm/agent.py`) — ReAct-style reasoning, autonomous multi-step attack planning, adaptive command refinement
-- Attack orchestrator (`ciicerone/core/attack_orchestrator.py`) — MITRE technique-to-tool mapping, automated finding extraction
-- MCP server (`ciicerone/mcp/`) — Model Context Protocol server exposing VM control, command execution, and attack tools to AI agents
-- VM operator (`ciicerone/vm/operator.py`) — Proxmox, KVM, Docker hypervisor support; SSH/WinRM execution; snapshot management
+- AI attack agent (`vorsyghta/vm/agent.py`) — ReAct-style reasoning, autonomous multi-step attack planning, adaptive command refinement
+- Attack orchestrator (`vorsyghta/core/attack_orchestrator.py`) — MITRE technique-to-tool mapping, automated finding extraction
+- MCP server (`vorsyghta/mcp/`) — Model Context Protocol server exposing VM control, command execution, and attack tools to AI agents
+- VM operator (`vorsyghta/vm/operator.py`) — Proxmox, KVM, Docker hypervisor support; SSH/WinRM execution; snapshot management
 - Offensive tools — nmap, nuclei, gobuster, hydra, sqlmap, curl, metasploit (via VM templates)
-- GUI automation (`ciicerone/mcp/tools/computer_use.py`) — screenshots, mouse/keyboard input for GUI-targeted attacks
-- Safety controls (`ciicerone/mcp/safety/`) — network isolation, command blocklists, rate limiting, scenario approval, audit logging
+- GUI automation (`vorsyghta/mcp/tools/computer_use.py`) — screenshots, mouse/keyboard input for GUI-targeted attacks
+- Safety controls (`vorsyghta/mcp/safety/`) — network isolation, command blocklists, rate limiting, scenario approval, audit logging
 
 ### 2. Zero-Day Vulnerability Research
 
-Ciicerone's discovery toolchain extends beyond known-vulnerability scanning into finding **new** vulnerabilities. The MCP server exposes fuzzing, static analysis, and binary analysis tools to AI agents, who can autonomously run campaigns, triage crashes, and generate vulnerability reports.
+Vorsyghta's discovery toolchain extends beyond known-vulnerability scanning into finding **new** vulnerabilities. The MCP server exposes fuzzing, static analysis, and binary analysis tools to AI agents, who can autonomously run campaigns, triage crashes, and generate vulnerability reports.
 
 **What's implemented:**
-- **Fuzzing tools** (`ciicerone/mcp/tools/discovery_tools.py`):
+- **Fuzzing tools** (`vorsyghta/mcp/tools/discovery_tools.py`):
   - AFL++ — coverage-guided fuzzing with crash collection
   - libFuzzer — in-process LLVM fuzzing for instrumented targets
   - honggfuzz — hardware-based fuzzing for closed-source binaries
@@ -49,20 +49,20 @@ Ciicerone's discovery toolchain extends beyond known-vulnerability scanning into
   - Ghidra headless — decompilation, function discovery, vulnerability pattern scanning
   - radare2 — reverse engineering, ROP gadget discovery, security mitigation checks
   - Binary diffing — compare binary versions to find patched vulnerabilities
-- **Crash triage pipeline** (`ciicerone/research/crash_pipeline.py`):
+- **Crash triage pipeline** (`vorsyghta/research/crash_pipeline.py`):
   - Collect crashes from fuzzing campaigns
   - Deduplicate by stack trace signature
   - Triage under GDB — classify crash type, assess exploitability
   - Map to CWE IDs and estimate CVSS scores
   - Prioritize by severity
-- **LLM-guided mutation** (`ciicerone/research/llm_mutator.py`):
+- **LLM-guided mutation** (`vorsyghta/research/llm_mutator.py`):
   - Grammar-aware mutation (JSON, XML, structured data)
   - Protocol-aware mutation (HTTP, binary protocols)
   - Boundary value testing
   - Injection payload generation (SQLi, XSS, command injection, path traversal)
   - Semantic mutation — LLM generates edge-case inputs that pass parsing but trigger bugs
   - Crash-guided mutation — uses previous crash info to explore similar code paths
-- **Vulnerability reporting** (`ciicerone/research/vuln_report.py`):
+- **Vulnerability reporting** (`vorsyghta/research/vuln_report.py`):
   - Structured findings with CWE, CVSS, reproduction steps, PoC
   - Markdown and JSON output for client delivery
   - Executive summaries with severity breakdowns
@@ -77,9 +77,53 @@ Ciicerone's discovery toolchain extends beyond known-vulnerability scanning into
 
 ---
 
+## The Teams — one platform, coordinated roles
+
+Vorsyghta is a **one-stop agentic cybersecurity platform**: your entire security operation runs as
+coordinated **teams** over a single typed event bus and replayable audit store. There are two
+first-class taxonomies — the eight **colour teams** (the exercise roles) and the **functional teams**
+(the corporate org-chart mapping).
+
+> Authoritative, code-anchored spec with per-team status: **[`docs/architecture/TEAM_ARCHITECTURE.md`](docs/architecture/TEAM_ARCHITECTURE.md)** §1.
+> Build-target roadmap: **[`docs/plans/color-team-architecture-plan.md`](docs/plans/color-team-architecture-plan.md)**.
+
+### Colour teams (the eight)
+
+| Team | Role | Mission | Status |
+|---|---|---|---|
+| 🔴 **Red** | Offense | Adaptive, MITRE-mapped attack simulation on isolated VMs | Implemented |
+| 🔵 **Blue** | Defense | Real-time detection, correlation, and response (SIEM/IDS/EDR) | Implemented |
+| 🟣 **Purple** | Integration / Coaching | Correlate Red vs Blue, find detection gaps, generate the AAR | Implemented |
+| 🟡 **Yellow** | Builders / Infrastructure | Provision, harden, and validate the exercise sandbox | Implemented |
+| 🟢 **Green** | Remediation / Automation | Turn findings into fixes & detection-as-code (today: training/awareness) | Partial |
+| 🟠 **Orange** | Code Review / Governance | Pre-release SAST + threat modelling (today: compliance mapping) | Partial |
+| ⚪ **White** | Governance / Referee | Rules of engagement, scope enforcement, halt authority | Implemented |
+| ⚫ **Black** | Observation / Evaluation | Non-interfering scoring & benchmarking of every team | Partial |
+
+### Functional teams (org-chart mapping)
+
+**SOC** · **DFIR** · **Vulnerability Management** · **SecOps / DevSecOps** · **AppSec** ·
+**Cloud Security** · **IAM** · **GRC** · **Threat Intelligence** · **TPRM** — each backed by real
+modules (deterministic where assurance/compliance evidence is involved, agentic where the task
+reasons under uncertainty). See TEAM_ARCHITECTURE.md §1b for status per team.
+
+**One-stop command** — run a full-spectrum exercise across every colour team:
+
+```bash
+vorsyghta exercise run --scenario templates/supply_chain_compromise.yaml --teams all
+# White sets rules → Yellow provisions → Red attacks → Blue defends → Purple correlates/AAR →
+# Green remediates → Orange reviews rebuild → White verifies → Black scores → results persisted
+```
+
+> **Honesty guarantee:** every result is **measured**, or explicitly flagged `simulation=true`.
+> The status column above reflects exactly what ships today — see the architecture doc for the seam
+> between shipping engines and the committed build target.
+
+---
+
 ## Licensing — Read This First
 
-Ciicerone is **open-core**. The simulation engine, CLI, YAML template system, basic LLM provider abstraction, and the zero-day discovery toolchain are open source under **Apache 2.0**. The intelligence stack, event-sourced audit trail, blue team modules, multi-team orchestration, enterprise integrations, and other production-grade capabilities are licensed commercially.
+Vorsyghta is **open-core**. The simulation engine, CLI, YAML template system, basic LLM provider abstraction, and the zero-day discovery toolchain are open source under **Apache 2.0**. The intelligence stack, event-sourced audit trail, blue team modules, multi-team orchestration, enterprise integrations, and other production-grade capabilities are licensed commercially.
 
 - **Open source core** — see [`LICENSE`](LICENSE) (Apache 2.0).
 - **Commercial modules** — see [`docs/licensing/COMPONENT_MATRIX.md`](docs/licensing/COMPONENT_MATRIX.md) for the full component-by-component breakdown and commercial terms.
@@ -90,7 +134,7 @@ Ciicerone is **open-core**. The simulation engine, CLI, YAML template system, ba
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        Ciicerone Platform                        │
+│                        Vorsyghta Platform                        │
 ├─────────────────┬───────────────────┬───────────────────────────┤
 │  Threat Sim     │  Zero-Day Research│  Blue Team & Intel        │
 │                 │                   │                           │
@@ -116,7 +160,7 @@ Ciicerone is **open-core**. The simulation engine, CLI, YAML template system, ba
 
 ## Who It's For
 
-| Audience | What Ciicerone gives them |
+| Audience | What Vorsyghta gives them |
 |---|---|
 | **Red Team Leads** | Autonomous, LLM-driven attack agents that plan, execute, and adapt across the full MITRE ATT&CK kill chain — enriched with live OSINT and dark web intelligence. |
 | **Vulnerability Researchers** | Fuzzing, SAST, and binary analysis tools exposed through the MCP interface. AI-guided mutation, automated crash triage, and structured vulnerability reporting. |
@@ -139,8 +183,8 @@ Ciicerone is **open-core**. The simulation engine, CLI, YAML template system, ba
 ### Install
 
 ```bash
-git clone https://github.com/ciicerone-AI/Ciicerone.git
-cd Ciicerone
+git clone https://github.com/QuantumindSSI/Vorsyghta.git
+cd Vorsyghta
 
 python -m venv .venv
 source .venv/bin/activate          # Windows: .\.venv\Scripts\Activate.ps1
@@ -168,8 +212,8 @@ export PROXMOX_TOKEN_NAME="automation"
 export PROXMOX_TOKEN_VALUE="your-token"
 
 # For SSH access to attacker VMs
-export CIICERONE_VM_USERNAME="root"
-export CIICERONE_VM_PASSWORD="your-password"
+export VORSYGHTA_VM_USERNAME="root"
+export VORSYGHTA_VM_PASSWORD="your-password"
 ```
 
 Edit `config.yaml` to select your provider, output directory, and safety settings.
@@ -177,17 +221,17 @@ Edit `config.yaml` to select your provider, output directory, and safety setting
 ### Run Threat Simulations
 
 ```bash
-ciicerone --help
-ciicerone templates validate-all
-ciicerone simulate -s templates/executive_phishing.yaml --dry-run   # no API calls
-ciicerone simulate -s templates/executive_phishing.yaml             # live generation
+vorsyghta --help
+vorsyghta templates validate-all
+vorsyghta simulate -s templates/executive_phishing.yaml --dry-run   # no API calls
+vorsyghta simulate -s templates/executive_phishing.yaml             # live generation
 ```
 
 ### Run the MCP Server (for AI-driven attacks and zero-day research)
 
 ```bash
 # Start the MCP server (stdio transport for AI agents)
-python -m ciicerone.mcp.server --log-level INFO
+python -m vorsyghta.mcp.server --log-level INFO
 ```
 
 The MCP server exposes tools that AI agents can call:
@@ -202,9 +246,9 @@ The MCP server exposes tools that AI agents can call:
 
 ```python
 import asyncio
-from ciicerone.research.crash_pipeline import CrashPipeline
-from ciicerone.research.llm_mutator import LLMMutator, MutationStrategy
-from ciicerone.research.vuln_report import ReportGenerator
+from vorsyghta.research.crash_pipeline import CrashPipeline
+from vorsyghta.research.llm_mutator import LLMMutator, MutationStrategy
+from vorsyghta.research.vuln_report import ReportGenerator
 
 async def zero_day_campaign():
     # 1. Generate smart mutations with LLM
@@ -245,7 +289,7 @@ asyncio.run(zero_day_campaign())
 ### Sanctioned Target Pentest (Discovery Pipeline Validation)
 
 To validate the red-team attack + discovery toolchain against a target with
-**known ground truth**, Ciicerone ships a compose fragment for OWASP Juice
+**known ground truth**, Vorsyghta ships a compose fragment for OWASP Juice
 Shop — a sanctioned, intentionally-vulnerable training target with ~100
 documented challenges and a scoreboard. This lets you prove the agent actually
 finds vulnerabilities (compare `vuln_report.py` output against the challenge
@@ -258,14 +302,14 @@ list) rather than hallucinating.
 > disclosure / CVE assignment.
 
 ```bash
-# 1. Bring up the Ciicerone stack + Juice Shop target (dry-run, prints the attack command)
+# 1. Bring up the Vorsyghta stack + Juice Shop target (dry-run, prints the attack command)
 bash scripts/run_sanctioned_target.sh --target juice-shop --keep
 
 # 2. Launch the attack directly (requires a reachable tool server)
 bash scripts/run_sanctioned_target.sh --target juice-shop --attack --keep
 
 # Or run the red-team CLI manually against the host-mapped target:
-ciicerone red-team attack \
+vorsyghta red-team attack \
   -s templates/sanctioned_targets/juice_shop_web_pentest.yaml \
   -t http://localhost:3000 \
   -o juice_shop_findings.json
@@ -275,7 +319,7 @@ bash scripts/run_sanctioned_target.sh --down
 ```
 
 Files:
-- `docker/targets/juice-shop.yml` — compose fragment (Juice Shop on `ciicerone-network`)
+- `docker/targets/juice-shop.yml` — compose fragment (Juice Shop on `vorsyghta-network`)
 - `templates/sanctioned_targets/juice_shop_web_pentest.yaml` — scenario template
 - `scripts/run_sanctioned_target.sh` — harness (bring-up + health-wait + attack)
 
@@ -367,7 +411,7 @@ safety:
 A single command launches a full-spectrum exercise across all color teams:
 
 ```bash
-ciicerone exercise run --scenario templates/supply_chain_compromise.yaml --teams all
+vorsyghta exercise run --scenario templates/supply_chain_compromise.yaml --teams all
 ```
 
 | Team | Role |
@@ -405,7 +449,7 @@ ciicerone exercise run --scenario templates/supply_chain_compromise.yaml --teams
 
 ## Security, Safety & Responsible Use
 
-Ciicerone is a **defensive** security platform. It is built for authorized security testing, training, control validation, compliance, and vulnerability research — never for malicious activity.
+Vorsyghta is a **defensive** security platform. It is built for authorized security testing, training, control validation, compliance, and vulnerability research — never for malicious activity.
 
 - **Safety framework** — content filtering, unsafe-keyword blocking, PII masking, network isolation (attacks restricted to allowed networks), command blocklists, rate limiting, scenario approval for destructive operations, full audit logging.
 - **Authorized use cases** — security awareness training, authorized red/purple team exercises, control validation, compliance evidence, vulnerability research under authorized scope, research and education.
@@ -438,12 +482,12 @@ We welcome contributions to the open-source core. The commercial modules are not
 - **Contributing guide:** [`docs/community/CONTRIBUTING.md`](docs/community/CONTRIBUTING.md)
 - **Code of Conduct:** [`docs/community/CODE_OF_CONDUCT.md`](docs/community/CODE_OF_CONDUCT.md)
 - **Security policy:** [`SECURITY.md`](SECURITY.md)
-- **Issues & feature requests:** [GitHub Issues](https://github.com/ciicerone-AI/Ciicerone/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/ciicerone-AI/Ciicerone/discussions)
+- **Issues & feature requests:** [GitHub Issues](https://github.com/QuantumindSSI/Vorsyghta/issues)
+- **Discussions:** [GitHub Discussions](https://github.com/QuantumindSSI/Vorsyghta/discussions)
 
 ```bash
 # Dev setup
-git clone https://github.com/ciicerone-AI/Ciicerone.git && cd Ciicerone
+git clone https://github.com/QuantumindSSI/Vorsyghta.git && cd Vorsyghta
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements-dev.txt
 pre-commit install
@@ -454,7 +498,7 @@ pytest
 
 ## Commercial Licensing & Enterprise
 
-For enterprise licensing, pilot programmes, or to access the commercial modules (intelligence stack, event-sourced audit trail, blue team suite, multi-team orchestration, enterprise integrations), contact **commercial@ciicerone.io** or see [`docs/licensing/COMPONENT_MATRIX.md`](docs/licensing/COMPONENT_MATRIX.md).
+For enterprise licensing, pilot programmes, or to access the commercial modules (intelligence stack, event-sourced audit trail, blue team suite, multi-team orchestration, enterprise integrations), contact **commercial@vorsyghta.io** or see [`docs/licensing/COMPONENT_MATRIX.md`](docs/licensing/COMPONENT_MATRIX.md).
 
 ---
 
@@ -464,4 +508,4 @@ The open-source core is licensed under **Apache 2.0**. Commercial modules are se
 
 ---
 
-*Ciicerone — guide your security teams from simulation to resilience to discovery.*
+*Vorsyghta — guide your security teams from simulation to resilience to discovery.*

@@ -1,4 +1,4 @@
-**Ciicerone Data Subject Rights Implementation**
+**Vorsyghta Data Subject Rights Implementation**
 
 **Version:** 1.0  
 **Last Updated:** January 20, 2026  
@@ -8,7 +8,7 @@
 
 **Overview**
 
-This document details the implementation of GDPR Data Subject Rights (Articles 12-23) in Ciicerone. It provides technical specifications, workflows, and code examples for handling data subject requests.
+This document details the implementation of GDPR Data Subject Rights (Articles 12-23) in Vorsyghta. It provides technical specifications, workflows, and code examples for handling data subject requests.
 
 ---
 
@@ -139,8 +139,8 @@ class DataAccessService:
             "export_metadata": {
                 "generated_at": datetime.utcnow().isoformat(),
                 "format_version": "1.0",
-                "data_controller": "Ciicerone Project",
-                "contact": "privacy@ciicerone.io"
+                "data_controller": "Vorsyghta Project",
+                "contact": "privacy@vorsyghta.io"
             },
             "data_subject": await self._get_account_data(user_id),
             "processing_information": self._get_processing_info(),
@@ -269,7 +269,7 @@ class DataAccessService:
             "access": "You exercised this right to receive this data",
             "rectification": "Update your data at /settings/profile",
             "erasure": "Request account deletion at /settings/account",
-            "restriction": "Contact privacy@ciicerone.io",
+            "restriction": "Contact privacy@vorsyghta.io",
             "portability": "Export data in machine-readable format",
             "object": "Manage at /settings/privacy",
             "complaint": "Lodge complaint with supervisory authority"
@@ -318,12 +318,12 @@ class DataAccessService:
     def _generate_readme(self, data: Dict) -> str:
         """Generate human-readable README."""
         return f"""
-Ciicerone Data Export
+Vorsyghta Data Export
 ========================
 
 Generated: {data['export_metadata']['generated_at']}
 
-This archive contains your personal data as processed by Ciicerone.
+This archive contains your personal data as processed by Vorsyghta.
 
 Files Included:
 - personal_data.json: Complete data in machine-readable format
@@ -336,7 +336,7 @@ Contact: {data['export_metadata']['contact']}
 Your Rights:
 {json.dumps(data['your_rights'], indent=2)}
 
-For questions, contact: privacy@ciicerone.io
+For questions, contact: privacy@vorsyghta.io
         """
 ```
 
@@ -426,7 +426,7 @@ async def download_data_export(
         io.BytesIO(export_data),
         media_type="application/zip",
         headers={
-            "Content-Disposition": f"attachment; filename=ciicerone_data_export_{request_id}.zip"
+            "Content-Disposition": f"attachment; filename=vorsyghta_data_export_{request_id}.zip"
         }
     )
 ```
@@ -777,7 +777,7 @@ class ObjectionService:
         handlers = {
             "direct_marketing": self._stop_direct_marketing,
             "analytics": self._stop_analytics,
-            "profiling": self._stop_profiling,  # N/A for Ciicerone
+            "profiling": self._stop_profiling,  # N/A for Vorsyghta
             "legitimate_interest": self._review_legitimate_interest
         }
         
@@ -970,7 +970,7 @@ class DSARHandler:
 
 TEMPLATES = {
     "access_request_received": """
-Subject: Your Data Access Request - Ciicerone
+Subject: Your Data Access Request - Vorsyghta
 
 Dear {user_name},
 
@@ -986,12 +986,12 @@ To verify this request, please click the link below:
 If you did not make this request, please ignore this email.
 
 Best regards,
-Ciicerone Privacy Team
-privacy@ciicerone.io
+Vorsyghta Privacy Team
+privacy@vorsyghta.io
     """,
     
     "access_request_ready": """
-Subject: Your Data Export is Ready - Ciicerone
+Subject: Your Data Export is Ready - Vorsyghta
 
 Dear {user_name},
 
@@ -1010,11 +1010,11 @@ The download includes:
 For security, this link will expire in 7 days.
 
 Best regards,
-Ciicerone Privacy Team
+Vorsyghta Privacy Team
     """,
     
     "deletion_scheduled": """
-Subject: Account Deletion Scheduled - Ciicerone
+Subject: Account Deletion Scheduled - Vorsyghta
 
 Dear {user_name},
 
@@ -1030,10 +1030,10 @@ After {deletion_date}, all your data will be permanently deleted
 and cannot be recovered.
 
 If you did not request this, please cancel immediately and 
-contact us at security@ciicerone.io
+contact us at security@vorsyghta.io
 
 Best regards,
-Ciicerone Privacy Team
+Vorsyghta Privacy Team
     """
 }
 ```
@@ -1060,5 +1060,5 @@ Ciicerone Privacy Team
 
 ---
 
-*Document maintained by Ciicerone Compliance Team*  
+*Document maintained by Vorsyghta Compliance Team*  
 *Related: [GDPR Overview](README.md) | [Consent Management](consent-management.md)*

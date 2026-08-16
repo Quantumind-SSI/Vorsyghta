@@ -9,7 +9,7 @@
 
 ## Mission
 
-Make the red team standalone and bank-scenario-ready, removing the hard dependency on the external "Ciicerone Attack" API.
+Make the red team standalone and bank-scenario-ready, removing the hard dependency on the external "Vorsyghta Attack" API.
 
 ---
 
@@ -47,7 +47,7 @@ Make the red team standalone and bank-scenario-ready, removing the hard dependen
 
 ## Exit Criteria
 
-1. `ciicerone simulate` succeeds without `CIICERONE_ATTACK_API_URL` env var.
+1. `vorsyghta simulate` succeeds without `VORSYGHTA_ATTACK_API_URL` env var.
 2. Attack events publish to event bus with MITRE technique IDs.
 3. Bank scenarios execute through the orchestrator.
 4. External API still works when configured (no regression).

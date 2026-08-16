@@ -3,9 +3,9 @@
 
 set -euo pipefail
 
-RESOURCE_GROUP="${RESOURCE_GROUP:-ciicerone-rg}"
+RESOURCE_GROUP="${RESOURCE_GROUP:-vorsyghta-rg}"
 LOCATION="${LOCATION:-eastus2}"
-VM_NAME="${VM_NAME:-ciicerone-neo4j-vm}"
+VM_NAME="${VM_NAME:-vorsyghta-neo4j-vm}"
 NEO4J_PASSWORD="${NEO4J_PASSWORD:-password}"
 
 echo "[INFO] Deploying Neo4j on Azure VM..."

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Ciicerone End-to-End Demo: "Project Nightfall"
+# Vorsyghta End-to-End Demo: "Project Nightfall"
 # =============================================================================
-# A narrative walkthrough of EVERY Ciicerone feature in a single red-team
+# A narrative walkthrough of EVERY Vorsyghta feature in a single red-team
 # engagement against Acme Corp. Tells the story of an authorized security
 # assessment from initial recon through detection, response, and learning.
 #
@@ -12,7 +12,7 @@
 #   bash demos/end_to_end/run_e2e_demo.sh --recon     # add OSINT company recon
 #
 # Requirements:
-#   - Python 3.11+ with ciicerone installed (pip install -e .)
+#   - Python 3.11+ with vorsyghta installed (pip install -e .)
 #   - No API keys required for the default offline path.
 #   - --live: requires Ollama running (http://localhost:11434) OR
 #     OPENROUTER_API_KEY / OPENAI_API_KEY / ANTHROPIC_API_KEY set in .env
@@ -48,7 +48,7 @@ mkdir -p "${OUTPUT_DIR}"
 
 # Banner
 echo "╔══════════════════════════════════════════════════════════════════════════╗"
-echo "║  Ciicerone End-to-End Demo: PROJECT NIGHTFALL                            ║"
+echo "║  Vorsyghta End-to-End Demo: PROJECT NIGHTFALL                            ║"
 echo "║  An authorized red-team engagement against Acme Corp                     ║"
 echo "╚══════════════════════════════════════════════════════════════════════════╝"
 echo ""
@@ -107,17 +107,17 @@ echo "████████████████████████�
 echo "██  PHASE 1: RECONNAISSANCE & CLIENT DATA INGESTION                       ██"
 echo "████████████████████████████████████████████████████████████████████████████"
 
-run_cmd "1.1  Platform status — confirm Ciicerone is operational" \
-    ${PY} -m ciicerone --config "${CONFIG}" status
+run_cmd "1.1  Platform status — confirm Vorsyghta is operational" \
+    ${PY} -m vorsyghta --config "${CONFIG}" status
 
 run_cmd "1.2  List configured client data sources (Acme Corp tenant)" \
-    ${PY} -m ciicerone --config "${CONFIG}" client-data list --tenant acme-demo
+    ${PY} -m vorsyghta --config "${CONFIG}" client-data list --tenant acme-demo
 
 run_cmd "1.3  Sync client data — pull employee directory & network topology" \
-    ${PY} -m ciicerone --config "${CONFIG}" client-data sync --tenant acme-demo
+    ${PY} -m vorsyghta --config "${CONFIG}" client-data sync --tenant acme-demo
 
 run_cmd "1.4  Show synced Acme Corp client profile" \
-    ${PY} -m ciicerone --config "${CONFIG}" client-data show --tenant acme-demo
+    ${PY} -m vorsyghta --config "${CONFIG}" client-data show --tenant acme-demo
 
 # ============================================================================
 # PHASE 2 — INTELLIGENCE / OSINT
@@ -130,11 +130,11 @@ echo "██  PHASE 2: INTELLIGENCE & OSINT                                     
 echo "████████████████████████████████████████████████████████████████████████████"
 
 run_cmd "2.1  List available intelligence sources" \
-    ${PY} -m ciicerone --config "${CONFIG}" intel sources
+    ${PY} -m vorsyghta --config "${CONFIG}" intel sources
 
 if [ -n "${RECON_FLAG}" ]; then
     run_cmd "2.2  Gather OSINT on Acme Corp domain (requires internet)" \
-        ${PY} -m ciicerone --config "${CONFIG}" intel gather acme-corp.com \
+        ${PY} -m vorsyghta --config "${CONFIG}" intel gather acme-corp.com \
             -t company -t domain -f json -o "${OUTPUT_DIR}/acme_osint.json"
 else
     echo ""
@@ -144,7 +144,7 @@ fi
 # ============================================================================
 # PHASE 3 — SCENARIO SELECTION & VALIDATION
 # "We select a spear-phishing scenario template and validate it against
-#  the Ciicerone schema before enrichment."
+#  the Vorsyghta schema before enrichment."
 # ============================================================================
 echo ""
 echo "████████████████████████████████████████████████████████████████████████████"
@@ -152,14 +152,14 @@ echo "██  PHASE 3: SCENARIO SELECTION & VALIDATION                          
 echo "████████████████████████████████████████████████████████████████████████████"
 
 run_cmd "3.1  List all available threat scenario templates" \
-    ${PY} -m ciicerone --config "${CONFIG}" templates list-all
+    ${PY} -m vorsyghta --config "${CONFIG}" templates list-all
 
 run_cmd "3.2  Validate the Project Nightfall scenario against the schema" \
-    ${PY} -m ciicerone --config "${CONFIG}" validate \
+    ${PY} -m vorsyghta --config "${CONFIG}" validate \
         -d "${SCRIPT_DIR}/scenarios"
 
 run_cmd "3.3  Show the Project Nightfall scenario details (validated)" \
-    ${PY} -m ciicerone --config "${CONFIG}" templates show \
+    ${PY} -m vorsyghta --config "${CONFIG}" templates show \
         "${SCRIPT_DIR}/scenarios/acme_cfo_spear_phishing.yaml" --validate
 
 # ============================================================================
@@ -173,7 +173,7 @@ echo "██  PHASE 4: SCENARIO ENRICHMENT WITH CLIENT DATA                     
 echo "████████████████████████████████████████████████████████████████████████████"
 
 run_cmd "4.1  Enrich scenario with Acme Corp client data (+ optional recon)" \
-    ${PY} -m ciicerone --config "${CONFIG}" client-data enrich \
+    ${PY} -m vorsyghta --config "${CONFIG}" client-data enrich \
         --tenant acme-demo \
         --scenario "${SCENARIO}" \
         --output "${OUTPUT_DIR}/enriched_scenario.json" \
@@ -204,12 +204,12 @@ echo "██  PHASE 5: THREAT SIMULATION EXECUTION                              
 echo "████████████████████████████████████████████████████████████████████████████"
 
 run_cmd "5.1  Dry-run simulation — validate execution plan (no LLM call)" \
-    ${PY} -m ciicerone --config "${CONFIG}" simulate \
+    ${PY} -m vorsyghta --config "${CONFIG}" simulate \
         -s "${SCENARIO}" --dry-run --preview
 
 if [ "${RUN_LIVE}" = "1" ]; then
     run_cmd "5.2  LIVE simulation — generate phishing content via LLM" \
-        ${PY} -m ciicerone --config "${CONFIG}" simulate \
+        ${PY} -m vorsyghta --config "${CONFIG}" simulate \
             -s "${SCENARIO}" -o json
 else
     echo ""
@@ -227,25 +227,25 @@ echo "██  PHASE 6: LLM PROVIDER MANAGEMENT                                  
 echo "████████████████████████████████████████████████████████████████████████████"
 
 run_cmd "6.1  Test configured LLM providers (connectivity & auth)" \
-    ${PY} -m ciicerone --config "${CONFIG}" llm test-providers
+    ${PY} -m vorsyghta --config "${CONFIG}" llm test-providers
 
 # ============================================================================
-# PHASE 7 — RED TEAM / CIICERONE ATTACK INTEGRATION
-# "We map the spear-phishing scenario to an autonomous Ciicerone Attack flow
-#  and check whether the Ciicerone Attack autonomous pentest platform is reachable."
+# PHASE 7 — RED TEAM / VORSYGHTA ATTACK INTEGRATION
+# "We map the spear-phishing scenario to an autonomous Vorsyghta Attack flow
+#  and check whether the Vorsyghta Attack autonomous pentest platform is reachable."
 # ============================================================================
 echo ""
 echo "████████████████████████████████████████████████████████████████████████████"
-echo "██  PHASE 7: RED TEAM — CIICERONE ATTACK AUTONOMOUS PENETRATION TESTING            ██"
+echo "██  PHASE 7: RED TEAM — VORSYGHTA ATTACK AUTONOMOUS PENETRATION TESTING            ██"
 echo "████████████████████████████████████████████████████████████████████████████"
 
-run_cmd "7.1  Ciicerone Attack health check (is the autonomous pentest platform reachable?)" \
-    ${PY} -m ciicerone --config "${CONFIG}" red-team health
+run_cmd "7.1  Vorsyghta Attack health check (is the autonomous pentest platform reachable?)" \
+    ${PY} -m vorsyghta --config "${CONFIG}" red-team health
 
-run_cmd "7.2  Map scenario → Ciicerone Attack flow (scenario-to-task mapping)" \
+run_cmd "7.2  Map scenario → Vorsyghta Attack flow (scenario-to-task mapping)" \
     ${PY} - <<'PYEOF'
 import json
-from ciicerone.integrations.attack_mapper import AttackMapper
+from vorsyghta.integrations.attack_mapper import AttackMapper
 
 scenario = {
     "name": "Project Nightfall: CFO Spear-Phishing",
@@ -286,14 +286,14 @@ echo "██  PHASE 8: DETECTION ENGINEERING (BLUE TEAM)                        
 echo "████████████████████████████████████████████████████████████████████████████"
 
 run_cmd "8.1  List supported SIEM detection rule formats" \
-    ${PY} -m ciicerone --config "${CONFIG}" detect list-formats
+    ${PY} -m vorsyghta --config "${CONFIG}" detect list-formats
 
 run_cmd "8.2  Generate Sigma + Splunk + Elastic + Sentinel rules from scenario" \
-    ${PY} -m ciicerone --config "${CONFIG}" detect generate \
+    ${PY} -m vorsyghta --config "${CONFIG}" detect generate \
         -s "${SCENARIO}" -f all -o "${OUTPUT_DIR}/detection_rules/"
 
 run_cmd "8.3  Generate detection rule from MITRE technique T1566.001 (Spearphishing Attachment)" \
-    ${PY} -m ciicerone --config "${CONFIG}" detect from-technique T1566.001 \
+    ${PY} -m vorsyghta --config "${CONFIG}" detect from-technique T1566.001 \
         -f sigma -o "${OUTPUT_DIR}/detection_rules/T1566.001_sigma.yaml"
 
 # ============================================================================
@@ -307,50 +307,50 @@ echo "██  PHASE 9: BLUE TEAM DEFENSIVE OPERATIONS                           
 echo "████████████████████████████████████████████████████████████████████████████"
 
 run_cmd "9.1  Blue team dashboard — overview of all defensive components" \
-    ${PY} -m ciicerone --config "${CONFIG}" blue-team dashboard
+    ${PY} -m vorsyghta --config "${CONFIG}" blue-team dashboard
 
 run_cmd "9.2  SIEM statistics (simulated)" \
-    ${PY} -m ciicerone --config "${CONFIG}" blue-team siem stats
+    ${PY} -m vorsyghta --config "${CONFIG}" blue-team siem stats
 
 run_cmd "9.3  IDS — inspect a suspicious SSH brute-force packet" \
-    ${PY} -m ciicerone --config "${CONFIG}" blue-team ids inspect \
+    ${PY} -m vorsyghta --config "${CONFIG}" blue-team ids inspect \
         --protocol tcp --src-ip 185.220.101.45 --dest-port 22 \
         --payload "Failed password for admin"
 
 run_cmd "9.4  IDS — list loaded detection rules" \
-    ${PY} -m ciicerone --config "${CONFIG}" blue-team ids rules
+    ${PY} -m vorsyghta --config "${CONFIG}" blue-team ids rules
 
 run_cmd "9.5  EDR — monitor a suspicious encoded PowerShell execution" \
-    ${PY} -m ciicerone --config "${CONFIG}" blue-team edr monitor \
+    ${PY} -m vorsyghta --config "${CONFIG}" blue-team edr monitor \
         --process powershell.exe --cmd "powershell -enc SGVsbG8=" --user admin
 
 run_cmd "9.6  EDR statistics" \
-    ${PY} -m ciicerone --config "${CONFIG}" blue-team edr stats
+    ${PY} -m vorsyghta --config "${CONFIG}" blue-team edr stats
 
 run_cmd "9.7  Incident Response — create a critical credential-dumping incident" \
-    ${PY} -m ciicerone --config "${CONFIG}" blue-team incident create \
+    ${PY} -m vorsyghta --config "${CONFIG}" blue-team incident create \
         -t "Credential Dumping Attack via Spear-Phishing" \
         -s critical -c intrusion \
         --systems DC-01,WEB-02 --mitre T1003,T1059.001,T1566.001 --auto
 
 run_cmd "9.8  Incident Response — list all incidents" \
-    ${PY} -m ciicerone --config "${CONFIG}" blue-team incident list
+    ${PY} -m vorsyghta --config "${CONFIG}" blue-team incident list
 
 run_cmd "9.9  Threat Hunting — list available hunt hypotheses" \
-    ${PY} -m ciicerone --config "${CONFIG}" blue-team hunt hypotheses
+    ${PY} -m vorsyghta --config "${CONFIG}" blue-team hunt hypotheses
 
 run_cmd "9.10 Threat Hunting — hunt for MITRE T1003 (Credential Dumping)" \
-    ${PY} -m ciicerone --config "${CONFIG}" blue-team hunt search --technique T1003
+    ${PY} -m vorsyghta --config "${CONFIG}" blue-team hunt search --technique T1003
 
 run_cmd "9.11 Log Analysis — parse the captured Acme Corp auth.log" \
-    ${PY} -m ciicerone --config "${CONFIG}" blue-team logs parse \
+    ${PY} -m vorsyghta --config "${CONFIG}" blue-team logs parse \
         -f "${SCRIPT_DIR}/sample_logs/auth.log" -t linux_auth --host acme-dc-01
 
 run_cmd "9.12 Alert Triage — statistics" \
-    ${PY} -m ciicerone --config "${CONFIG}" blue-team triage stats
+    ${PY} -m vorsyghta --config "${CONFIG}" blue-team triage stats
 
 run_cmd "9.13 Forensics — initialize a forensic case for Project Nightfall" \
-    ${PY} -m ciicerone --config "${CONFIG}" blue-team forensics init \
+    ${PY} -m vorsyghta --config "${CONFIG}" blue-team forensics init \
         -c nightfall-2026-001
 
 # ============================================================================
@@ -364,19 +364,19 @@ echo "██  PHASE 10: RAG — TACTICAL PLAYBOOK GENERATION                    
 echo "████████████████████████████████████████████████████████████████████████████"
 
 run_cmd "10.1 RAG system status (vector store, Neo4j, dependencies)" \
-    ${PY} -m ciicerone --config "${CONFIG}" rag status
+    ${PY} -m vorsyghta --config "${CONFIG}" rag status
 
 run_cmd "10.2 Initialize the RAG system (creates data dirs + default config)" \
-    ${PY} -m ciicerone --config "${CONFIG}" rag init
+    ${PY} -m vorsyghta --config "${CONFIG}" rag init
 
 run_cmd "10.3 List available intelligence sources for RAG ingestion" \
-    ${PY} -m ciicerone --config "${CONFIG}" rag sources
+    ${PY} -m vorsyghta --config "${CONFIG}" rag sources
 
 run_cmd "10.4 Ingest MITRE ATT&CK intelligence (dry-run preview)" \
-    ${PY} -m ciicerone --config "${CONFIG}" rag ingest --source mitre --dry-run
+    ${PY} -m vorsyghta --config "${CONFIG}" rag ingest --source mitre --dry-run
 
 run_cmd "10.5 Generate a tactical playbook for the spear-phishing scenario" \
-    ${PY} -m ciicerone --config "${CONFIG}" rag generate \
+    ${PY} -m vorsyghta --config "${CONFIG}" rag generate \
         -s "spear-phishing attack targeting a CFO with credential harvesting" \
         -o "${OUTPUT_DIR}/tactical_playbook.md"
 
@@ -391,10 +391,10 @@ echo "██  PHASE 11: FIELD MANUAL GENERATION                                 
 echo "████████████████████████████████████████████████████████████████████████████"
 
 run_cmd "11.1 List security teams available for manual generation" \
-    ${PY} -m ciicerone --config "${CONFIG}" manuals list-teams
+    ${PY} -m vorsyghta --config "${CONFIG}" manuals list-teams
 
 run_cmd "11.2 Generate Blue Team field manual for spear-phishing (financial sector)" \
-    ${PY} -m ciicerone --config "${CONFIG}" manuals generate \
+    ${PY} -m vorsyghta --config "${CONFIG}" manuals generate \
         --team blue_team --threat-type spear_phishing \
         --industry financial --org-size enterprise --difficulty 7 \
         -m T1566.001 -m T1566.002 -m T1003 \
@@ -402,7 +402,7 @@ run_cmd "11.2 Generate Blue Team field manual for spear-phishing (financial sect
         --output-dir "${OUTPUT_DIR}/field_manuals"
 
 run_cmd "11.3 Generate SOC field manual for the same scenario" \
-    ${PY} -m ciicerone --config "${CONFIG}" manuals generate \
+    ${PY} -m vorsyghta --config "${CONFIG}" manuals generate \
         --team soc --threat-type spear_phishing \
         --industry financial --org-size enterprise --difficulty 7 \
         -m T1566.001 -m T1078 \
@@ -422,7 +422,7 @@ echo "████████████████████████�
 DEMO_PLAYBOOK="${PROJECT_DIR}/demos/full_platform/sample_data/demo_playbook.md"
 
 run_cmd "12.1 Validate the executive spear-phishing response playbook (NIST + MITRE)" \
-    ${PY} -m ciicerone --config "${CONFIG}" validate playbook \
+    ${PY} -m vorsyghta --config "${CONFIG}" validate playbook \
         "${DEMO_PLAYBOOK}" -f nist-csf -f mitre -t incident_response \
         -o markdown -s "${OUTPUT_DIR}/playbook_validation_report.md"
 
@@ -437,7 +437,7 @@ echo "██  PHASE 13: FEEDBACK LOOP — CONTINUOUS IMPROVEMENT                
 echo "████████████████████████████████████████████████████████████████████████████"
 
 run_cmd "13.1 Feedback loop status (requires Neo4j for full metrics)" \
-    ${PY} -m ciicerone --config "${CONFIG}" feedback status
+    ${PY} -m vorsyghta --config "${CONFIG}" feedback status
 
 # ============================================================================
 # PHASE 14 — DATASET CATALOG
@@ -450,10 +450,10 @@ echo "██  PHASE 14: DATASET CATALOG                                         
 echo "████████████████████████████████████████████████████████████████████████████"
 
 run_cmd "14.1 List available cybersecurity datasets" \
-    ${PY} -m ciicerone --config "${CONFIG}" datasets list
+    ${PY} -m vorsyghta --config "${CONFIG}" datasets list
 
 run_cmd "14.2 Dataset health status" \
-    ${PY} -m ciicerone --config "${CONFIG}" datasets status
+    ${PY} -m vorsyghta --config "${CONFIG}" datasets status
 
 # ============================================================================
 # PHASE 15 — VM ATTACK SIMULATION LAB
@@ -466,7 +466,7 @@ echo "██  PHASE 15: VM ATTACK SIMULATION LAB                                
 echo "████████████████████████████████████████████████████████████████████████████"
 
 run_cmd "15.1 VM lab status (Docker/Azure hypervisor)" \
-    ${PY} -m ciicerone --config "${CONFIG}" vm status
+    ${PY} -m vorsyghta --config "${CONFIG}" vm status
 
 # ============================================================================
 # PHASE 16 — MCP SERVER (AI-DRIVEN VM CONTROL)
@@ -479,13 +479,13 @@ echo "██  PHASE 16: MCP SERVER — AI-DRIVEN VM CONTROL                     
 echo "████████████████████████████████████████████████████████████████████████████"
 
 run_cmd "16.1 MCP server status & configuration" \
-    ${PY} -m ciicerone --config "${CONFIG}" mcp status
+    ${PY} -m vorsyghta --config "${CONFIG}" mcp status
 
 run_cmd "16.2 List MCP tools available to AI agents" \
-    ${PY} -m ciicerone --config "${CONFIG}" mcp tools
+    ${PY} -m vorsyghta --config "${CONFIG}" mcp tools
 
 run_cmd "16.3 Export MCP tool schemas (for client configuration)" \
-    ${PY} -m ciicerone --config "${CONFIG}" mcp export-schema \
+    ${PY} -m vorsyghta --config "${CONFIG}" mcp export-schema \
         -o "${OUTPUT_DIR}/mcp_tool_schema.json"
 
 # ============================================================================
@@ -499,10 +499,10 @@ echo "██  PHASE 17: DEPLOYMENT & CAMPAIGN MANAGEMENT                        
 echo "████████████████████████████████████████████████████████████████████████████"
 
 run_cmd "17.1 List available deployment platforms" \
-    ${PY} -m ciicerone --config "${CONFIG}" deploy platforms
+    ${PY} -m vorsyghta --config "${CONFIG}" deploy platforms
 
 run_cmd "17.2 Deploy campaign in TEST MODE (safe, no real delivery)" \
-    ${PY} -m ciicerone --config "${CONFIG}" deploy campaign \
+    ${PY} -m vorsyghta --config "${CONFIG}" deploy campaign \
         --name "Project Nightfall - Q3 Board Lure" \
         --content-file "${SCRIPT_DIR}/content.json" \
         --targets-file "${SCRIPT_DIR}/targets.json" \
@@ -519,14 +519,14 @@ echo "██  PHASE 18: SIMULATION LOGS & REPORTING                             
 echo "████████████████████████████████████████████████████████████████████████████"
 
 run_cmd "18.1 List stored simulation results" \
-    ${PY} -m ciicerone --config "${CONFIG}" logs list
+    ${PY} -m vorsyghta --config "${CONFIG}" logs list
 
 run_cmd "18.2 Simulation statistics" \
-    ${PY} -m ciicerone --config "${CONFIG}" logs stats
+    ${PY} -m vorsyghta --config "${CONFIG}" logs stats
 
 # ============================================================================
 # PHASE 19 — SAFETY & COMPLIANCE
-# "Finally, we confirm the safety controls that govern every Ciicerone
+# "Finally, we confirm the safety controls that govern every Vorsyghta
 #  operation: content filtering, audit logging, and ethical use."
 # ============================================================================
 echo ""
@@ -535,7 +535,7 @@ echo "██  PHASE 19: SAFETY & COMPLIANCE                                     
 echo "████████████████████████████████████████████████████████████████████████████"
 
 run_cmd "19.1 Safety & compliance check" \
-    ${PY} -m ciicerone --config "${CONFIG}" safety --help
+    ${PY} -m vorsyghta --config "${CONFIG}" safety --help
 
 # ============================================================================
 # SUMMARY
@@ -545,7 +545,7 @@ echo "████████████████████████�
 echo "██  PROJECT NIGHTFALL — ENGAGEMENT SUMMARY                                ██"
 echo "████████████████████████████████████████████████████████████████████████████"
 echo ""
-echo "All Ciicerone feature areas exercised:"
+echo "All Vorsyghta feature areas exercised:"
 echo "  [x] status            — platform status"
 echo "  [x] client-data       — tenant sync, profile, scenario enrichment"
 echo "  [x] intel             — OSINT sources & gathering"
@@ -553,7 +553,7 @@ echo "  [x] templates         — list, show, validate"
 echo "  [x] validate          — schema + playbook validation"
 echo "  [x] simulate          — dry-run + (optional) live LLM simulation"
 echo "  [x] llm               — provider testing"
-echo "  [x] red-team          — Ciicerone Attack health & scenario→flow mapping"
+echo "  [x] red-team          — Vorsyghta Attack health & scenario→flow mapping"
 echo "  [x] detect            — Sigma/Splunk/Elastic/Sentinel rule generation"
 echo "  [x] blue-team         — SIEM, IDS, EDR, IR, hunt, logs, triage, forensics"
 echo "  [x] rag               — status, init, sources, ingest, playbook generation"

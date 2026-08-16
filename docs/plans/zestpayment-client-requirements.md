@@ -1,17 +1,17 @@
-# Ciicerone Cloud Security Threat Simulation Platform
+# Vorsyghta Cloud Security Threat Simulation Platform
 ## ZestPayment Engagement — Client Requirements Document
 
 **Prepared for:** ZestPayment  
-**Prepared by:** Ciicerone Security Team  
+**Prepared by:** Vorsyghta Security Team  
 **Date:** June 2026  
-**Contact:** admin@ciicerone.com  
-**Platform URL:** https://ciicerone.com  
+**Contact:** admin@vorsyghta.com  
+**Platform URL:** https://vorsyghta.com  
 
 ---
 
 ## 1. Overview
 
-This document outlines the requirements from ZestPayment to successfully deploy and operate the Ciicerone AI-powered threat simulation platform. Ciicerone will simulate realistic cyber attacks against ZestPayment's payment infrastructure — including payment fraud, API abuse, cloud misconfiguration, and data breach scenarios — to validate security controls, test incident response, and ensure PCI-DSS and NDPR compliance.
+This document outlines the requirements from ZestPayment to successfully deploy and operate the Vorsyghta AI-powered threat simulation platform. Vorsyghta will simulate realistic cyber attacks against ZestPayment's payment infrastructure — including payment fraud, API abuse, cloud misconfiguration, and data breach scenarios — to validate security controls, test incident response, and ensure PCI-DSS and NDPR compliance.
 
 The engagement spans **8–12 weeks** across three phases: Discovery, Data Collection & AI Configuration, and Integration & Testing.
 
@@ -36,7 +36,7 @@ ZestPayment must assign the following personnel to support the engagement:
 |------|--------|
 | **Role** | Technical Project Manager |
 | **Time Commitment** | 20–30 hours total (across engagement) |
-| **Responsibilities** | Project coordination, technical team management, timeline and milestone tracking, liaison between ZestPayment and Ciicerone teams |
+| **Responsibilities** | Project coordination, technical team management, timeline and milestone tracking, liaison between ZestPayment and Vorsyghta teams |
 | **Key Deliverable** | Weekly status reports, milestone sign-offs |
 
 ### 2.3 Cloud Infrastructure Engineer
@@ -85,7 +85,7 @@ ZestPayment must provision or provide access to the following Huawei Cloud resou
 
 | Resource | Specification | Purpose |
 |----------|--------------|---------|
-| **CCE Cluster** | Minimum 2 nodes, 4 vCPU / 8GB RAM each, Ubuntu 22.04 | Ciicerone API and worker containers |
+| **CCE Cluster** | Minimum 2 nodes, 4 vCPU / 8GB RAM each, Ubuntu 22.04 | Vorsyghta API and worker containers |
 | **GPU Instance** | NVIDIA T4 minimum (A10/A100 preferred), 24GB VRAM, 100GB SSD | Local LLM hosting via Ollama |
 
 ### 3.2 Container Registry
@@ -95,7 +95,7 @@ ZestPayment must provision or provide access to the following Huawei Cloud resou
 | **Preferred** | Huawei SWR (Software Repository for Container) |
 | **Alternative** | Docker Hub with IP whitelisting |
 | **Access Needed** | Push/pull permissions for Docker images |
-| **Credentials** | Authentication credentials for Ciicerone deployment |
+| **Credentials** | Authentication credentials for Vorsyghta deployment |
 
 ### 3.3 Storage
 
@@ -109,7 +109,7 @@ ZestPayment must provision or provide access to the following Huawei Cloud resou
 
 | Requirement | Detail |
 |-------------|--------|
-| **VPC** | Dedicated VPC for Ciicerone cluster |
+| **VPC** | Dedicated VPC for Vorsyghta cluster |
 | **Subnets** | Subnet allocation for containers, network segmentation for payment processing |
 | **Security Groups** | Inbound: 8000 (API), 443 (HTTPS), 22 (SSH restricted). Outbound: LLM endpoint, payment processor APIs, banking network, update repositories, monitoring endpoints |
 | **Load Balancer** | Huawei ELB with listener for 443/8000, health checks, SSL termination |
@@ -157,7 +157,7 @@ ZestPayment must choose **one** of the following four paths for LLM access:
 | **Network** | No external dependencies required |
 | **Model Management** | Local model management via Ollama |
 | **Benefit** | Complete offline capability and data sovereignty |
-| **Complexity** | High (Ciicerone team handles setup) |
+| **Complexity** | High (Vorsyghta team handles setup) |
 
 ### Path D: External LLM APIs (Least Likely for CBN Entities)
 
@@ -257,7 +257,7 @@ ZestPayment must provide the following documentation during Phase 1 (Discovery):
 | **Entra ID App Registration** | Required for Graph API access |
 | **Permissions** | `Mail.Send` (delegated or application), `User.Read.All` |
 | **Credentials** | Tenant ID, Client ID, Client Secret |
-| **Sender Address** | admin@ciicerone.com |
+| **Sender Address** | admin@vorsyghta.com |
 | **Purpose** | Simulation email delivery, staff targeting by department |
 
 ### 6.2 Directory Integration (Choose One)
@@ -291,26 +291,26 @@ ZestPayment must provide the following documentation during Phase 1 (Discovery):
 
 ### 7.1 Domain
 
-Ciicerone already owns and manages the `ciicerone.com` domain. The following DNS records will be configured by the Ciicerone team:
+Vorsyghta already owns and manages the `vorsyghta.com` domain. The following DNS records will be configured by the Vorsyghta team:
 
 | Record | Type | Value | Status |
 |--------|------|-------|--------|
-| `ciicerone.com` | A | ELB external IP address | Ciicerone-managed |
-| `www.ciicerone.com` | CNAME | `ciicerone.com` | Ciicerone-managed |
-| `ciicerone.com` | MX | `ciicerone-com.mail.protection.outlook.com` | Ciicerone-managed |
+| `vorsyghta.com` | A | ELB external IP address | Vorsyghta-managed |
+| `www.vorsyghta.com` | CNAME | `vorsyghta.com` | Vorsyghta-managed |
+| `vorsyghta.com` | MX | `vorsyghta-com.mail.protection.outlook.com` | Vorsyghta-managed |
 
 **No action required from ZestPayment.**
 
 ### 7.2 SSL Certificate
 
-The SSL certificate for `ciicerone.com` is managed by the Ciicerone team.
+The SSL certificate for `vorsyghta.com` is managed by the Vorsyghta team.
 
 | Requirement | Detail | Status |
 |-------------|--------|--------|
-| **Source** | Public Certificate Authority | Ciicerone-managed |
-| **Termination** | Huawei ELB | Ciicerone-managed |
-| **Renewal** | Automated | Ciicerone-managed |
-| **Compliance** | PCI-DSS compliant encryption standards | Ciicerone-managed |
+| **Source** | Public Certificate Authority | Vorsyghta-managed |
+| **Termination** | Huawei ELB | Vorsyghta-managed |
+| **Renewal** | Automated | Vorsyghta-managed |
+| **Compliance** | PCI-DSS compliant encryption standards | Vorsyghta-managed |
 
 **No action required from ZestPayment.**
 
@@ -420,11 +420,11 @@ The following simulation types require explicit approval from the ZestPayment Pr
 
 | Item | Detail |
 |------|--------|
-| **Ciicerone Contact** | admin@ciicerone.com |
-| **Platform URL** | https://ciicerone.com |
+| **Vorsyghta Contact** | admin@vorsyghta.com |
+| **Platform URL** | https://vorsyghta.com |
 | **Document Version** | 1.0 |
 | **Date** | June 2026 |
 
 ---
 
-*This document contains confidential information intended solely for ZestPayment. Please do not distribute without authorization from admin@ciicerone.com.*
+*This document contains confidential information intended solely for ZestPayment. Please do not distribute without authorization from admin@vorsyghta.com.*

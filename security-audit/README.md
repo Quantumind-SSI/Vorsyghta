@@ -262,4 +262,4 @@ To extend the pipeline:
 
 ## License
 
-This security audit pipeline is part of the Ciicerone project. See the main project license for details.
+This security audit pipeline is part of the Vorsyghta project. See the main project license for details.

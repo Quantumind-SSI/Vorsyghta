@@ -4,13 +4,13 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 packages = [
-    { include = "ciicerone" },
+    { include = "vorsyghta" },
 ]
 
 [project]
-name = "ciicerone"
+name = "vorsyghta"
 version = "0.1.0"
-description = "Ciicerone – AI-powered threat simulation and intelligence platform"
+description = "Vorsyghta – AI-powered threat simulation and intelligence platform"
 readme = "README.md"
 requires-python = ">=3.10,<4.0"
 license = { text = "MIT" }
@@ -86,7 +86,7 @@ test = [
 ]
 
 [project.scripts]
-ciicerone = "ciicerone.cli.main:main"
+vorsyghta = "vorsyghta.cli.main:main"
 
 [tool.black]
 line-length = 88
@@ -183,7 +183,7 @@ markers = [
 ]
 
 [tool.coverage.run]
-source = ["ciicerone"]
+source = ["vorsyghta"]
 omit = [
     "*/tests/*",
     "*/test_*.py",

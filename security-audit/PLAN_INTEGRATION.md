@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-The `security-audit/` recursive prompting pipeline aligns directly with the Ciicerone project's **Orange Team** mandate and supports the **Yellow Team** and **Compliance** workstreams defined in the current bank-pilot-readiness plan. It is a ready-to-integrate implementation of the LLM-enriched SAST and STRIDE threat-modeling capability that the plan currently schedules as a **Phase 3 (Weeks 15–16)** deliverable for Lanre Shittu.
+The `security-audit/` recursive prompting pipeline aligns directly with the Vorsyghta project's **Orange Team** mandate and supports the **Yellow Team** and **Compliance** workstreams defined in the current bank-pilot-readiness plan. It is a ready-to-integrate implementation of the LLM-enriched SAST and STRIDE threat-modeling capability that the plan currently schedules as a **Phase 3 (Weeks 15–16)** deliverable for Lanre Shittu.
 
 ## Where the Plan Already Expects This Work
 
@@ -10,13 +10,13 @@ The `security-audit/` recursive prompting pipeline aligns directly with the Ciic
 
 | Plan Requirement | Pipeline Capability | Status |
 |-------------------|---------------------|--------|
-| `ciicerone/core/code_review_engine.py` — LLM-enriched SAST | `security-audit/pipeline.py` Stage 3 recursive audit loop | Implemented |
+| `vorsyghta/core/code_review_engine.py` — LLM-enriched SAST | `security-audit/pipeline.py` Stage 3 recursive audit loop | Implemented |
 | STRIDE threat modeling from architecture specs | `security-audit/pipeline.py` Stage 2 STRIDE threat model | Implemented |
 | Attack surface mapping and reduction recommendations | `security-audit/pipeline.py` Stage 1 architecture + user-flow recon | Implemented |
 | Dependency vulnerability scanning | `security-audit/pipeline.py` Stage 1 SBOM + Trivy audit | Implemented |
 | Maps findings to MITRE ATT&CK techniques | Pipeline threat model output can be extended to MITRE mapping | Partial |
-| `ciicerone/cli/orange_team.py` commands | Not yet integrated into CLI | Gap |
-| `ciicerone/agents/orange_team_agent.py` | Not yet integrated into agent framework | Gap |
+| `vorsyghta/cli/orange_team.py` commands | Not yet integrated into CLI | Gap |
+| `vorsyghta/agents/orange_team_agent.py` | Not yet integrated into agent framework | Gap |
 
 ### Yellow Team (Phase 3, Weeks 15–18)
 
@@ -56,11 +56,11 @@ The `security-audit/` recursive prompting pipeline aligns directly with the Ciic
 
 | Gap | Plan Owner | Recommended Action |
 |-----|-----------|-------------------|
-| Not wired into `ciicerone` CLI or agent framework | Lanre | Wrap `pipeline.py` as `ciicerone/cli/orange_team.py` and `ciicerone/agents/orange_team_agent.py` |
+| Not wired into `vorsyghta` CLI or agent framework | Lanre | Wrap `pipeline.py` as `vorsyghta/cli/orange_team.py` and `vorsyghta/agents/orange_team_agent.py` |
 | No CIS benchmark / infrastructure hardening checks | Omolara | Add Semgrep rules + recon modules for Terraform/Docker Compose/K8s manifests |
 | No framework-specific compliance mapping (GDPR/PCI-DSS/SOC2/HIPAA) | Jeremiah | Extend Stage 4 triage to map findings to control frameworks |
 | No hash-chain tamper-evidence on reports | Jeremiah | Integrate `DatabaseAuditSink` hash-chain output with pipeline reports |
-| No MITRE ATT&CK mapping of findings | Lanre | Add `ciicerone/intelligence/mitre_attack.py` lookups to threat model stage |
+| No MITRE ATT&CK mapping of findings | Lanre | Add `vorsyghta/intelligence/mitre_attack.py` lookups to threat model stage |
 | No CI/CD integration | DevRel | Add GitHub Actions workflow to run pipeline nightly or on PR |
 | Local LLM calls are currently stubbed | Lanre | Replace `_call_local_llm()` with Ollama/LM Studio integration |
 
@@ -74,13 +74,13 @@ Use the pipeline as-is for manual security audits before bank pilot. It can run 
 
 ### Option B: Integrate into Orange Team (Aligns with Plan)
 
-Convert the pipeline into the planned `ciicerone/core/code_review_engine.py` module.
+Convert the pipeline into the planned `vorsyghta/core/code_review_engine.py` module.
 
 **Steps:**
-1. Move `security-audit/pipeline.py` logic into `ciicerone/core/code_review_engine.py`.
-2. Add `ciicerone/cli/orange_team.py` commands that wrap the pipeline stages.
-3. Add `ciicerone/agents/orange_team_agent.py` for agent-framework integration.
-4. Store pipeline outputs in PostgreSQL via `ciicerone/db/models/compliance.py` (Phase 3).
+1. Move `security-audit/pipeline.py` logic into `vorsyghta/core/code_review_engine.py`.
+2. Add `vorsyghta/cli/orange_team.py` commands that wrap the pipeline stages.
+3. Add `vorsyghta/agents/orange_team_agent.py` for agent-framework integration.
+4. Store pipeline outputs in PostgreSQL via `vorsyghta/db/models/compliance.py` (Phase 3).
 
 **When:** Weeks 15–16 (Phase 3 Orange Team).
 
@@ -113,6 +113,6 @@ Add the pipeline to GitHub Actions so it runs on every PR and nightly.
 The recursive SAST pipeline is not a deviation from the current plan — it is a **ready-to-use implementation of the Orange Team deliverable** and a **force multiplier for the Phase 1 security hardening and Phase 3 compliance work**. The highest-value next step is to either:
 
 1. **Run it immediately** against the current codebase to produce a verified-finding report for the P0/P1 blockers, or
-2. **Promote it to `ciicerone/core/code_review_engine.py`** so it becomes a first-class Orange Team component within the application.
+2. **Promote it to `vorsyghta/core/code_review_engine.py`** so it becomes a first-class Orange Team component within the application.
 
 Either path produces actionable security findings well before the bank pilot dry-run in Weeks 19–20.

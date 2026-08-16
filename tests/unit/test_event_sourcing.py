@@ -16,7 +16,7 @@ import asyncio
 from datetime import datetime, timezone, timedelta
 from uuid import UUID, uuid4
 
-from ciicerone.core.event_sourcing import (
+from vorsyghta.core.event_sourcing import (
     Event,
     AggregateType,
     EventStore,

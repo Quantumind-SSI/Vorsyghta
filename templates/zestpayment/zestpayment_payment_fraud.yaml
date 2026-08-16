@@ -6,13 +6,13 @@
 # manipulation, refund/chargeback fraud, and currency conversion attacks.
 #
 # USAGE:
-#   ciicerone simulate -s templates/zestpayment/zestpayment_payment_fraud.yaml
+#   vorsyghta simulate -s templates/zestpayment/zestpayment_payment_fraud.yaml
 
 metadata:
   name: "ZestPayment Payment Fraud Simulation"
   description: "Simulates payment fraud attacks against ZestPayment's payment processing platform"
   version: "1.0.0"
-  author: "Ciicerone Security Team"
+  author: "Vorsyghta Security Team"
   created_at: "2026-06-29T10:00:00Z"
   updated_at: "2026-06-29T10:00:00Z"
   tags: ["payment_fraud", "financial", "pci-dss", "zestpayment", "african_markets"]

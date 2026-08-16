@@ -1,6 +1,6 @@
-# Ciicerone CLI — Pilot Programme Runbook
+# Vorsyghta CLI — Pilot Programme Runbook
 
-> Comprehensive runbook and CLI reference for running a safe, auditable pilot using the Ciicerone CLI.
+> Comprehensive runbook and CLI reference for running a safe, auditable pilot using the Vorsyghta CLI.
 
 ---
 
@@ -19,7 +19,7 @@ This runbook documents full CLI commands, examples, end-to-end pilot flow, safet
 
 ## Prerequisites
 - Python environment with project dependencies installed (see project README).
-- Local config: `~/.ciicerone/config.yaml` (or pass `-c/--config`).
+- Local config: `~/.vorsyghta/config.yaml` (or pass `-c/--config`).
 - LLM keys if using AI features:
   - `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `OPENROUTER_API_KEY` (export in environment or config).
 - Verified isolated lab or test tenant with SIEM / EDR ingestion.
@@ -29,88 +29,88 @@ This runbook documents full CLI commands, examples, end-to-end pilot flow, safet
 
 ## Helpful file paths in this repo
 - Runbook created here: `docs/CLI_Pilot_Runbook.md`
-- Templates folder: `ciicerone/cli/templates.py` and generated templates in `templates/` (use `ciicerone templates`)
+- Templates folder: `vorsyghta/cli/templates.py` and generated templates in `templates/` (use `vorsyghta templates`)
 - Example scenarios (project may include `scenarios/` or `demos/` folders)
 
 ---
 
 ## Core CLI command groups (top-level)
-- `ciicerone simulate` — execute a threat simulation scenario
-- `ciicerone validate` — validate YAML scenario/playbook files
-- `ciicerone exercise run` — orchestrate color-team exercises
-- `ciicerone report` — generate After-Action Report (AAR)
-- `ciicerone llm` — LLM provider utilities and tests
-- `ciicerone deploy` — deploy campaigns and delivery templates
-- `ciicerone detect` — detection rule generation/validation/conversion
-- `ciicerone logs` — list/show/archive/validate logs
-- `ciicerone vm` — lab VM management and controlled attacks (lab-only)
-- `ciicerone agent` — autonomous agent planning & execution
-- `ciicerone rag` — retrieval-augmented generation helpers
-- `ciicerone templates` — list and manage templates
-- `ciicerone feedback` — feedback loop / learning management
+- `vorsyghta simulate` — execute a threat simulation scenario
+- `vorsyghta validate` — validate YAML scenario/playbook files
+- `vorsyghta exercise run` — orchestrate color-team exercises
+- `vorsyghta report` — generate After-Action Report (AAR)
+- `vorsyghta llm` — LLM provider utilities and tests
+- `vorsyghta deploy` — deploy campaigns and delivery templates
+- `vorsyghta detect` — detection rule generation/validation/conversion
+- `vorsyghta logs` — list/show/archive/validate logs
+- `vorsyghta vm` — lab VM management and controlled attacks (lab-only)
+- `vorsyghta agent` — autonomous agent planning & execution
+- `vorsyghta rag` — retrieval-augmented generation helpers
+- `vorsyghta templates` — list and manage templates
+- `vorsyghta feedback` — feedback loop / learning management
 - Domain groups: `intel`, `hunt`, `audit`, `research`, `manuals`, `integrations`, `red-team`, `blue-team`
 
 ---
 
 ## Key commands with examples
-(Use `ciicerone <command> --help` for live options)
+(Use `vorsyghta <command> --help` for live options)
 
 ### Validate scenarios
 - Single file:
 ```
-ciicerone validate path/to/scenario.yaml
+vorsyghta validate path/to/scenario.yaml
 ```
 - Directory (strict mode):
 ```
-ciicerone validate -d ./scenarios --strict
+vorsyghta validate -d ./scenarios --strict
 ```
 
 ### Preview / Dry-run simulation
 ```
-ciicerone simulate -s scenario.yaml --dry-run --preview
+vorsyghta simulate -s scenario.yaml --dry-run --preview
 ```
 
 ### Execute simulation (interactive)
 ```
-ciicerone simulate -s scenario.yaml -t "Sales" -o report
+vorsyghta simulate -s scenario.yaml -t "Sales" -o report
 ```
 
 ### Exercise orchestration
 ```
-ciicerone exercise run --config exercise_config.yaml --output-file exercise_result.json
+vorsyghta exercise run --config exercise_config.yaml --output-file exercise_result.json
 ```
 
 ### Generate AAR
 ```
-ciicerone report -i exercise_result.json --format html -o aar_my_pilot.html
+vorsyghta report -i exercise_result.json --format html -o aar_my_pilot.html
 ```
 
 ### Deploy campaign (staged)
 ```
-ciicerone deploy campaign --template <template-id> --target <profile>
-ciicerone deploy status --campaign <id>
+vorsyghta deploy campaign --template <template-id> --target <profile>
+vorsyghta deploy status --campaign <id>
 ```
 
 ### Lab VM management (lab-only)
 ```
-ciicerone vm setup --profile pilot-lab
-ciicerone vm start-lab --lab pilot-lab
-ciicerone vm attack --lab pilot-lab --stage phishing
-ciicerone vm stop-lab --lab pilot-lab
+vorsyghta vm setup --profile pilot-lab
+vorsyghta vm start-lab --lab pilot-lab
+vorsyghta vm attack --lab pilot-lab --stage phishing
+vorsyghta vm stop-lab --lab pilot-lab
 ```
 
 ### Detection rules
 ```
-ciicerone detect generate --technique T1234 --format sigma
-ciicerone detect validate --rules ./rules.yml
-ciicerone detect convert --in legacy --out sigma
+vorsyghta detect generate --technique T1234 --format sigma
+vorsyghta detect validate --rules ./rules.yml
+vorsyghta detect convert --in legacy --out sigma
 ```
 
 ### Logs & evidence
 ```
-ciicerone logs list --source siem
-ciicerone logs show --id <log-id>
-ciicerone logs archive --output pilot_logs_2026-07-xx.tar.gz
+vorsyghta logs list --source siem
+vorsyghta logs show --id <log-id>
+vorsyghta logs archive --output pilot_logs_2026-07-xx.tar.gz
 ```
 
 ---
@@ -125,14 +125,14 @@ This section expands phases and recommended operator actions with checkpoints an
 4. Create accounts and communication plans; define kill-switch and rollback.
 
 ### Phase B — Scenario authoring (1–3 days)
-1. Scaffold templates: `ciicerone templates list-all` → `ciicerone templates use <id>`.
+1. Scaffold templates: `vorsyghta templates list-all` → `vorsyghta templates use <id>`.
 2. Author scenarios YAML and embed metadata (owner, MITRE techniques, duration, difficulty).
-3. Validate authoring: `ciicerone validate -d ./scenarios --strict`.
+3. Validate authoring: `vorsyghta validate -d ./scenarios --strict`.
 4. Peer review and finalize scenarios.
 
 ### Phase C — Dry-runs & Blue-team rehearsal (1–2 days)
 1. Dry-run previews for each scenario:
-   - `ciicerone simulate -s scenario.yaml --dry-run --preview`
+   - `vorsyghta simulate -s scenario.yaml --dry-run --preview`
 2. Blue-team rehearsals: deploy detection rules to test SIEM/EDR and verify alerts.
 3. Triage and iterate until detection fidelity acceptable.
 
@@ -143,16 +143,16 @@ Goal: increase scope gradually while protecting production.
   - Validate configs and logs. Approvals checked. Test monitoring and escalation.
 
 - Stage D1 — Small cohort (1–2 days)
-  - Run on a small subset in test tenant: `ciicerone simulate -s scenario.yaml` (interactive).
+  - Run on a small subset in test tenant: `vorsyghta simulate -s scenario.yaml` (interactive).
   - Collect `exercise_result.json`, monitor SIEM/EDR, confirm alerts.
 
 - Stage D2 — Full pilot campaign (2–5 days)
-  - Deploy campaigns via `ciicerone deploy campaign`, rotate scenarios, monitor continuously.
-  - Use `ciicerone deploy monitor` and `ciicerone logs` to collect evidence.
+  - Deploy campaigns via `vorsyghta deploy campaign`, rotate scenarios, monitor continuously.
+  - Use `vorsyghta deploy monitor` and `vorsyghta logs` to collect evidence.
 
 ### Phase E — Evidence collection & analysis
 1. Centralize artifacts: `exercise_result.json`, saved generated content, logs archive.
-2. Run AAR generation: `ciicerone report -i exercise_result.json --format html -o aar.html`.
+2. Run AAR generation: `vorsyghta report -i exercise_result.json --format html -o aar.html`.
 3. Produce MITRE mapping, detection gap analysis, and prioritized remediation list.
 
 ### Phase F — Remediation, training & handover
@@ -199,16 +199,16 @@ Run these steps in CI for repeatable pilot runs (pseudo-yaml):
 ```yaml
 steps:
   - name: Validate scenarios
-    run: ciicerone validate -d ./scenarios --strict
+    run: vorsyghta validate -d ./scenarios --strict
 
   - name: Preview
-    run: ciicerone simulate -s ./scenarios/sample.yaml --dry-run --preview
+    run: vorsyghta simulate -s ./scenarios/sample.yaml --dry-run --preview
 
   - name: Execute exercise
-    run: ciicerone exercise run --config ciicerone_exercise_config.yaml --output-file results/exercise_result.json
+    run: vorsyghta exercise run --config vorsyghta_exercise_config.yaml --output-file results/exercise_result.json
 
   - name: Generate AAR
-    run: ciicerone report -i results/exercise_result.json --format json -o results/aar.json
+    run: vorsyghta report -i results/exercise_result.json --format json -o results/aar.json
 
   - name: Archive evidence
     run: tar -czf artifacts/pilot_artifacts_$(date +%F).tar.gz results/ generated_content/ pilot_logs/
@@ -236,7 +236,7 @@ steps:
 ---
 
 ## Safe operation notes
-- Never run `ciicerone vm attack` or live delivery against production systems.
+- Never run `vorsyghta vm attack` or live delivery against production systems.
 - Use `--dry-run` and `--preview` liberally during development.
 - Maintain an audit log of all CLI runs (stdout + exit codes).
 
@@ -253,7 +253,7 @@ steps:
 ## Where this file lives
 Project path: `docs/CLI_Pilot_Runbook.md` (relative to repository root).
 Absolute path in your environment:
-`/home/azureuser/Ciicerone/docs/CLI_Pilot_Runbook.md`
+`/home/azureuser/Vorsyghta/docs/CLI_Pilot_Runbook.md`
 
 ---
 

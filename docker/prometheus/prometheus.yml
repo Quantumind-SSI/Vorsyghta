@@ -1,9 +1,9 @@
-# Prometheus Configuration for Ciicerone
+# Prometheus Configuration for Vorsyghta
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
   external_labels:
-    monitor: 'ciicerone-monitor'
+    monitor: 'vorsyghta-monitor'
     environment: 'development'
 
 # Alertmanager configuration (optional)
@@ -27,13 +27,13 @@ scrape_configs:
           service: 'prometheus'
           component: 'monitoring'
 
-  # Ciicerone API metrics
-  - job_name: 'ciicerone-api'
+  # Vorsyghta API metrics
+  - job_name: 'vorsyghta-api'
     metrics_path: '/metrics'
     static_configs:
-      - targets: ['ciicerone-api:8000']
+      - targets: ['vorsyghta-api:8000']
         labels:
-          service: 'ciicerone-api'
+          service: 'vorsyghta-api'
           component: 'application'
     scrape_interval: 10s
     scrape_timeout: 5s

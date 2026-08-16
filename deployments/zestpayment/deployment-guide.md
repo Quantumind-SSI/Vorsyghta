@@ -1,8 +1,8 @@
-# ZestPayment Ciicerone Deployment Guide
+# ZestPayment Vorsyghta Deployment Guide
 
 ## Overview
 
-This guide covers deploying Ciicerone on Huawei Cloud CCE for ZestPayment's
+This guide covers deploying Vorsyghta on Huawei Cloud CCE for ZestPayment's
 cloud security threat simulation platform.
 
 ## Prerequisites
@@ -10,7 +10,7 @@ cloud security threat simulation platform.
 - Huawei Cloud account with CCE (Cloud Container Engine) access
 - NVIDIA GPU-enabled ECS instance (T4 minimum, A10/A100 preferred)
 - Huawei SWR (Software Repository for Container) access
-- Domain: `ciicerone.com` with DNS control
+- Domain: `vorsyghta.com` with DNS control
 - Microsoft 365 tenant (for email delivery and directory integration)
 - PCI-DSS compliance documentation
 
@@ -25,7 +25,7 @@ cloud security threat simulation platform.
                     ┌──────────▼──────────────────┐
                     │   CCE Cluster (2+ nodes)     │
                     │  ┌──────────────────────┐   │
-                    │  │  ciicerone-api (x2)  │   │
+                    │  │  vorsyghta-api (x2)  │   │
                     │  │  FastAPI + Workers   │   │
                     │  └──────────┬───────────┘   │
                     │             │                │
@@ -61,13 +61,13 @@ cloud security threat simulation platform.
 # Login to Huawei SWR
 docker login -u <username> -p <password> swr.ng-west-1.myhuaweicloud.com
 
-# Tag and push Ciicerone image
-docker tag ciicerone:latest swr.ng-west-1.myhuaweicloud.com/ciicerone/ciicerone:latest
-docker push swr.ng-west-1.myhuaweicloud.com/ciicerone/ciicerone:latest
+# Tag and push Vorsyghta image
+docker tag vorsyghta:latest swr.ng-west-1.myhuaweicloud.com/vorsyghta/vorsyghta:latest
+docker push swr.ng-west-1.myhuaweicloud.com/vorsyghta/vorsyghta:latest
 
 # Create image pull secret in cluster
 kubectl create secret docker-registry swr-credentials \
-  --namespace ciicerone \
+  --namespace vorsyghta \
   --docker-server=swr.ng-west-1.myhuaweicloud.com \
   --docker-username=<username> \
   --docker-password=<password>
@@ -77,8 +77,8 @@ kubectl create secret docker-registry swr-credentials \
 
 ```bash
 # Create Kubernetes secrets (or use Huawei DEW for production)
-kubectl create secret generic ciicerone-secrets \
-  --namespace ciicerone \
+kubectl create secret generic vorsyghta-secrets \
+  --namespace vorsyghta \
   --from-literal=JWT_SECRET_KEY=$(openssl rand -hex 32) \
   --from-literal=M365_TENANT_ID=<your-tenant-id> \
   --from-literal=M365_CLIENT_ID=<your-client-id> \
@@ -95,12 +95,12 @@ kubectl create secret generic ciicerone-secrets \
 kubectl apply -f deployments/zestpayment/kubernetes-manifests.yaml
 
 # Verify deployment
-kubectl get pods -n ciicerone
-kubectl get svc -n ciicerone
-kubectl get ingress -n ciicerone
+kubectl get pods -n vorsyghta
+kubectl get svc -n vorsyghta
+kubectl get ingress -n vorsyghta
 
 # Check API health
-kubectl port-forward svc/ciicerone-api 8000:443 -n ciicerone
+kubectl port-forward svc/vorsyghta-api 8000:443 -n vorsyghta
 curl -k https://localhost:8000/health
 ```
 
@@ -108,20 +108,20 @@ curl -k https://localhost:8000/health
 
 ```bash
 # Exec into Ollama pod and pull model
-kubectl exec -it deployment/ollama -n ciicerone -- ollama pull llama3:70b
+kubectl exec -it deployment/ollama -n vorsyghta -- ollama pull llama3:70b
 
 # Verify model is loaded
-kubectl exec -it deployment/ollama -n ciicerone -- ollama list
+kubectl exec -it deployment/ollama -n vorsyghta -- ollama list
 ```
 
 ## Step 6: Configure DNS & SSL
 
 ```bash
 # Create A record pointing to ELB external IP
-# ciicerone.com -> <ELB_EXTERNAL_IP>
+# vorsyghta.com -> <ELB_EXTERNAL_IP>
 
 # Verify DNS resolution
-nslookup ciicerone.com
+nslookup vorsyghta.com
 
 # SSL certificate should be configured on ELB
 # Use Huawei Cloud SCM or company PKI
@@ -138,20 +138,20 @@ nslookup ciicerone.com
 
 ```bash
 # Run a test simulation
-ciicerone simulate --scenario templates/zestpayment/payment_fraud.yaml
+vorsyghta simulate --scenario templates/zestpayment/payment_fraud.yaml
 
 # Check quantum threat scan
-ciicerone quantum scan --target ciicerone.com
+vorsyghta quantum scan --target vorsyghta.com
 
 # Check API endpoints
-curl -k https://ciicerone.com/api/v1/quantum/inventory
+curl -k https://vorsyghta.com/api/v1/quantum/inventory
 ```
 
 ## Monitoring
 
-- **Prometheus metrics**: `https://ciicerone.com/metrics`
+- **Prometheus metrics**: `https://vorsyghta.com/metrics`
 - **Logs**: Huawei LTS (Log Tank Service)
-- **Health**: `https://ciicerone.com/health`
+- **Health**: `https://vorsyghta.com/health`
 
 ## Compliance Notes
 

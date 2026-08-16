@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # ============================================================
-# Ciicerone Blue Team Azure Infrastructure Deployment Script
+# Vorsyghta Blue Team Azure Infrastructure Deployment Script
 #
 # Provisions:
 #   1. Log Analytics Workspace (for Microsoft Sentinel SIEM)
@@ -10,16 +10,16 @@ set -euo pipefail
 #   3. Storage Account (forensic evidence storage)
 #   4. Cosmos DB (document-based blue team data)
 #
-# All resources are deployed to ciicerone-rg in eastus2.
+# All resources are deployed to vorsyghta-rg in eastus2.
 # ============================================================
 
-RESOURCE_GROUP="ciicerone-rg"
+RESOURCE_GROUP="vorsyghta-rg"
 LOCATION="eastus2"
-PREFIX="ciicerone"
-POSTGRES_ADMIN_USER="ciicerone_admin"
+PREFIX="vorsyghta"
+POSTGRES_ADMIN_USER="vorsyghta_admin"
 POSTGRES_ADMIN_PASSWORD="Ci1cer0ne!Secure2024"
-COSMOS_DB_NAME="ciicerone-blue-team"
-STORAGE_ACCOUNT_NAME="ciiceroneforensics"
+COSMOS_DB_NAME="vorsyghta-blue-team"
+STORAGE_ACCOUNT_NAME="vorsyghtaforensics"
 
 echo "[INFO] Deploying Blue Team infrastructure to Azure..."
 echo "[INFO] Resource Group: ${RESOURCE_GROUP}"

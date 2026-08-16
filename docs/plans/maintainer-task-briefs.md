@@ -1,4 +1,4 @@
-# Ciicerone Maintainer Task Briefs & Timeline
+# Vorsyghta Maintainer Task Briefs & Timeline
 
 **Source:** `dev-docs/maintainers/ThreatScene/maintainers/*_IMPLEMENTATION.md`
 **Source of truth:** `docs/plans/maintainer-timelines-bank-pilot-readiness.md`
@@ -10,7 +10,7 @@
 
 ## Project Overview
 
-**Goal:** Make Ciicerone deliver a true end-to-end bank pilot: red attack → blue detection → purple after-action → compliance-ready report, on infrastructure a bank security team will approve.
+**Goal:** Make Vorsyghta deliver a true end-to-end bank pilot: red attack → blue detection → purple after-action → compliance-ready report, on infrastructure a bank security team will approve.
 
 **Status:** **DONE — production is pilot-ready** (verified 2026-07-07 via live Azure deployment audit and acceptance gate).
 
@@ -111,7 +111,7 @@
 
 | Task | Weeks | Brief | Key Deliverables | Blocker Resolved |
 |------|-------|-------|------------------|------------------|
-| TEMI-001 | 9–11 | Build standalone red team engine | `core/red_team_engine.py`; decouple from external "Ciicerone Attack" API | P1-6 (red team requires external API) |
+| TEMI-001 | 9–11 | Build standalone red team engine | `core/red_team_engine.py`; decouple from external "Vorsyghta Attack" API | P1-6 (red team requires external API) |
 | TEMI-002 | 11–12 | Red team ORM models + persistence | `db/models/red_team.py` — `AttackPlanRecord`, `AttackResultRecord`, etc. | P0-6 (no persistence) |
 | TEMI-003 | 13–14 | Wire bank-relevant scenarios to orchestrator | Run BEC, supply-chain, payment fraud scenarios through orchestrator | P0-1 (no end-to-end orchestration) |
 | TEMI-004 | 15–16 | Support Orange Team attack surface analysis | Coordinate with Lanre; feed red team patterns to Orange Team threat modeling | P0-2 (Orange missing) |
@@ -167,10 +167,10 @@
 
 | Task | Weeks | Brief | Key Deliverables | Blocker Resolved |
 |------|-------|-------|------------------|------------------|
-| DEVREL-005 | 9–14 | Document orchestrator and team integration | Docs for `ciicerone exercise run` and team participation | P1-3 (demo/manual docs) |
+| DEVREL-005 | 9–14 | Document orchestrator and team integration | Docs for `vorsyghta exercise run` and team participation | P1-3 (demo/manual docs) |
 | DEVREL-004 | 15–18 | Black Team evaluation engine | `core/evaluation_engine.py` — non-interfering observer, exercise scoring, benchmark reports | P0-2, P2-1 (Black Team missing) |
 | DEVREL-001 | 19 | End-to-end integration test | `tests/full/test_e2e_exercise.py` — full red→blue→purple→white→black→report flow | P1-2 (no e2e tests) |
-| DEVREL-002 | 19 | Rewrite demo as integrated single-command flow | Rewrite `demos/end_to_end/run_e2e_demo.sh` to use `ciicerone exercise run` | P1-3 (demo is manual CLI tour) |
+| DEVREL-002 | 19 | Rewrite demo as integrated single-command flow | Rewrite `demos/end_to_end/run_e2e_demo.sh` to use `vorsyghta exercise run` | P1-3 (demo is manual CLI tour) |
 | DEVREL-003 | 20 | Update cold email and README to match reality | `docs/community/PILOT_PROGRAMME_COLD_EMAIL.md`, `README.md` | All P0/P1 (false claims) |
 | DEVREL-006 | 20 | Pilot dry-run and sign-off | E2E test passes, demo runs, marketing is accurate | P1-2 (no e2e tests) |
 
@@ -229,7 +229,7 @@ Week:  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20
 
 All maintainers converge on these Week 19–20 exit criteria:
 
-1. `ciicerone exercise run --scenario templates/finance_bec.yaml --teams red,blue,purple,white,black` runs end-to-end.
+1. `vorsyghta exercise run --scenario templates/finance_bec.yaml --teams red,blue,purple,white,black` runs end-to-end.
 2. All API endpoints require authentication and enforce RBAC.
 3. All data is persisted to PostgreSQL with `tenant_id` isolation.
 4. Every simulation action emits a tamper-evident, hash-chained audit event.

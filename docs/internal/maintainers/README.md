@@ -1,6 +1,6 @@
 # Internal Maintainer Briefs
 
-This directory contains one-page internal briefs for each Ciicerone maintainer, derived from the atomic task plans in `dev-docs/maintainers/ThreatScene/maintainers/`.
+This directory contains one-page internal briefs for each Vorsyghta maintainer, derived from the atomic task plans in `dev-docs/maintainers/ThreatScene/maintainers/`.
 
 ## Maintainer Briefs
 

@@ -1,7 +1,7 @@
 ---
 version: alpha
-name: Ciicerone-design-system
-description: "The design language for Ciicerone — an enterprise AI-powered cybersecurity threat simulation platform (Python/FastAPI, multi-LLM, MITRE ATT&CK, PhishTank, red team exercises, audit/compliance logging). The system is adapted from the Sentry-inspired design language: a deep purple-violet midnight canvas, electric lime accents, and a slightly subversive illustrated personality. It pairs a custom display sans (chunky, playful, near-condensed) with the open Rubik family for UI copy and Monaco for code, then leans on dark-on-light pricing surfaces, sticker-style mascots, and a single-color CTA hierarchy where black-violet buttons read as the primary action against either polarity. For Ciicerone the lime-on-midnight console cadence maps directly onto threat-alert markers, MITRE ATT&CK keyword chips, and audit-log surfaces."
+name: Vorsyghta-design-system
+description: "The design language for Vorsyghta — an enterprise AI-powered cybersecurity threat simulation platform (Python/FastAPI, multi-LLM, MITRE ATT&CK, PhishTank, red team exercises, audit/compliance logging). The system is adapted from the Sentry-inspired design language: a deep purple-violet midnight canvas, electric lime accents, and a slightly subversive illustrated personality. It pairs a custom display sans (chunky, playful, near-condensed) with the open Rubik family for UI copy and Monaco for code, then leans on dark-on-light pricing surfaces, sticker-style mascots, and a single-color CTA hierarchy where black-violet buttons read as the primary action against either polarity. For Vorsyghta the lime-on-midnight console cadence maps directly onto threat-alert markers, MITRE ATT&CK keyword chips, and audit-log surfaces."
 
 colors:
   primary: "#150f23"
@@ -274,7 +274,7 @@ components:
 
 ## Overview
 
-Ciicerone's design language reads like a threat-intelligence console wearing a leather jacket. The marketing and product surfaces sit on a near-black violet midnight (`{colors.surface-canvas-dark}` / `{colors.surface-night}`), strewn with starfield textures and floating sticker-style mascots — astronauts, monsters, traffic cones — that puncture the seriousness of a security product. Headlines run in a chunky proprietary display sans where the most important keywords are wrapped in lime-green highlight chips (`{colors.accent-lime}`), as if the copy itself has been marked up by a red-teamer redlining their own MITRE ATT&CK navigator. The same lime chip wraps technique IDs (`T1566.001`), threat-actor handles, and alert keywords inside the product UI — a single typographic device doing double duty across marketing and console.
+Vorsyghta's design language reads like a threat-intelligence console wearing a leather jacket. The marketing and product surfaces sit on a near-black violet midnight (`{colors.surface-canvas-dark}` / `{colors.surface-night}`), strewn with starfield textures and floating sticker-style mascots — astronauts, monsters, traffic cones — that puncture the seriousness of a security product. Headlines run in a chunky proprietary display sans where the most important keywords are wrapped in lime-green highlight chips (`{colors.accent-lime}`), as if the copy itself has been marked up by a red-teamer redlining their own MITRE ATT&CK navigator. The same lime chip wraps technique IDs (`T1566.001`), threat-actor handles, and alert keywords inside the product UI — a single typographic device doing double duty across marketing and console.
 
 The palette is deliberately narrow: deep midnight as the dominant canvas, electric lime as the primary attention-grabber (reserved for "alert" markers, MITRE keyword chips, and the footer squiggle), hot pink (`{colors.accent-pink}`) as a secondary punctuation (used for critical-severity markers and sticker outlines), and a violet-mid (`{colors.accent-violet-mid}`) for tag chips and hairline strokes. White appears in two roles — as text on dark, and as the canvas for pricing, deployment-matrix, and audit/compliance tables where security teams need to scan dense rows. The "single primary CTA" is visually inverted depending on context: filled black-violet (`{colors.primary}`) with white type on light surfaces, or filled white with dark type on dark surfaces. The button always reads as the strongest UI affordance regardless of polarity — whether it labels "Run Simulation", "Launch Exercise", or "Request Demo".
 
@@ -283,7 +283,7 @@ Typography splits cleanly between three families: a custom display sans for hero
 **Key Characteristics:**
 - Two-polarity canvas system: deep violet midnight (`{colors.surface-canvas-dark}`) for marketing hero and product feature pages (threat-console hero, red-team exercise showcase), white (`{colors.surface-canvas-light}`) for pricing, deployment matrix, and dense audit/compliance reference content — the system never tries to blur the two.
 - Lime keyword highlight (`{colors.accent-lime}`) treated as a typographic device, not a color swatch — it wraps single words inside the display headline to act as a syntax highlight on the reading flow. Inside the product UI the same chip wraps MITRE ATT&CK technique IDs and alert keywords, reading as a console "alert" marker.
-- Sticker illustration system: floating mascot characters with hand-drawn outlines, appearing at section junctions, never inside cards — they create rhythm and personality between dense info blocks. For Ciicerone they read as the brand's "subversive security" voice against an otherwise serious compliance product.
+- Sticker illustration system: floating mascot characters with hand-drawn outlines, appearing at section junctions, never inside cards — they create rhythm and personality between dense info blocks. For Vorsyghta they read as the brand's "subversive security" voice against an otherwise serious compliance product.
 - Uppercase eyebrow + button caps in `{typography.button-cap}` and `{typography.eyebrow}`, with a consistent 0.2px tracking lift, give the brand its "developer console" cadence — the same cadence a security analyst expects from a CLI or SIEM prompt.
 - Single-primary CTA hierarchy: every page has one filled button reading either `{colors.primary}` on light or `{colors.on-primary}` on dark; outlined and ghost variants are downgraded.
 - Card surfaces follow the canvas: dark sections nest dark cards (`{colors.ink-deep}` with subtle hairline) and light sections nest white cards with `{colors.hairline-cloud}` borders — chrome stays consistent, only the polarity flips. This is what makes the audit-log viewer and the MITRE navigator feel like the same product.
@@ -389,7 +389,7 @@ The dark canvas absorbs whitespace differently from light. On dark surfaces the 
 | 4 | `box-shadow: rgba(0,0,0,0.18) 0 0.5rem 1.5rem` | Pressed inverted button on dark canvas |
 
 ### Decorative Depth
-Ciicerone's depth doesn't come from drop shadows — it comes from the **starfield texture** on the hero canvas (subtle white-on-violet pinpricks at low opacity, reading like a network-traffic scatter plot at a glance), the **floating sticker mascots** (drawn with hand-rendered outlines and saturated fills, layered above the canvas with no shadow), and the **lime squiggly divider** above the footer. These illustrative elements do the work that shadow stacks do in flatter design systems — they tell the eye where one section ends and another begins.
+Vorsyghta's depth doesn't come from drop shadows — it comes from the **starfield texture** on the hero canvas (subtle white-on-violet pinpricks at low opacity, reading like a network-traffic scatter plot at a glance), the **floating sticker mascots** (drawn with hand-rendered outlines and saturated fills, layered above the canvas with no shadow), and the **lime squiggly divider** above the footer. These illustrative elements do the work that shadow stacks do in flatter design systems — they tell the eye where one section ends and another begins.
 
 ## Shapes
 
@@ -436,13 +436,13 @@ The site doesn't use traditional photography — it uses **illustrated stickers 
 **`card-pricing`** — the standard tier card on the deployment/pricing page (Developer, Team, Business tiers).
 - Background `{colors.surface-canvas-light}`, text `{colors.ink-deep}`, padding `{spacing.xxl}` 32px, rounded `{rounded.xl}` 12px, 1px `{colors.hairline-cloud}` border. Headline at top in `{typography.heading-md}`, price in `{typography.display-large}`, feature list in `{typography.body-md}`, primary CTA pinned to the bottom of the card.
 
-**`card-pricing-featured`** — the dark inverted "featured" tier (Ciicerone uses the Enterprise tier as the featured one).
+**`card-pricing-featured`** — the dark inverted "featured" tier (Vorsyghta uses the Enterprise tier as the featured one).
 - Background `{colors.surface-night}`, text `{colors.on-primary}`, otherwise identical structure to `card-pricing`. The inversion (rather than an accent-bordered light card) is the brand's distinctive choice — the featured tier reads as the brand's voice, not as a marketing decoration.
 
 **`card-feature-dark`** — large feature-band card on dark surfaces, used to anchor product feature explanations (threat-console overview, red-team exercise showcase).
 - Background `{colors.ink-deep}`, text `{colors.on-primary}`, padding `{spacing.xxl}` 32px, rounded `{rounded.xxl}` 18px. Often holds a UI mock plus a 27px headline plus 16px body.
 
-**`card-spotlight-violet`** — accent feature card with deeper violet fill, used for "Ciicerone-only" capability bands (multi-LLM orchestration, MITRE ATT&CK coverage, PhishTank integration).
+**`card-spotlight-violet`** — accent feature card with deeper violet fill, used for "Vorsyghta-only" capability bands (multi-LLM orchestration, MITRE ATT&CK coverage, PhishTank integration).
 - Background `{colors.accent-violet-deep}`, text `{colors.on-primary}`, padding `{spacing.xxl}`, rounded `{rounded.xxl}`. The deep violet reads as a feature highlight without breaking out of the brand's purple family.
 
 **`code-block`** — code/install snippets (FastAPI route examples, YAML scenario definitions, audit-log excerpts).

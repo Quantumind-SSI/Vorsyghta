@@ -7,13 +7,13 @@
 # procedures, and compliance notification workflows.
 #
 # USAGE:
-#   ciicerone simulate -s templates/zestpayment/zestpayment_dark_web_monitoring.yaml
+#   vorsyghta simulate -s templates/zestpayment/zestpayment_dark_web_monitoring.yaml
 
 metadata:
   name: "ZestPayment Dark Web Monitoring Simulation"
   description: "Simulates dark web searches for leaked ZestPayment confidential data including credentials, payment data, and internal documents"
   version: "1.0.0"
-  author: "Ciicerone Security Team"
+  author: "Vorsyghta Security Team"
   created_at: "2026-07-03T08:00:00Z"
   updated_at: "2026-07-03T08:00:00Z"
   tags: ["dark_web", "credential_leak", "data_exposure", "pci-dss", "ndpr", "zestpayment", "osint", "breach_monitoring"]

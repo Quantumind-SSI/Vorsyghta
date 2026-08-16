@@ -1,11 +1,11 @@
-"""Ciicerone sandbox tool server — containerized edition.
+"""Vorsyghta sandbox tool server — containerized edition.
 
 A minimal FastAPI service that exposes an allowlisted set of offensive
 security tools (nmap, nikto, sqlmap, dirb, hydra, curl, ...) over a small
-HTTP contract so the Ciicerone AttackOrchestrator can drive real tool
+HTTP contract so the Vorsyghta AttackOrchestrator can drive real tool
 execution against a sanctioned target from inside the Docker network.
 
-Contract (matches ciicerone/core/tool_server_client.py):
+Contract (matches vorsyghta/core/tool_server_client.py):
     GET  /health   -> {"status": "ok"}
     GET  /tools    -> {"tools": [...]}
     POST /execute  -> {"stdout":..., "stderr":..., "returncode":...}
@@ -28,7 +28,7 @@ import subprocess
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-app = FastAPI(title="Ciicerone Tool Server", version="1.0.0")
+app = FastAPI(title="Vorsyghta Tool Server", version="1.0.0")
 
 # Allowlist mirrors the Azure Kali VM deployment. Adding a tool here does
 # NOT grant it — the binary must also be installed in the image (see
