@@ -23,6 +23,7 @@ from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
 from vorsyghta.core.tool_server_client import ToolServerClient, get_tool_server_client
+from vorsyghta.vm.safety import VMSafetyController
 
 logger = logging.getLogger(__name__)
 
@@ -101,9 +102,25 @@ class AttackOrchestrator:
         self,
         tool_server_client: Optional[ToolServerClient] = None,
         tenant_id: str = "default",
+        safety: Optional[VMSafetyController] = None,
+        enforce_safety: bool = True,
     ):
+        """Initialize the orchestrator.
+
+        Args:
+            tool_server_client: Tool server client (defaults to the shared one).
+            tenant_id: Tenant the orchestrated sequences belong to.
+            safety: Command-safety gate. Defaults to a fresh
+                :class:`VMSafetyController` (the canonical lab-scope allowlist /
+                destructive-command denylist). Reused, not re-implemented.
+            enforce_safety: When True (default, production), every command is
+                validated fail-closed before it reaches the tool server. Only
+                set False in trusted unit tests that assert ungated behaviour.
+        """
         self.client = tool_server_client or get_tool_server_client()
         self.tenant_id = tenant_id
+        self.safety = safety or VMSafetyController()
+        self.enforce_safety = enforce_safety
 
     async def create_attack_sequence_from_scenario(
         self,
@@ -217,7 +234,7 @@ class AttackOrchestrator:
         """
         from vorsyghta.db.session import get_session
         from vorsyghta.db.models.tool_tracking import (
-            AttackSequenceRecord, AttackSequenceStepRecord, AttackExecutionRecord,
+            AttackSequenceRecord, AttackSequenceStepRecord,
         )
 
         # Check tool server health
@@ -256,99 +273,30 @@ class AttackOrchestrator:
             completed = 0
             successful = 0
             failed = 0
+            blocked = 0
             all_findings: List[str] = []
 
             for step in steps:
-                if step.step_type != "tool_execution" or not step.command:
-                    step.step_status = "skipped"
-                    completed += 1
-                    continue
-
-                # Execute via tool server
-                step.step_status = "running"
-                step.start_time = datetime.utcnow()
-                await session.commit()
-
-                tool_result = await self.client.execute_and_track(
-                    command=step.command,
-                    tool_name=step.tool_name or "unknown",
-                    tenant_id=self.tenant_id,
-                    exercise_id=seq.exercise_id,
-                    simulation_id=seq.simulation_id,
-                    sequence_step_id=step.step_id,
+                outcome = await self._run_step(
+                    session=session,
+                    seq=seq,
+                    step=step,
                     invoked_by=invoked_by,
-                    invocation_source="orchestrator",
-                    mitre_technique_id=step.mitre_technique_id,
-                    attack_phase=step.attack_phase,
-                    target=step.target,
-                    timeout=timeout_per_step,
+                    timeout_per_step=timeout_per_step,
                 )
+                completed += outcome["completed"]
+                successful += outcome["successful"]
+                failed += outcome["failed"]
+                blocked += outcome["blocked"]
+                all_findings.extend(outcome["findings"])
+                if outcome["result"] is not None:
+                    results.append(outcome["result"])
+                if fail_fast and outcome["stop"]:
+                    break
 
-                step.end_time = datetime.utcnow()
-                step.success = tool_result["success"]
-                step.error_message = tool_result.get("error")
-                step.output_summary = (tool_result.get("stdout") or "")[:2000]
-                step.duration_seconds = tool_result.get("duration_seconds", 0)
-
-                # Extract findings from output
-                findings = self._extract_findings(tool_result.get("stdout", ""), step.tool_name)
-                if findings:
-                    step.findings = json.dumps(findings)
-                    all_findings.extend(findings)
-
-                # Create execution record
-                execution = AttackExecutionRecord(
-                    execution_id=f"exec_{uuid4().hex[:12]}",
-                    tenant_id=self.tenant_id,
-                    step_id=step.step_id,
-                    executor="tool_server",
-                    executor_endpoint=self.client.url,
-                    input_command=step.command,
-                    raw_output=tool_result.get("stdout"),
-                    return_code=tool_result.get("returncode", -1),
-                    exit_status="success" if tool_result["success"] else "failure",
-                    error_details=tool_result.get("error"),
-                    execution_duration_seconds=tool_result.get("duration_seconds", 0),
-                    started_at=step.start_time,
-                    completed_at=step.end_time,
-                )
-                session.add(execution)
-
-                if tool_result["success"]:
-                    step.step_status = "completed"
-                    successful += 1
-                else:
-                    step.step_status = "failed"
-                    failed += 1
-                    if fail_fast:
-                        completed += 1
-                        break
-
-                completed += 1
-                results.append({
-                    "step_id": step.step_id,
-                    "step_name": step.step_name,
-                    "tool": step.tool_name,
-                    "technique": step.mitre_technique_id,
-                    "success": tool_result["success"],
-                    "duration_seconds": tool_result.get("duration_seconds", 0),
-                    "findings_count": len(findings),
-                })
-                await session.commit()
-
-            # Update sequence
-            seq.completed_steps = seq.completed_steps + completed
-            seq.successful_steps = seq.successful_steps + successful
-            seq.failed_steps = seq.failed_steps + failed
-            seq.end_time = datetime.utcnow()
-            if seq.start_time:
-                seq.total_duration_seconds = (seq.end_time - seq.start_time).total_seconds()
-            seq.overall_success = failed == 0 and successful > 0
-            seq.sequence_status = "completed" if failed == 0 else "failed"
-            seq.result_summary = f"{successful}/{completed} steps successful"
-            if all_findings:
-                seq.key_findings = json.dumps(all_findings[:50])  # cap at 50 findings
-            await session.commit()
+            await self._finalize_sequence(
+                session, seq, completed, successful, failed, blocked, all_findings
+            )
 
             return {
                 "sequence_id": sequence_id,
@@ -358,10 +306,212 @@ class AttackOrchestrator:
                 "completed_steps": seq.completed_steps,
                 "successful_steps": seq.successful_steps,
                 "failed_steps": seq.failed_steps,
+                "blocked_steps": blocked,
                 "total_duration_seconds": seq.total_duration_seconds,
                 "findings_count": len(all_findings),
                 "step_results": results,
             }
+
+    async def _finalize_sequence(
+        self,
+        session: Any,
+        seq: Any,
+        completed: int,
+        successful: int,
+        failed: int,
+        blocked: int,
+        all_findings: List[str],
+    ) -> None:
+        """Write the aggregate sequence result after all steps have run.
+
+        Note: counter updates here are still additive read-modify-write; making
+        them atomic under concurrent execution is tracked separately (B-2).
+        """
+        seq.completed_steps = seq.completed_steps + completed
+        seq.successful_steps = seq.successful_steps + successful
+        seq.failed_steps = seq.failed_steps + failed
+        seq.end_time = datetime.utcnow()
+        if seq.start_time:
+            seq.total_duration_seconds = (seq.end_time - seq.start_time).total_seconds()
+        clean = failed == 0 and blocked == 0
+        seq.overall_success = clean and successful > 0
+        seq.sequence_status = "completed" if clean else "failed"
+        seq.result_summary = (
+            f"{successful}/{completed} steps successful"
+            + (f", {blocked} blocked by safety gate" if blocked else "")
+        )
+        if all_findings:
+            seq.key_findings = json.dumps(all_findings[:50])  # cap at 50 findings
+        await session.commit()
+
+    @staticmethod
+    def _step_outcome(
+        completed: int = 0,
+        successful: int = 0,
+        failed: int = 0,
+        blocked: int = 0,
+        findings: Optional[List[str]] = None,
+        result: Optional[Dict[str, Any]] = None,
+        stop: bool = False,
+    ) -> Dict[str, Any]:
+        """Build a normalized per-step outcome tally consumed by the main loop."""
+        return {
+            "completed": completed,
+            "successful": successful,
+            "failed": failed,
+            "blocked": blocked,
+            "findings": findings or [],
+            "result": result,
+            "stop": stop,
+        }
+
+    async def _run_step(
+        self,
+        session: Any,
+        seq: Any,
+        step: Any,
+        invoked_by: str,
+        timeout_per_step: int,
+    ) -> Dict[str, Any]:
+        """Execute a single sequence step through the fail-closed safety gate.
+
+        Returns a normalized outcome dict (see :meth:`_step_outcome`). Steps that
+        are non-executable are skipped; commands rejected by the safety gate are
+        recorded as ``blocked`` and NEVER sent to the tool server.
+        """
+        if step.step_type != "tool_execution" or not step.command:
+            step.step_status = "skipped"
+            return self._step_outcome(completed=1)
+
+        # Execution-boundary safety gate (fail-closed). Closes the authorization
+        # gap where the orchestrator previously trusted caller-supplied DB
+        # commands verbatim.
+        is_safe, reason = self._authorize_command(step.command)
+        if not is_safe:
+            return await self._record_blocked_step(session, step, reason)
+
+        return await self._execute_tool_step(
+            session, seq, step, invoked_by, timeout_per_step
+        )
+
+    async def _record_blocked_step(
+        self, session: Any, step: Any, reason: str
+    ) -> Dict[str, Any]:
+        """Persist a safety-blocked step (not executed) and return its outcome."""
+        step.step_status = "blocked"
+        step.error_message = f"Blocked by safety gate: {reason}"
+        step.end_time = datetime.utcnow()
+        await session.commit()
+        return self._step_outcome(
+            completed=1,
+            blocked=1,
+            stop=True,
+            result={
+                "step_id": step.step_id,
+                "step_name": step.step_name,
+                "tool": step.tool_name,
+                "technique": step.mitre_technique_id,
+                "success": False,
+                "blocked": True,
+                "reason": reason,
+            },
+        )
+
+    async def _execute_tool_step(
+        self,
+        session: Any,
+        seq: Any,
+        step: Any,
+        invoked_by: str,
+        timeout_per_step: int,
+    ) -> Dict[str, Any]:
+        """Run one authorized command via the tool server and record results."""
+        from vorsyghta.db.models.tool_tracking import AttackExecutionRecord
+
+        step.step_status = "running"
+        step.start_time = datetime.utcnow()
+        await session.commit()
+
+        tool_result = await self.client.execute_and_track(
+            command=step.command,
+            tool_name=step.tool_name or "unknown",
+            tenant_id=self.tenant_id,
+            exercise_id=seq.exercise_id,
+            simulation_id=seq.simulation_id,
+            sequence_step_id=step.step_id,
+            invoked_by=invoked_by,
+            invocation_source="orchestrator",
+            mitre_technique_id=step.mitre_technique_id,
+            attack_phase=step.attack_phase,
+            target=step.target,
+            timeout=timeout_per_step,
+        )
+        success = bool(tool_result.get("success"))
+
+        step.end_time = datetime.utcnow()
+        step.success = success
+        step.error_message = tool_result.get("error")
+        step.output_summary = (tool_result.get("stdout") or "")[:2000]
+        step.duration_seconds = tool_result.get("duration_seconds", 0)
+
+        findings = self._extract_findings(tool_result.get("stdout", ""), step.tool_name)
+        if findings:
+            step.findings = json.dumps(findings)
+
+        session.add(AttackExecutionRecord(
+            execution_id=f"exec_{uuid4().hex[:12]}",
+            tenant_id=self.tenant_id,
+            step_id=step.step_id,
+            executor="tool_server",
+            executor_endpoint=self.client.url,
+            input_command=step.command,
+            raw_output=tool_result.get("stdout"),
+            return_code=tool_result.get("returncode", -1),
+            exit_status="success" if success else "failure",
+            error_details=tool_result.get("error"),
+            execution_duration_seconds=tool_result.get("duration_seconds", 0),
+            started_at=step.start_time,
+            completed_at=step.end_time,
+        ))
+
+        step.step_status = "completed" if success else "failed"
+        await session.commit()
+        return self._step_outcome(
+            completed=1,
+            successful=1 if success else 0,
+            failed=0 if success else 1,
+            findings=findings,
+            stop=not success,
+            result={
+                "step_id": step.step_id,
+                "step_name": step.step_name,
+                "tool": step.tool_name,
+                "technique": step.mitre_technique_id,
+                "success": success,
+                "duration_seconds": tool_result.get("duration_seconds", 0),
+                "findings_count": len(findings),
+            },
+        )
+
+    def _authorize_command(self, command: str) -> tuple[bool, str]:
+        """Fail-closed authorization for a single tool command.
+
+        Returns ``(True, "OK")`` only when safety enforcement is enabled and the
+        command passes :meth:`VMSafetyController.validate_command`. When
+        enforcement is disabled (trusted tests) it returns ``(True, ...)``
+        explicitly so the bypass is visible rather than silent.
+
+        Args:
+            command: The exact command string that would be sent to the tool
+                server.
+
+        Returns:
+            Tuple of ``(is_authorized, reason)``.
+        """
+        assert isinstance(command, str) and command, "command must be a non-empty str"
+        if not self.enforce_safety:
+            return True, "safety enforcement disabled"
+        return self.safety.validate_command(command)
 
     @staticmethod
     def _parse_nmap(line: str) -> Optional[str]:

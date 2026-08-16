@@ -234,7 +234,8 @@ class AttackSequenceStepRecord(Base):
 
     # Status
     step_status = Column(String, nullable=False, default="pending")
-    # pending, running, completed, failed, skipped
+    # pending, running, completed, failed, skipped, blocked
+    # 'blocked' = rejected fail-closed by the VMSafetyController gate; never executed.
     success = Column(Boolean, nullable=False, default=False)
     error_message = Column(Text, nullable=True)
 
