@@ -2,9 +2,26 @@
 
 # LLM Provider Configuration
 llm:
-  # Default provider selection (openai, anthropic, openrouter, ollama, huggingface, llamacpp)
-  default_provider: "openrouter"
-  
+  # Default provider selection (azure, openai, anthropic, openrouter, ollama, huggingface, llamacpp)
+  default_provider: "azure"
+
+  # Primary provider - Azure AI (QuantmindSSI: admin-7558-resource, eastus2).
+  # Powers ALL application operations. Secrets live in .env (never committed):
+  #   AZURE_OPENAI_API_KEY, AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_DEPLOYMENT
+  azure:
+    api_key: ""  # Set via environment variable AZURE_OPENAI_API_KEY
+    endpoint: "https://admin-7558-resource.openai.azure.com/"
+    deployment: "Phi-4"       # Verified working via chat.completions (HTTP 200)
+    model: "Phi-4"
+    api_version: "2024-10-21"
+    max_tokens: 3000
+    temperature: 0.7
+    timeout_seconds: 60
+    retry_attempts: 3
+    # Other deployments available on this resource (switch `deployment` to use):
+    #   - Phi-4-mini-reasoning   # reasoning-tuned small model
+    #   - claude-opus-5          # strongest, but currently rate-limited (429)
+
   # Primary provider - OpenAI
   openai:
     api_key: ""  # Set via environment variable OPENAI_API_KEY
