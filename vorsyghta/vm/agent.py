@@ -18,7 +18,7 @@ from .models import (
     AgentState,
     CommandResult,
 )
-from .operator import VMOperator
+from .operator import VMOperator, CommandBlockedError
 from .safety import VMSafetyController
 
 logger = logging.getLogger(__name__)
@@ -422,7 +422,27 @@ Include 5-10 steps covering reconnaissance through objectives.
                 vm_id=target_vm,
             )
 
-        result = await self.vm.execute_command(target_vm, command)
+        # The operator enforces its own fail-closed boundary gate; emit a block
+        # audit event if it rejects the command so the block is never invisible
+        # to the audit trail (B-5), then return a blocked CommandResult rather
+        # than propagating an unaudited raise.
+        try:
+            result = await self.vm.execute_command(target_vm, command)
+        except CommandBlockedError as blocked:
+            self._emit_audit(
+                "red_team.command_blocked",
+                command=command,
+                reason=str(blocked),
+                vm_id=target_vm,
+                boundary="operator",
+            )
+            return CommandResult(
+                command=command,
+                stdout="",
+                stderr=f"Command blocked at execution boundary: {blocked}",
+                exit_code=-1,
+                vm_id=target_vm,
+            )
         self._emit_audit(
             "red_team.command_executed",
             command=command,
@@ -464,12 +484,36 @@ Include 5-10 steps covering reconnaissance through objectives.
             # Refine command based on current state
             refined_command = await self._refine_command(command)
 
-            # Execute on attacker VM
-            cmd_result = await self.vm.execute_command(
-                self.state.current_vm,
-                refined_command,
-                timeout_seconds=step.timeout_seconds,
-            )
+            # Execute on attacker VM. The operator enforces its OWN fail-closed
+            # safety gate at the execution boundary; if the refined command is
+            # blocked there (agent-side and operator-side controllers can differ)
+            # it raises CommandBlockedError. Emit a block audit event so the
+            # boundary block is never invisible to the audit trail (B-5), then
+            # record it and move on rather than propagating an unaudited raise.
+            try:
+                cmd_result = await self.vm.execute_command(
+                    self.state.current_vm,
+                    refined_command,
+                    timeout_seconds=step.timeout_seconds,
+                )
+            except CommandBlockedError as blocked:
+                logger.warning("Command blocked at execution boundary: %s", blocked)
+                self._emit_audit(
+                    "red_team.command_blocked",
+                    technique=step.technique_id,
+                    phase=step.phase.value,
+                    command=refined_command,
+                    reason=str(blocked),
+                    boundary="operator",
+                )
+                results["commands_executed"].append({
+                    "original": command,
+                    "executed": refined_command,
+                    "blocked": True,
+                    "reason": str(blocked),
+                    "boundary": "operator",
+                })
+                continue
 
             self._emit_audit(
                 "red_team.command_executed",

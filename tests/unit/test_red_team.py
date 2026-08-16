@@ -604,6 +604,60 @@ class TestAgentFailClosed:
 
 
 # --------------------------------------------------------------------------- #
+# 6. Boundary-gate blocks are audited (B-5)
+#     When the operator's own fail-closed gate raises CommandBlockedError, the
+#     agent must emit a red_team.command_blocked audit event (never invisible).
+# --------------------------------------------------------------------------- #
+class _BoundaryBlockingVM:
+    """VM operator whose execution boundary rejects every command."""
+
+    async def execute_command(self, vm_id, command, timeout_seconds=60, **kw):
+        from vorsyghta.vm.operator import CommandBlockedError
+        raise CommandBlockedError(command, "blocked at operator boundary")
+
+
+class TestBoundaryBlockAudited:
+    def _agent(self, audit_events: List[Dict[str, Any]]):
+        from vorsyghta.vm.agent import AIAttackAgent
+        return AIAttackAgent(
+            llm_manager=_OkLLM("{}"),
+            vm_operator=_BoundaryBlockingVM(),
+            safety_controller=VMSafetyController(),
+            audit_sink=audit_events.append,
+        )
+
+    async def test_run_single_command_boundary_block_emits_audit(self):
+        from vorsyghta.vm.models import AgentState
+        events: List[Dict[str, Any]] = []
+        agent = self._agent(events)
+        agent.state = AgentState(current_vm="10.0.100.5")
+        # A command the AGENT-side controller allows (lab IP) but the operator
+        # boundary rejects -> must be audited as blocked, not raised unaudited.
+        result = await agent.run_single_command("nmap 10.0.100.5", vm_id="10.0.100.5")
+        assert result.exit_code == -1
+        assert "boundary" in result.stderr.lower()
+        blocked = [e for e in events if e.get("event_type") == "red_team.command_blocked"]
+        assert blocked, f"expected a command_blocked event, got {events}"
+        assert blocked[-1].get("boundary") == "operator"
+
+    async def test_execute_step_boundary_block_emits_audit(self):
+        from vorsyghta.vm.models import AgentState, AttackStep, AttackPhase
+        events: List[Dict[str, Any]] = []
+        agent = self._agent(events)
+        agent.state = AgentState(current_vm="10.0.100.5")
+        step = AttackStep(
+            phase=AttackPhase.RECONNAISSANCE, technique_id="T1595",
+            technique_name="scan", description="d", commands=["nmap 10.0.100.5"],
+        )
+        results = await agent._execute_step(step)
+        blocked = [e for e in events if e.get("event_type") == "red_team.command_blocked"]
+        assert blocked, f"expected a command_blocked event, got {events}"
+        assert blocked[-1].get("boundary") == "operator"
+        # The step records the block rather than a silent success.
+        assert any(c.get("blocked") for c in results["commands_executed"])
+
+
+# --------------------------------------------------------------------------- #
 # Helpers
 # --------------------------------------------------------------------------- #
 class _StateStub:
