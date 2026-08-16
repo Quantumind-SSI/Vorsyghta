@@ -46,14 +46,77 @@ class LLMManager:
         """Initialize LLM manager.
 
         Args:
-            provider: Specific LLM provider to use
-            config: Configuration for LLM providers
+            provider: A concrete :class:`BaseLLMProvider` instance to force.
+            config: Configuration dict for LLM providers (the common case).
+
+        Notes:
+            Defensive against the common footgun ``LLMManager(cfg)`` where the
+            config dict is passed positionally into ``provider``. If ``provider``
+            is a dict (not a provider), it is treated as ``config`` so the
+            manager still wires a concrete provider instead of silently falling
+            back to a dict that has no ``generate_content``.
         """
+        # Guard: config passed positionally as `provider`.
+        if isinstance(provider, dict) and config is None:
+            config = provider
+            provider = None
+
+        # Guard: reject a non-provider object slipping into `provider`.
+        if provider is not None and not isinstance(provider, BaseLLMProvider):
+            logger.warning(
+                "LLMManager(provider=...) got %s, not a BaseLLMProvider; ignoring it.",
+                type(provider).__name__,
+            )
+            provider = None
+
+        # Self-sufficiency: when constructed with no config (the common
+        # `LLMManager()` call used across API/CLI/agents), auto-load .env and
+        # the `llm:` block from config.yaml so every entry point wires the same
+        # concrete provider without the caller repeating boilerplate.
+        if config is None and provider is None:
+            config = self._autoload_config()
+
         self.config = config or {}
-        self.provider = provider
+        self.provider: Optional[BaseLLMProvider] = provider
         self._providers: Dict[str, BaseLLMProvider] = {}
         self._session: Optional[Any] = None  # For HTTP session management
         self._initialize_providers()
+
+        # Postcondition: if any provider initialized, self.provider must be a
+        # concrete provider, never a dict/None left over from a bad call.
+        if self._providers and not isinstance(self.provider, BaseLLMProvider):
+            fallback_name = next(iter(self._providers))
+            self.provider = self._providers[fallback_name]
+            logger.info("LLMManager active provider set to '%s'.", fallback_name)
+
+    @staticmethod
+    def _autoload_config() -> Dict[str, Any]:
+        """Best-effort load of .env + the `llm:` block from config.yaml.
+
+        Returns an empty dict on any failure so construction never raises; the
+        manager then falls back to env-var-only provider init.
+        """
+        # Load .env into the process environment (idempotent, no override of
+        # already-set vars).
+        try:
+            from dotenv import load_dotenv
+            load_dotenv()
+        except Exception as exc:  # noqa: BLE001 - reported, not hidden
+            logger.debug("dotenv not loaded: %s", exc)
+
+        # Load the llm section from config.yaml if present.
+        try:
+            import yaml
+            from pathlib import Path
+            cfg_path = Path(os.getenv("VORSYGHTA_CONFIG", "config.yaml"))
+            if cfg_path.is_file():
+                data = yaml.safe_load(cfg_path.read_text()) or {}
+                llm_cfg = data.get("llm", {})
+                if isinstance(llm_cfg, dict):
+                    return llm_cfg
+        except Exception as exc:  # noqa: BLE001 - reported, not hidden
+            logger.debug("config.yaml llm block not loaded: %s", exc)
+        return {}
 
     async def _get_session(self):
         """Get or create aiohttp session with connection pooling."""
