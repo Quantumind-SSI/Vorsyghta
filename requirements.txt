@@ -26,6 +26,11 @@ anthropic>=0.8.1
 aiohttp>=3.14.1
 httpx>=0.25.2
 requests>=2.31.0
+# Strict/typed agent runtime for the red team (Azure gpt-4o via pydantic-ai).
+pydantic-ai>=1.0.0
+# Azure Key Vault as the single source of truth for secrets (local mirrors prod).
+azure-identity>=1.19.0
+azure-keyvault-secrets>=4.9.0
 
 # ================================
 # Data Science (Essential only)

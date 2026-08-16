@@ -138,7 +138,11 @@ class AIAttackAgent:
                 event-store adapter in production. If ``None``, events are still
                 appended to :attr:`audit_events` in memory.
         """
-        self.llm = llm_manager
+        # Strict pydantic-ai routing: the red team reasons through the
+        # pydantic-ai provider (Azure gpt-4o in production) when available.
+        # If given an LLMManager, resolve its 'pydantic_ai' provider; fall back
+        # to the manager itself so behaviour is preserved when unavailable.
+        self.llm = self._resolve_llm(llm_manager)
         self.vm = vm_operator
         self.safety = safety_controller or VMSafetyController()
         self.config = config or {}
@@ -148,6 +152,25 @@ class AIAttackAgent:
         self.attack_log: List[Dict[str, Any]] = []
         self.audit_events: List[Dict[str, Any]] = []
         self._current_plan: Optional[AttackPlan] = None
+
+    @staticmethod
+    def _resolve_llm(llm_manager: Any) -> Any:
+        """Prefer the strict pydantic-ai provider for red-team reasoning.
+
+        Args:
+            llm_manager: An LLMManager (has get_provider) or a raw provider.
+
+        Returns:
+            The pydantic-ai provider when the manager exposes one, otherwise the
+            manager/provider as given (behaviour preserved).
+        """
+        getter = getattr(llm_manager, "get_provider", None)
+        if callable(getter):
+            provider = getter("pydantic_ai")
+            if provider is not None:
+                logger.info("Red team LLM routed through pydantic-ai (Azure gpt-4o).")
+                return provider
+        return llm_manager
 
     def _emit_audit(self, event_type: str, **fields: Any) -> Dict[str, Any]:
         """Emit a typed audit event to the sink and the in-memory trail.

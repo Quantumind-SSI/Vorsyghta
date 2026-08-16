@@ -2,15 +2,20 @@
 
 # LLM Provider Configuration
 llm:
-  # Default provider selection (azure, openai, anthropic, openrouter, ollama, huggingface, llamacpp)
-  default_provider: "azure"
+  # Default provider selection (pydantic_ai, azure, openai, anthropic, openrouter, ollama, huggingface, llamacpp)
+  # pydantic_ai = strict/typed client over the SAME Azure gpt-4o deployment.
+  default_provider: "pydantic_ai"
 
   # Primary provider - Azure OpenAI (PRODUCTION: ciicerone-openai, eastus2,
   # sub 59346494-..., rg ciicerone-rg). This matches the live ciicerone-api
   # Container App exactly. Powers ALL application operations. Secrets live in
   # .env (never committed): AZURE_OPENAI_API_KEY, ENDPOINT, DEPLOYMENT.
   azure:
-    api_key: ""  # Set via environment variable AZURE_OPENAI_API_KEY
+    # Secrets are resolved from Azure Key Vault when key_vault_url is set (the
+    # production path — matches the ciicerone-api Container App, which mounts
+    # azure-openai-* from ciicerone-kv). Falls back to AZURE_OPENAI_* env vars.
+    key_vault_url: "https://ciicerone-kv.vault.azure.net/"
+    api_key: ""  # Resolved from Key Vault secret 'azure-openai-api-key' or env
     endpoint: "https://ciicerone-openai.openai.azure.com/"
     deployment: "gpt-4o"      # Production model (verified: correct T1595 answer, HTTP 200)
     model: "gpt-4o"

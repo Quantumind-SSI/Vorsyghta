@@ -5,6 +5,7 @@ from .anthropic_provider import AnthropicProvider
 from .ollama_provider import OllamaProvider
 from .openrouter_provider import OpenRouterProvider
 from .azure_provider import AzureOpenAIProvider
+from .pydantic_ai_provider import PydanticAIProvider
 
 __all__ = [
     "OpenAIProvider",
@@ -12,4 +13,5 @@ __all__ = [
     "OllamaProvider",
     "OpenRouterProvider",
     "AzureOpenAIProvider",
+    "PydanticAIProvider",
 ]

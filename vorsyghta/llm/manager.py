@@ -16,6 +16,7 @@ from .providers.anthropic_provider import AnthropicProvider
 from .providers.openrouter_provider import OpenRouterProvider
 from .providers.ollama_provider import OllamaProvider
 from .providers.azure_provider import AzureOpenAIProvider
+from .providers.pydantic_ai_provider import PydanticAIProvider
 
 # Local model providers (with optional imports)
 try:
@@ -105,18 +106,65 @@ class LLMManager:
             logger.debug("dotenv not loaded: %s", exc)
 
         # Load the llm section from config.yaml if present.
+        llm_cfg: Dict[str, Any] = {}
         try:
             import yaml
             from pathlib import Path
             cfg_path = Path(os.getenv("VORSYGHTA_CONFIG", "config.yaml"))
             if cfg_path.is_file():
                 data = yaml.safe_load(cfg_path.read_text()) or {}
-                llm_cfg = data.get("llm", {})
-                if isinstance(llm_cfg, dict):
-                    return llm_cfg
+                candidate = data.get("llm", {})
+                if isinstance(candidate, dict):
+                    llm_cfg = candidate
         except Exception as exc:  # noqa: BLE001 - reported, not hidden
             logger.debug("config.yaml llm block not loaded: %s", exc)
-        return {}
+
+        # Resolve Azure secrets from Key Vault when configured (production path).
+        LLMManager._resolve_azure_key_vault(llm_cfg.get("azure", {}))
+        return llm_cfg
+
+    @staticmethod
+    def _resolve_azure_key_vault(azure_cfg: Dict[str, Any]) -> None:
+        """Populate the Azure config from Key Vault when a vault URL is set.
+
+        Mutates ``azure_cfg`` in place, filling api_key/endpoint/deployment/
+        api_version from the ciicerone-kv secrets so the LLM uses the exact same
+        credentials as the production Container App. Also exports the matching
+        AZURE_OPENAI_* env vars so downstream env-driven paths agree.
+
+        Best-effort: any failure (no vault, no auth) leaves the config untouched
+        and the manager falls back to env vars / config values.
+        """
+        vault_url = (
+            azure_cfg.get("key_vault_url")
+            or os.getenv("AZURE_KEY_VAULT_URL")
+        )
+        if not vault_url:
+            return
+        # secret name -> (config key, env var)
+        mapping = {
+            "azure-openai-api-key": ("api_key", "AZURE_OPENAI_API_KEY"),
+            "azure-openai-endpoint": ("endpoint", "AZURE_OPENAI_ENDPOINT"),
+            "azure-openai-deployment": ("deployment", "AZURE_OPENAI_DEPLOYMENT"),
+            "azure-openai-api-version": ("api_version", "AZURE_OPENAI_API_VERSION"),
+        }
+        try:
+            from azure.identity import DefaultAzureCredential
+            from azure.keyvault.secrets import SecretClient
+
+            client = SecretClient(vault_url=vault_url, credential=DefaultAzureCredential())
+            for secret_name, (cfg_key, env_var) in mapping.items():
+                try:
+                    value = client.get_secret(secret_name).value
+                except Exception as exc:  # noqa: BLE001 - per-secret, reported
+                    logger.debug("KV secret %s not read: %s", secret_name, exc)
+                    continue
+                if value:
+                    azure_cfg[cfg_key] = value
+                    os.environ.setdefault(env_var, value)
+            logger.info("Azure LLM secrets resolved from Key Vault: %s", vault_url)
+        except Exception as exc:  # noqa: BLE001 - reported, not hidden
+            logger.warning("Key Vault resolution skipped (%s): %s", vault_url, exc)
 
     async def _get_session(self):
         """Get or create aiohttp session with connection pooling."""
@@ -144,13 +192,25 @@ class LLMManager:
             azure_deployment = azure_config.get('deployment') or os.getenv('AZURE_OPENAI_DEPLOYMENT')
             azure_api_version = azure_config.get('api_version') or os.getenv('AZURE_OPENAI_API_VERSION', '2024-10-21')
             if azure_api_key and azure_endpoint and azure_deployment:
-                self._providers['azure'] = AzureOpenAIProvider({
+                azure_provider_config = {
                     'api_key': azure_api_key,
                     'endpoint': azure_endpoint,
                     'deployment': azure_deployment,
                     'api_version': azure_api_version,
-                })
+                    'model': azure_config.get('model', azure_deployment),
+                    'temperature': azure_config.get('temperature', 0.7),
+                    'max_tokens': azure_config.get('max_tokens', 3000),
+                }
+                self._providers['azure'] = AzureOpenAIProvider(azure_provider_config)
                 logger.info("Azure OpenAI provider initialized")
+                # Strict, typed pydantic-ai provider over the SAME Azure
+                # deployment (gpt-4o). Selectable via default_provider:
+                # pydantic_ai; used by agentic teams (red team) for typed I/O.
+                try:
+                    self._providers['pydantic_ai'] = PydanticAIProvider(azure_provider_config)
+                    logger.info("pydantic-ai provider initialized (Azure gpt-4o)")
+                except Exception as exc:  # noqa: BLE001 - reported, not hidden
+                    logger.warning("pydantic-ai provider not initialized: %s", exc)
 
             # Initialize OpenAI if configured
             openai_config = self.config.get('openai', {})
@@ -429,6 +489,14 @@ User Request:
     def get_available_providers(self) -> List[str]:
         """Get list of available provider names."""
         return list(self._providers.keys())
+
+    def get_provider(self, name: str) -> Optional[BaseLLMProvider]:
+        """Return a specific initialized provider by name, or None.
+
+        Used by agentic teams that require a particular backend (e.g. the red
+        team requesting the strict ``pydantic_ai`` provider).
+        """
+        return self._providers.get(name)
 
     def get_provider_info(self, provider_name: Optional[str] = None) -> Dict[str, Any]:
         """Get detailed information about a provider."""
