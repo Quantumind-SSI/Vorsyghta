@@ -262,17 +262,26 @@ class TestFindingsExtraction:
 #     VMSafetyController before it can reach the tool server, fail-closed.
 # --------------------------------------------------------------------------- #
 class _FakeSession:
-    """Minimal async-session stub: records commit() calls, no DB."""
+    """Minimal async-session stub: records commit/execute/refresh, no DB."""
 
     def __init__(self) -> None:
         self.commits = 0
         self.added: List[Any] = []
+        self.executed: List[Any] = []
+        self.refreshed: List[Any] = []
 
     async def commit(self) -> None:
         self.commits += 1
 
     def add(self, obj: Any) -> None:
         self.added.append(obj)
+
+    async def execute(self, stmt: Any) -> Any:
+        self.executed.append(stmt)
+        return None
+
+    async def refresh(self, obj: Any) -> None:
+        self.refreshed.append(obj)
 
 
 class _FakeStep:
@@ -317,6 +326,19 @@ class _RecordingClient:
 class _SeqStub:
     exercise_id = None
     simulation_id = None
+
+    def __init__(self) -> None:
+        self.sequence_id = "seq_test"
+        self.completed_steps = 0
+        self.successful_steps = 0
+        self.failed_steps = 0
+        self.start_time = None
+        self.end_time = None
+        self.total_duration_seconds = None
+        self.overall_success = None
+        self.sequence_status = "running"
+        self.result_summary = None
+        self.key_findings = None
 
 
 class TestOrchestratorAuthorizationGate:
@@ -392,6 +414,62 @@ class TestOrchestratorAuthorizationGate:
         orch = AttackOrchestrator(tool_server_client=_RecordingClient())
         assert orch.enforce_safety is True
         assert orch.safety is not None
+
+
+# --------------------------------------------------------------------------- #
+# 3c. Atomic sequence counters (B-2)
+#     Counter accumulation must be an atomic SQL UPDATE (SET x = x + n), not a
+#     Python read-modify-write that races under concurrent execution.
+# --------------------------------------------------------------------------- #
+class TestAtomicCounters:
+    def _orch(self):
+        from vorsyghta.core.attack_orchestrator import AttackOrchestrator
+        return AttackOrchestrator(tool_server_client=_RecordingClient(), tenant_id="t1")
+
+    async def test_finalize_issues_atomic_update_not_python_rmw(self):
+        orch = self._orch()
+        session, seq = _FakeSession(), _SeqStub()
+        seq.completed_steps = 5  # pre-existing prior progress
+        await orch._finalize_sequence(
+            session=session, seq=seq,
+            completed=3, successful=2, failed=1, blocked=0, all_findings=[],
+        )
+        # An UPDATE statement must have been executed (atomic counter bump)...
+        assert len(session.executed) == 1
+        compiled = str(session.executed[0])
+        assert "UPDATE attack_sequences" in compiled
+        # ...and the counters must be expressed as SET x = x + :param (atomic),
+        # not overwritten by a Python-computed literal.
+        flat = compiled.replace(" ", "").replace("\n", "")
+        assert "completed_steps=(attack_sequences.completed_steps+" in flat
+        assert "successful_steps=(attack_sequences.successful_steps+" in flat
+        assert "failed_steps=(attack_sequences.failed_steps+" in flat
+        # The stale in-memory counter must NOT have been mutated by += in Python
+        # (it should be left for session.refresh to reload from the DB).
+        assert seq.completed_steps == 5
+        assert seq in session.refreshed
+
+    async def test_finalize_sets_derived_fields_from_local_tally(self):
+        orch = self._orch()
+        session, seq = _FakeSession(), _SeqStub()
+        await orch._finalize_sequence(
+            session=session, seq=seq,
+            completed=2, successful=2, failed=0, blocked=0, all_findings=["f1"],
+        )
+        assert seq.sequence_status == "completed"
+        assert seq.overall_success is True
+        assert "2/2 steps successful" in seq.result_summary
+
+    async def test_finalize_marks_failed_when_blocked(self):
+        orch = self._orch()
+        session, seq = _FakeSession(), _SeqStub()
+        await orch._finalize_sequence(
+            session=session, seq=seq,
+            completed=2, successful=1, failed=0, blocked=1, all_findings=[],
+        )
+        assert seq.sequence_status == "failed"
+        assert seq.overall_success is False
+        assert "blocked by safety gate" in seq.result_summary
 
 
 # --------------------------------------------------------------------------- #

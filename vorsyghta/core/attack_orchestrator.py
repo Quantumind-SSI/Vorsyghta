@@ -324,15 +324,19 @@ class AttackOrchestrator:
     ) -> None:
         """Write the aggregate sequence result after all steps have run.
 
-        Note: counter updates here are still additive read-modify-write; making
-        them atomic under concurrent execution is tracked separately (B-2).
+        The three accumulator counters are updated atomically (SET x = x + n) to
+        avoid the lost-update race between concurrent/replayed executions of the
+        same sequence (B-2); derived fields are computed from this run's local
+        tallies and assigned directly. The ORM object is refreshed afterward so
+        the caller sees the atomically-updated counter values.
         """
-        seq.completed_steps = seq.completed_steps + completed
-        seq.successful_steps = seq.successful_steps + successful
-        seq.failed_steps = seq.failed_steps + failed
-        seq.end_time = datetime.utcnow()
+        from sqlalchemy import update as _update
+        from vorsyghta.db.models.tool_tracking import AttackSequenceRecord
+
+        end_time = datetime.utcnow()
+        seq.end_time = end_time
         if seq.start_time:
-            seq.total_duration_seconds = (seq.end_time - seq.start_time).total_seconds()
+            seq.total_duration_seconds = (end_time - seq.start_time).total_seconds()
         clean = failed == 0 and blocked == 0
         seq.overall_success = clean and successful > 0
         seq.sequence_status = "completed" if clean else "failed"
@@ -342,7 +346,20 @@ class AttackOrchestrator:
         )
         if all_findings:
             seq.key_findings = json.dumps(all_findings[:50])  # cap at 50 findings
+        await session.execute(
+            _update(AttackSequenceRecord)
+            .where(
+                AttackSequenceRecord.sequence_id == seq.sequence_id,
+                AttackSequenceRecord.tenant_id == self.tenant_id,
+            )
+            .values(
+                completed_steps=AttackSequenceRecord.completed_steps + completed,
+                successful_steps=AttackSequenceRecord.successful_steps + successful,
+                failed_steps=AttackSequenceRecord.failed_steps + failed,
+            )
+        )
         await session.commit()
+        await session.refresh(seq)
 
     @staticmethod
     def _step_outcome(

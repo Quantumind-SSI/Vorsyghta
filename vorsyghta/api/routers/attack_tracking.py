@@ -302,8 +302,17 @@ async def add_step_to_sequence(
         )
         session.add(step)
 
-        # Update sequence total_steps
-        seq.total_steps = seq.total_steps + 1
+        # Update sequence total_steps atomically (SET x = x + 1) to avoid the
+        # lost-update race between concurrent step-adds (B-2). A Python
+        # read-modify-write on seq.total_steps could clobber a concurrent add.
+        await session.execute(
+            update(AttackSequenceRecord)
+            .where(
+                AttackSequenceRecord.sequence_id == sequence_id,
+                AttackSequenceRecord.tenant_id == current_user.tenant_id,
+            )
+            .values(total_steps=AttackSequenceRecord.total_steps + 1)
+        )
         await session.commit()
 
         return {
@@ -454,17 +463,31 @@ async def execute_sequence(
             })
             await session.commit()
 
-        # Update sequence
-        seq.completed_steps = seq.completed_steps + completed
-        seq.successful_steps = seq.successful_steps + successful
-        seq.failed_steps = seq.failed_steps + failed
-        seq.end_time = datetime.utcnow()
+        # Update sequence. The three accumulator counters are updated atomically
+        # (SET x = x + n) to avoid the lost-update race between concurrent
+        # executes of the same sequence (B-2); the derived fields below are
+        # computed from THIS run's local tallies and are safe to assign.
+        end_time = datetime.utcnow()
+        seq.end_time = end_time
         if seq.start_time:
-            seq.total_duration_seconds = (seq.end_time - seq.start_time).total_seconds()
+            seq.total_duration_seconds = (end_time - seq.start_time).total_seconds()
         seq.overall_success = failed == 0 and successful > 0
         seq.sequence_status = "completed" if failed == 0 else "failed"
         seq.result_summary = f"{successful}/{completed} steps successful"
+        await session.execute(
+            update(AttackSequenceRecord)
+            .where(
+                AttackSequenceRecord.sequence_id == sequence_id,
+                AttackSequenceRecord.tenant_id == current_user.tenant_id,
+            )
+            .values(
+                completed_steps=AttackSequenceRecord.completed_steps + completed,
+                successful_steps=AttackSequenceRecord.successful_steps + successful,
+                failed_steps=AttackSequenceRecord.failed_steps + failed,
+            )
+        )
         await session.commit()
+        await session.refresh(seq)
 
         audit = get_audit_logger()
         audit.log(
