@@ -8,7 +8,7 @@ import asyncio
 import json
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from .models import (
     AttackPlan,
@@ -123,6 +123,7 @@ class AIAttackAgent:
         vm_operator: VMOperator,
         safety_controller: Optional[VMSafetyController] = None,
         config: Optional[Dict[str, Any]] = None,
+        audit_sink: Optional[Callable[[Dict[str, Any]], None]] = None,
     ):
         """Initialize AI attack agent.
 
@@ -131,15 +132,53 @@ class AIAttackAgent:
             vm_operator: VM operator for command execution
             safety_controller: Safety controller for command validation
             config: Additional configuration
+            audit_sink: Optional callable invoked with a typed audit event dict
+                for every command execution, block, and step completion. This is
+                how the offensive path feeds the replayable audit trail; pass an
+                event-store adapter in production. If ``None``, events are still
+                appended to :attr:`audit_events` in memory.
         """
         self.llm = llm_manager
         self.vm = vm_operator
         self.safety = safety_controller or VMSafetyController()
         self.config = config or {}
+        self._audit_sink = audit_sink
 
         self.state: Optional[AgentState] = None
         self.attack_log: List[Dict[str, Any]] = []
+        self.audit_events: List[Dict[str, Any]] = []
         self._current_plan: Optional[AttackPlan] = None
+
+    def _emit_audit(self, event_type: str, **fields: Any) -> Dict[str, Any]:
+        """Emit a typed audit event to the sink and the in-memory trail.
+
+        Every offensive action (command run, command blocked, step done) is
+        recorded here so the attack path is replayable and auditable.
+
+        Args:
+            event_type: Stable event identifier (e.g. ``red_team.command_executed``).
+            **fields: Event-specific payload.
+
+        Returns:
+            The event dict that was emitted.
+        """
+        assert event_type, "event_type must be non-empty"
+        event = {
+            "event_type": event_type,
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "agent": "red_team",
+            "exercise_id": getattr(self.state, "exercise_id", None) if self.state else None,
+            **fields,
+        }
+        self.audit_events.append(event)
+        if self._audit_sink is not None:
+            # A failing sink must not abort an in-flight attack, but it must be
+            # visible: log it explicitly rather than swallowing silently.
+            try:
+                self._audit_sink(event)
+            except Exception as exc:  # noqa: BLE001 - reported, not hidden
+                logger.error("Audit sink failed for %s: %s", event_type, exc)
+        return event
 
     async def plan_attack(
         self,
@@ -334,6 +373,12 @@ Include 5-10 steps covering reconnaissance through objectives.
         # Validate command safety
         is_safe, reason = self.safety.validate_command(command)
         if not is_safe:
+            self._emit_audit(
+                "red_team.command_blocked",
+                command=command,
+                reason=reason,
+                vm_id=target_vm,
+            )
             return CommandResult(
                 command=command,
                 stdout="",
@@ -342,7 +387,14 @@ Include 5-10 steps covering reconnaissance through objectives.
                 vm_id=target_vm,
             )
 
-        return await self.vm.execute_command(target_vm, command)
+        result = await self.vm.execute_command(target_vm, command)
+        self._emit_audit(
+            "red_team.command_executed",
+            command=command,
+            vm_id=target_vm,
+            exit_code=result.exit_code,
+        )
+        return result
 
     async def _execute_step(self, step: AttackStep) -> Dict[str, Any]:
         """Execute a single attack step."""
@@ -359,6 +411,13 @@ Include 5-10 steps covering reconnaissance through objectives.
             is_safe, reason = self.safety.validate_command(command)
             if not is_safe:
                 logger.warning(f"Command blocked: {reason}")
+                self._emit_audit(
+                    "red_team.command_blocked",
+                    technique=step.technique_id,
+                    phase=step.phase.value,
+                    command=command,
+                    reason=reason,
+                )
                 results["commands_executed"].append({
                     "original": command,
                     "executed": None,
@@ -375,6 +434,15 @@ Include 5-10 steps covering reconnaissance through objectives.
                 self.state.current_vm,
                 refined_command,
                 timeout_seconds=step.timeout_seconds,
+            )
+
+            self._emit_audit(
+                "red_team.command_executed",
+                technique=step.technique_id,
+                phase=step.phase.value,
+                command=refined_command,
+                vm_id=self.state.current_vm,
+                exit_code=cmd_result.exit_code,
             )
 
             results["commands_executed"].append({
@@ -408,6 +476,14 @@ Include 5-10 steps covering reconnaissance through objectives.
         step.executed = True
         step.success = results["success"]
         step.output = "\n".join(results["outputs"])
+
+        self._emit_audit(
+            "red_team.step_completed",
+            technique=step.technique_id,
+            phase=step.phase.value,
+            success=results["success"],
+            commands=len(results["commands_executed"]),
+        )
 
         return results
 

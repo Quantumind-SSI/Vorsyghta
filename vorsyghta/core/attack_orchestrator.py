@@ -363,77 +363,104 @@ class AttackOrchestrator:
                 "step_results": results,
             }
 
+    @staticmethod
+    def _parse_nmap(line: str) -> Optional[str]:
+        if "/tcp" in line and "open" in line:
+            return f"Open port: {line}"
+        if "OS details:" in line or "MAC Address:" in line:
+            return line
+        return None
+
+    @staticmethod
+    def _parse_nikto(line: str) -> Optional[str]:
+        if line.startswith("+") and any(k in line for k in ("OSVDB", "Server:", "PHP")):
+            return line
+        return None
+
+    @staticmethod
+    def _parse_sqlmap(line: str) -> Optional[str]:
+        low = line.lower()
+        if "available databases" in low:
+            return f"SQLi found: {line}"
+        if "is vulnerable" in low:
+            return f"Vulnerability: {line}"
+        if "sqlmap identified" in low:
+            return line
+        return None
+
+    @staticmethod
+    def _parse_hydra(line: str) -> Optional[str]:
+        low = line.lower()
+        if "successfully" in low and "password" in low:
+            return f"Credential found: {line}"
+        return None
+
+    @staticmethod
+    def _parse_gobuster(line: str) -> Optional[str]:
+        if "Status:" in line and any(c in line for c in ("200", "301", "302")):
+            return f"Directory found: {line}"
+        return None
+
+    @staticmethod
+    def _parse_whatweb(line: str) -> Optional[str]:
+        if line and not line.startswith("HTTP"):
+            return f"Tech detected: {line[:200]}"
+        return None
+
+    @staticmethod
+    def _parse_dirb(line: str) -> Optional[str]:
+        if "+ " in line and "CODE:" in line:
+            return f"Path found: {line}"
+        return None
+
+    # Dispatch table: tool name -> per-line parser (Power-of-10 rule 9).
+    _TOOL_PARSERS = {
+        "nmap": _parse_nmap,
+        "nikto": _parse_nikto,
+        "sqlmap": _parse_sqlmap,
+        "hydra": _parse_hydra,
+        "gobuster": _parse_gobuster,
+        "whatweb": _parse_whatweb,
+        "dirb": _parse_dirb,
+    }
+
     def _extract_findings(self, output: str, tool_name: str) -> List[str]:
-        """Extract key findings from tool output.
+        """Extract key findings from tool output via a per-tool parser table.
 
-        This is a simple heuristic-based extractor that looks for
-        common patterns in security tool output.
+        Args:
+            output: Raw stdout from the security tool.
+            tool_name: Tool identifier selecting the parser (e.g. ``nmap``).
+
+        Returns:
+            Up to 20 finding strings. Empty if output is empty or the tool is
+            unknown.
         """
-        findings: List[str] = []
         if not output:
-            return findings
+            return []
+        parser = self._TOOL_PARSERS.get(tool_name)
+        if parser is None:
+            return []
+        # A value stored in a class-body dict may be a staticmethod object;
+        # unwrap to the underlying callable.
+        parse = getattr(parser, "__func__", parser)
 
-        lines = output.split("\n")
-
-        if tool_name == "nmap":
-            for line in lines:
-                line = line.strip()
-                if "/tcp" in line and "open" in line:
-                    findings.append(f"Open port: {line}")
-                elif "OS details:" in line:
-                    findings.append(line)
-                elif "MAC Address:" in line:
-                    findings.append(line)
-
-        elif tool_name == "nikto":
-            for line in lines:
-                line = line.strip()
-                if line.startswith("+") and ("OSVDB" in line or "Server:" in line or "PHP" in line):
-                    findings.append(line)
-
-        elif tool_name == "sqlmap":
-            for line in lines:
-                line = line.strip()
-                if "available databases" in line.lower():
-                    findings.append(f"SQLi found: {line}")
-                elif "is vulnerable" in line.lower():
-                    findings.append(f"Vulnerability: {line}")
-                elif "sqlmap identified" in line.lower():
-                    findings.append(line)
-
-        elif tool_name == "hydra":
-            for line in lines:
-                line = line.strip()
-                if "successfully" in line.lower() and "password" in line.lower():
-                    findings.append(f"Credential found: {line}")
-
-        elif tool_name == "gobuster":
-            for line in lines:
-                line = line.strip()
-                if "Status:" in line and ("200" in line or "301" in line or "302" in line):
-                    findings.append(f"Directory found: {line}")
-
-        elif tool_name == "whatweb":
-            for line in lines:
-                line = line.strip()
-                if line and not line.startswith("HTTP"):
-                    findings.append(f"Tech detected: {line[:200]}")
-
-        elif tool_name == "dirb":
-            for line in lines:
-                line = line.strip()
-                if "+ " in line and "CODE:" in line:
-                    findings.append(f"Path found: {line}")
-
+        findings: List[str] = []
+        for raw in output.split("\n"):
+            finding = parse(raw.strip())
+            if finding is not None:
+                findings.append(finding)
         return findings[:20]  # cap at 20 findings per tool
 
 
-# Helper to avoid importing select at module level for circular imports
-from sqlalchemy import select as _select
-
-
 def select_stmt(model, sequence_id: str, pending_only: bool = False):
-    """Build a select statement for sequence-related queries."""
+    """Build a select statement for sequence-related queries.
+
+    The SQLAlchemy import is performed lazily here so that the offensive core
+    (attack planning, execution, and findings extraction) does not require the
+    database layer to be installed or imported.
+    """
+    from sqlalchemy import select as _select
+
     if model.__name__ == "AttackSequenceRecord":
         return _select(model).where(
             model.sequence_id == sequence_id,

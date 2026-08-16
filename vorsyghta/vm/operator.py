@@ -22,6 +22,21 @@ from .models import (
 logger = logging.getLogger(__name__)
 
 
+class CommandBlockedError(RuntimeError):
+    """Raised when a command is rejected by the execution-boundary safety gate.
+
+    This is a fail-closed control: the offending command never reaches any VM.
+    The ``reason`` attribute carries the human-readable policy explanation.
+    """
+
+    def __init__(self, command: str, reason: str):
+        assert isinstance(command, str), "command must be a str"
+        assert isinstance(reason, str) and reason, "reason must be a non-empty str"
+        self.command = command
+        self.reason = reason
+        super().__init__(f"Command blocked by safety policy: {reason}")
+
+
 class VMOperator:
     """
     Interface for AI agent to control virtual machines.
@@ -54,16 +69,33 @@ class VMOperator:
         print(result.stdout)
     """
 
-    def __init__(self, config: Optional[InfrastructureConfig] = None):
+    def __init__(
+        self,
+        config: Optional[InfrastructureConfig] = None,
+        safety_controller: Optional["VMSafetyController"] = None,
+        enforce_safety: bool = True,
+    ):
         """Initialize VM operator.
 
         Args:
             config: Infrastructure configuration. Defaults to Docker-based setup.
+            safety_controller: Controller that validates every command before it
+                reaches a VM. If ``None`` a default :class:`VMSafetyController` is
+                created. This is the execution-boundary safety gate: it applies to
+                *all* callers of :meth:`execute_command`, not just the AI agent.
+            enforce_safety: When ``True`` (default, fail-closed) every command is
+                validated and blocked commands raise :class:`CommandBlockedError`.
+                Set ``False`` only for trusted internal calls in tests.
         """
+        # Import here to avoid a circular import (safety imports models too).
+        from .safety import VMSafetyController
+
         self.config = config or InfrastructureConfig()
         self._hypervisor = self._init_hypervisor()
         self._active_vms: Dict[str, VMInfo] = {}
         self._connections: Dict[str, Any] = {}
+        self.enforce_safety = enforce_safety
+        self.safety = safety_controller or VMSafetyController()
 
     def _init_hypervisor(self) -> "BaseHypervisor":
         """Initialize the hypervisor client based on config."""
@@ -131,7 +163,29 @@ class VMOperator:
 
         Returns:
             CommandResult with output and optional screenshot
+
+        Raises:
+            CommandBlockedError: If ``enforce_safety`` is set and the command is
+                rejected by the safety controller. Fail-closed: the command is
+                never sent to the VM.
+            ValueError: If ``vm_id`` is unknown or ``command`` is not a string.
         """
+        # Preconditions (Power-of-10 rule 5).
+        assert isinstance(vm_id, str) and vm_id, "vm_id must be a non-empty str"
+        assert isinstance(command, str), "command must be a str"
+        assert timeout_seconds > 0, "timeout_seconds must be positive"
+
+        # Execution-boundary safety gate (fail-closed). This applies to EVERY
+        # caller of execute_command, closing the bypass where non-agent callers
+        # could run unvalidated commands on a VM.
+        if self.enforce_safety:
+            is_safe, reason = self.safety.validate_command(command)
+            if not is_safe:
+                logger.warning(
+                    "Blocked command on VM %s: %s (%s)", vm_id, command, reason
+                )
+                raise CommandBlockedError(command, reason)
+
         start_time = time.time()
 
         # Get VM info
