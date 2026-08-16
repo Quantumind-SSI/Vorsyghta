@@ -278,7 +278,16 @@ class _FakeSession:
 
     async def execute(self, stmt: Any) -> Any:
         self.executed.append(stmt)
-        return None
+        # Return a result object whose rowcount is driven by `next_rowcount`
+        # so tests can simulate a won/lost compare-and-set claim.
+        rowcount = getattr(self, "next_rowcount", 1)
+
+        class _Result:
+            pass
+
+        r = _Result()
+        r.rowcount = rowcount
+        return r
 
     async def refresh(self, obj: Any) -> None:
         self.refreshed.append(obj)
@@ -470,6 +479,40 @@ class TestAtomicCounters:
         assert seq.sequence_status == "failed"
         assert seq.overall_success is False
         assert "blocked by safety gate" in seq.result_summary
+
+
+# --------------------------------------------------------------------------- #
+# 3d. Lifecycle claim guard (B-3)
+#     A sequence must be claimed for execution via an atomic compare-and-set so
+#     concurrent executes cannot both run it and terminal sequences can't replay.
+# --------------------------------------------------------------------------- #
+class TestLifecycleClaim:
+    def _orch(self):
+        from vorsyghta.core.attack_orchestrator import AttackOrchestrator
+        return AttackOrchestrator(tool_server_client=_RecordingClient(), tenant_id="t1")
+
+    async def test_claim_uses_compare_and_set_update(self):
+        orch = self._orch()
+        session, seq = _FakeSession(), _SeqStub()
+        session.next_rowcount = 1  # this caller wins the claim
+        won = await orch._claim_sequence_for_run(session, seq)
+        assert won is True
+        flat = str(session.executed[0]).replace(" ", "").replace("\n", "")
+        assert "UPDATEattack_sequences" in flat
+        assert "sequence_status=:sequence_status" in flat  # SET running
+        # Guarded by a runnable-state IN (...) predicate (compare-and-set).
+        assert "sequence_statusIN" in flat
+
+    async def test_claim_lost_when_no_row_updated(self):
+        orch = self._orch()
+        session, seq = _FakeSession(), _SeqStub()
+        session.next_rowcount = 0  # another executor already claimed it
+        won = await orch._claim_sequence_for_run(session, seq)
+        assert won is False
+
+    async def test_runnable_states_are_pending_and_created(self):
+        from vorsyghta.core.attack_orchestrator import AttackOrchestrator
+        assert AttackOrchestrator._RUNNABLE_STATES == ("pending", "created")
 
 
 # --------------------------------------------------------------------------- #

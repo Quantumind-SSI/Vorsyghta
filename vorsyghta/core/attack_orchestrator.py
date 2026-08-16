@@ -264,10 +264,22 @@ class AttackOrchestrator:
             if not steps:
                 return {"sequence_id": sequence_id, "status": "no_pending_steps"}
 
-            # Update sequence to running
-            seq.sequence_status = "running"
-            seq.start_time = datetime.utcnow()
-            await session.commit()
+            # Lifecycle guard (B-3): atomically claim the sequence for execution.
+            # Only a runnable sequence (pending/created) may transition to
+            # running, and the compare-and-set is done in a single SQL UPDATE so
+            # two concurrent executors cannot both claim the same sequence
+            # (prevents double tool runs / replay of terminal sequences).
+            claimed = await self._claim_sequence_for_run(session, seq)
+            if not claimed:
+                return {
+                    "sequence_id": sequence_id,
+                    "status": "not_runnable",
+                    "error": (
+                        f"Sequence is '{seq.sequence_status}', not runnable "
+                        f"(already running or in a terminal state)"
+                    ),
+                }
+            await session.refresh(seq)
 
             results: List[Dict[str, Any]] = []
             completed = 0
@@ -311,6 +323,41 @@ class AttackOrchestrator:
                 "findings_count": len(all_findings),
                 "step_results": results,
             }
+
+    # A sequence may be claimed for execution only from one of these states.
+    _RUNNABLE_STATES = ("pending", "created")
+
+    async def _claim_sequence_for_run(self, session: Any, seq: Any) -> bool:
+        """Atomically transition a runnable sequence to ``running``.
+
+        Uses a compare-and-set UPDATE (``SET status='running' WHERE
+        sequence_id=? AND tenant_id=? AND status IN runnable``) so that under
+        concurrent execution exactly one caller wins the claim. Returns True iff
+        this call performed the transition (rowcount == 1).
+
+        Args:
+            session: Active async DB session.
+            seq: The sequence ORM row (used for id/tenant/start_time).
+
+        Returns:
+            True if this caller claimed the sequence; False if it was already
+            running or in a terminal state.
+        """
+        from sqlalchemy import update as _update
+        from vorsyghta.db.models.tool_tracking import AttackSequenceRecord
+
+        result = await session.execute(
+            _update(AttackSequenceRecord)
+            .where(
+                AttackSequenceRecord.sequence_id == seq.sequence_id,
+                AttackSequenceRecord.tenant_id == self.tenant_id,
+                AttackSequenceRecord.sequence_status.in_(self._RUNNABLE_STATES),
+            )
+            .values(sequence_status="running", start_time=datetime.utcnow())
+        )
+        await session.commit()
+        # rowcount == 1 means this call won the compare-and-set claim.
+        return getattr(result, "rowcount", 0) == 1
 
     async def _finalize_sequence(
         self,

@@ -366,10 +366,29 @@ async def execute_sequence(
         if not steps:
             return {"sequence_id": sequence_id, "message": "No pending steps to execute"}
 
-        # Update sequence status to running
-        seq.sequence_status = "running"
-        seq.start_time = datetime.utcnow()
+        # Lifecycle guard (B-3): atomically claim the sequence. Only a runnable
+        # (pending/created) sequence may transition to running, via a single
+        # compare-and-set UPDATE so concurrent executes cannot both claim it
+        # (prevents double tool runs and replay of terminal sequences).
+        claim = await session.execute(
+            update(AttackSequenceRecord)
+            .where(
+                AttackSequenceRecord.sequence_id == sequence_id,
+                AttackSequenceRecord.tenant_id == current_user.tenant_id,
+                AttackSequenceRecord.sequence_status.in_(("pending", "created")),
+            )
+            .values(sequence_status="running", start_time=datetime.utcnow())
+        )
         await session.commit()
+        if getattr(claim, "rowcount", 0) != 1:
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    f"Sequence is '{seq.sequence_status}', not runnable "
+                    f"(already running or in a terminal state)"
+                ),
+            )
+        await session.refresh(seq)
 
         # Get tool server client
         client = get_tool_server_client()
