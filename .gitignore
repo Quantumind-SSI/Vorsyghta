@@ -72,3 +72,5 @@ coverage.xml
 /dev/
 /dev-docs/
 /archive/
+frontend/tsconfig.tsbuildinfo
+*.tsbuildinfo
