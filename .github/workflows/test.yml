@@ -41,7 +41,7 @@ jobs:
       run: ruff check vorsyghta/ tests/
 
     - name: Run security checks with bandit
-      run: bandit -r vorsyghta/ -c pyproject.toml
+      run: bandit -r vorsyghta/ -c pyproject.toml --severity-level medium
 
     - name: Run unit tests
       run: pytest tests/unit/ -v --tb=short --cov=vorsyghta --cov-report=xml -p no:cacheprovider

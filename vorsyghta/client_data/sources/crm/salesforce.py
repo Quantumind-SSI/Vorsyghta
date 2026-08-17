@@ -50,10 +50,12 @@ class SalesforceSource(BaseCrmSource):
 
     async def fetch(self) -> Any:
         headers = {"Authorization": f"Bearer {self._access_token}"}
-        query = (
-            "SELECT Id, Name, Email, Title, Department, Phone, Manager__c "
-            "FROM Contact LIMIT {max}"
-        ).format(max=self.max_records)
+        # LIMIT takes an integer literal only; coerce explicitly so no
+        # attacker-controllable string can enter the SOQL (defuses B608).
+        limit = int(self.max_records)
+        # limit is int()-coerced above; no attacker-controllable string enters
+        # the SOQL. Single-line query so the nosec lands on the flagged line.
+        query = f"SELECT Id, Name, Email, Title, Department, Phone, Manager__c FROM Contact LIMIT {limit}"  # nosec B608
         url = f"{self._instance_url}/services/data/{self.api_version}/query"
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             resp = await client.get(url, headers=headers, params={"q": query})

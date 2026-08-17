@@ -44,7 +44,7 @@ jobs:
       run: pytest tests/unit/ -v --tb=short -p no:cacheprovider
     
     - name: Security scan with bandit
-      run: bandit -r vorsyghta/ -c pyproject.toml
+      run: bandit -r vorsyghta/ -c pyproject.toml --severity-level medium
 
   build:
     needs: test

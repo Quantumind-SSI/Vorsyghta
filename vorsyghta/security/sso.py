@@ -26,6 +26,11 @@ from typing import Any, Dict, List, Optional
 from urllib.parse import urlencode, urlparse
 from xml.etree import ElementTree as ET
 
+# Parse untrusted SAML/metadata XML through defusedxml to prevent XXE / billion
+# laughs attacks. The stdlib ``ET`` is retained only for Element typing and
+# namespace registration (non-parsing, safe uses).
+from defusedxml.ElementTree import fromstring as _safe_fromstring
+
 import httpx
 from pydantic import BaseModel, Field
 
@@ -334,7 +339,7 @@ class SAMLProvider(SSOProvider):
 
     def _parse_saml_response(self, xml_bytes: bytes) -> SSOUserInfo:
         """Extract user info from a SAML response document."""
-        root = ET.fromstring(xml_bytes)
+        root = _safe_fromstring(xml_bytes)
         # Strip namespaces for easier querying.
         attrs = _saml_attributes(root)
         name_id = _saml_name_id(root)
@@ -499,7 +504,7 @@ def _localname(tag: str) -> str:
 
 def _parse_idp_sso_url(metadata_xml: str) -> str:
     """Extract the IdP SingleSignOnService (Redirect) URL from metadata."""
-    root = ET.fromstring(metadata_xml)
+    root = _safe_fromstring(metadata_xml)
     for elem in root.iter():
         if _localname(elem.tag) != "SingleSignOnService":
             continue

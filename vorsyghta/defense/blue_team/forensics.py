@@ -302,8 +302,14 @@ class ForensicsCollector:
         }
 
     def _calculate_hashes(self, file_path: str) -> tuple:
-        """Calculate MD5 and SHA256 hashes of a file."""
-        md5 = hashlib.md5()
+        """Calculate MD5 and SHA256 hashes of a file.
+
+        MD5 is retained as a forensic *file-identity* fingerprint (matching
+        industry IOC feeds and legacy evidence), NOT as a security control, so
+        it is flagged ``usedforsecurity=False`` for bandit. SHA256 is the
+        integrity hash.
+        """
+        md5 = hashlib.md5(usedforsecurity=False)
         sha256 = hashlib.sha256()
 
         try:

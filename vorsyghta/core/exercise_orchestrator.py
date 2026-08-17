@@ -270,7 +270,12 @@ class ExerciseOrchestrator:
     def _detect_technique(self, technique_id: str) -> bool:
         """Deterministic ~70% detection rate based on technique ID hash."""
         import hashlib
-        h = int(hashlib.md5(technique_id.encode()).hexdigest()[:4], 16)
+        # MD5 here is a non-cryptographic bucketing function (deterministic
+        # sampling), never used for security — flagged explicitly for bandit.
+        h = int(
+            hashlib.md5(technique_id.encode(), usedforsecurity=False).hexdigest()[:4],
+            16,
+        )
         return (h % 10) < 7
 
     async def _run_blue_team(self, scenario: ThreatScenario, result: ExerciseResult) -> None:

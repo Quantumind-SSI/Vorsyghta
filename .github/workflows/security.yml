@@ -29,8 +29,12 @@ jobs:
 
     - name: Run Bandit security scan
       run: |
+        # Full report (all severities) for the artifact upload.
         bandit -r vorsyghta/ -c pyproject.toml -f json -o bandit-report.json || true
-        bandit -r vorsyghta/ -c pyproject.toml
+        # Gate the build on Medium+ severity findings. Low-severity notes
+        # (e.g. B311 non-crypto random) are informational and reported in the
+        # artifact, not build-blocking.
+        bandit -r vorsyghta/ -c pyproject.toml --severity-level medium
 
     - name: Upload Bandit report
       uses: actions/upload-artifact@v4

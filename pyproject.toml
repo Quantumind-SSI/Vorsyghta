@@ -58,6 +58,7 @@ dependencies = [
     "python-dateutil>=2.8.2",
     "email-validator>=2.1.0",
     "asyncssh>=2.14.0",
+    "defusedxml>=0.7.1",
 ]
 
 [project.optional-dependencies]
