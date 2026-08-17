@@ -348,6 +348,8 @@ class _SeqStub:
         self.sequence_status = "running"
         self.result_summary = None
         self.key_findings = None
+        self.target_ip = "10.0.100.10"
+        self.target_system = "10.0.100.10"
 
 
 class TestOrchestratorAuthorizationGate:
@@ -655,6 +657,81 @@ class TestBoundaryBlockAudited:
         assert blocked[-1].get("boundary") == "operator"
         # The step records the block rather than a silent success.
         assert any(c.get("blocked") for c in results["commands_executed"])
+
+
+# --------------------------------------------------------------------------- #
+# T-2: rules-of-engagement authorization gate on the default engine
+#      No offensive tool runs until the target is authorised under an active,
+#      in-scope engagement (fail-closed).
+# --------------------------------------------------------------------------- #
+class _FakeEngagementManager:
+    """Stand-in for EngagementManager.is_authorized with scripted verdicts."""
+
+    def __init__(self, verdict: bool, reason: str = "Authorized"):
+        self._verdict = verdict
+        self._reason = reason
+        self.calls: List[tuple] = []
+
+    def is_authorized(self, engagement_id, target_value, method=None):
+        self.calls.append((engagement_id, target_value, method))
+        return self._verdict, self._reason
+
+
+class TestOrchestratorROEGate:
+    def _orch(self, **kwargs):
+        from vorsyghta.core.attack_orchestrator import AttackOrchestrator
+        return AttackOrchestrator(
+            tool_server_client=_RecordingClient(), tenant_id="t1", **kwargs
+        )
+
+    def test_missing_engagement_is_refused_fail_closed(self):
+        from vorsyghta.core.attack_orchestrator import EngagementNotAuthorizedError
+        orch = self._orch(require_authorization=True, engagement_id=None)
+        with pytest.raises(EngagementNotAuthorizedError) as ei:
+            orch._authorize_target("10.0.100.10")
+        assert "no engagement" in ei.value.reason.lower()
+
+    def test_out_of_scope_target_is_refused(self):
+        from vorsyghta.core.attack_orchestrator import EngagementNotAuthorizedError
+        mgr = _FakeEngagementManager(False, "Target 9.9.9.9 is not in scope")
+        orch = self._orch(
+            require_authorization=True, engagement_id="eng-1", engagement_manager=mgr,
+        )
+        with pytest.raises(EngagementNotAuthorizedError) as ei:
+            orch._authorize_target("9.9.9.9")
+        assert "not in scope" in ei.value.reason
+        assert mgr.calls == [("eng-1", "9.9.9.9", None)]
+
+    def test_authorized_target_passes(self):
+        mgr = _FakeEngagementManager(True, "Authorized")
+        orch = self._orch(
+            require_authorization=True, engagement_id="eng-1", engagement_manager=mgr,
+        )
+        orch._authorize_target("10.0.100.10")  # must not raise
+        assert mgr.calls == [("eng-1", "10.0.100.10", None)]
+
+    def test_explicit_bypass_skips_gate(self):
+        orch = self._orch(require_authorization=False, engagement_id=None)
+        orch._authorize_target("10.0.100.10")  # explicit opt-out, no raise
+
+    def test_default_requires_authorization(self):
+        from vorsyghta.core.attack_orchestrator import AttackOrchestrator
+        orch = AttackOrchestrator(tool_server_client=_RecordingClient())
+        assert orch.require_authorization is True
+
+    def test_unauthorized_never_contacts_tool_server(self):
+        from vorsyghta.core.attack_orchestrator import (
+            AttackOrchestrator, EngagementNotAuthorizedError,
+        )
+        mgr = _FakeEngagementManager(False, "Target not in scope")
+        client = _RecordingClient()
+        orch = AttackOrchestrator(
+            tool_server_client=client, tenant_id="t1",
+            require_authorization=True, engagement_id="eng-1", engagement_manager=mgr,
+        )
+        with pytest.raises(EngagementNotAuthorizedError):
+            orch._authorize_target("9.9.9.9")
+        assert client.executed_commands == []
 
 
 # --------------------------------------------------------------------------- #

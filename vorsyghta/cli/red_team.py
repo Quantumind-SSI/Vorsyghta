@@ -229,6 +229,8 @@ def red_team():
 @click.option("--tenant", default="default", help="Tenant ID (standalone mode only)")
 @click.option("--techniques", help="Comma-separated MITRE technique IDs to execute (standalone mode, overrides scenario)")
 @click.option("--timeout", type=int, default=300, help="Timeout per step in seconds (standalone mode)")
+@click.option("--engagement-id", "-e", help="Approved engagement ID authorising this target (required unless --allow-unauthorized)")
+@click.option("--allow-unauthorized", is_flag=True, default=False, help="DANGER: skip the rules-of-engagement authorization gate (sanctioned-lab smoke tests only)")
 def attack(
     scenario: str,
     target: str,
@@ -242,6 +244,8 @@ def attack(
     tenant: str,
     techniques: Optional[str],
     timeout: int,
+    engagement_id: Optional[str],
+    allow_unauthorized: bool,
 ):
     """Launch an autonomous penetration test.
 
@@ -263,7 +267,10 @@ def attack(
     if legacy:
         asyncio.run(_attack_legacy_async(scenario, target, monitor, output, payloads, auto_generate, content_type, variants))
     else:
-        asyncio.run(_attack_standalone_async(scenario, target, output, tenant, techniques, timeout))
+        asyncio.run(_attack_standalone_async(
+            scenario, target, output, tenant, techniques, timeout,
+            engagement_id, allow_unauthorized,
+        ))
 
 
 async def _attack_standalone_async(
@@ -273,6 +280,8 @@ async def _attack_standalone_async(
     tenant: str,
     techniques_override: Optional[str],
     timeout: int,
+    engagement_id: Optional[str] = None,
+    allow_unauthorized: bool = False,
 ):
     """Standalone attack using AttackOrchestrator — no external API needed."""
     from vorsyghta.core.attack_orchestrator import AttackOrchestrator
@@ -303,9 +312,30 @@ async def _attack_standalone_async(
     console.print(f"[dim]Techniques: {', '.join(mitre_techniques)}[/dim]")
     console.print(f"[dim]Target: {target}[/dim]")
 
+    # Rules-of-engagement gate (fail-closed): require an approved engagement
+    # unless the operator explicitly opts out for a sanctioned-lab smoke test.
+    if not engagement_id and not allow_unauthorized:
+        console.print(
+            "[red]No engagement specified.[/red] An approved engagement is "
+            "required to authorise this target.\n"
+            "Provide [bold]--engagement-id <id>[/bold] (create one with "
+            "[bold]vorsyghta research engagement create[/bold]), or pass "
+            "[bold]--allow-unauthorized[/bold] for a sanctioned-lab smoke test."
+        )
+        return
+    if allow_unauthorized:
+        console.print(
+            "[yellow]WARNING: --allow-unauthorized set — the rules-of-engagement "
+            "gate is bypassed. Use only against sanctioned lab targets.[/yellow]"
+        )
+
     # Create orchestrator
     try:
-        orchestrator = AttackOrchestrator(tenant_id=tenant)
+        orchestrator = AttackOrchestrator(
+            tenant_id=tenant,
+            engagement_id=engagement_id,
+            require_authorization=not allow_unauthorized,
+        )
     except Exception as e:
         console.print(f"[red]Failed to initialize AttackOrchestrator: {e}[/red]")
         console.print("[yellow]Ensure the tool server is running (vorsyghta mcp start)[/yellow]")
@@ -345,6 +375,19 @@ async def _attack_standalone_async(
 
     # Display results
     status = exec_result.get("status", "unknown")
+
+    # ROE gate refused the target — no tool ran. Surface it clearly and stop.
+    if status == "unauthorized":
+        console.print(
+            f"\n[red]Attack refused by rules-of-engagement gate:[/red] "
+            f"{exec_result.get('reason', 'target not authorised')}"
+        )
+        console.print(
+            "[yellow]No commands were executed. Authorise the target under an "
+            "active engagement, then retry.[/yellow]"
+        )
+        return
+
     status_color = "green" if status == "completed" else "red"
     console.print(f"\nSequence completed with status: [{status_color}]{status}[/{status_color}]")
 

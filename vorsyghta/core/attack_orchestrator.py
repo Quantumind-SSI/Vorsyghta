@@ -28,6 +28,23 @@ from vorsyghta.vm.safety import VMSafetyController
 logger = logging.getLogger(__name__)
 
 
+class EngagementNotAuthorizedError(RuntimeError):
+    """Raised when an attack sequence is executed without a valid, in-scope,
+    active engagement authorising its target.
+
+    Fail-closed rules-of-engagement (ROE) control: no offensive tool runs until
+    the target is proven authorised under an approved engagement. The ``reason``
+    attribute carries the human-readable policy explanation for the audit trail.
+    """
+
+    def __init__(self, target: str, reason: str):
+        assert isinstance(target, str), "target must be a str"
+        assert isinstance(reason, str) and reason, "reason must be a non-empty str"
+        self.target = target
+        self.reason = reason
+        super().__init__(f"Engagement authorization denied for {target}: {reason}")
+
+
 # MITRE technique → tool mapping for common attack phases
 MITRE_TO_TOOL_MAP: Dict[str, Dict[str, Any]] = {
     # Reconnaissance
@@ -104,6 +121,9 @@ class AttackOrchestrator:
         tenant_id: str = "default",
         safety: Optional[VMSafetyController] = None,
         enforce_safety: bool = True,
+        engagement_manager: Optional[Any] = None,
+        engagement_id: Optional[str] = None,
+        require_authorization: bool = True,
     ):
         """Initialize the orchestrator.
 
@@ -116,11 +136,80 @@ class AttackOrchestrator:
             enforce_safety: When True (default, production), every command is
                 validated fail-closed before it reaches the tool server. Only
                 set False in trusted unit tests that assert ungated behaviour.
+            engagement_manager: The canonical
+                :class:`~vorsyghta.research.engagement.EngagementManager` that
+                owns rules-of-engagement / scope / authorization. Reused, not
+                re-implemented. If ``None`` a default manager is lazily created
+                when authorization is enforced.
+            engagement_id: The engagement under which this orchestrator's
+                sequences are authorised. Required (fail-closed) when
+                ``require_authorization`` is True.
+            require_authorization: When True (default, production), every
+                sequence target must pass ``EngagementManager.is_authorized``
+                before any tool runs. Setting False (explicit opt-out, e.g. an
+                internal sanctioned-lab smoke test) skips the ROE gate and is
+                logged as a warning so the bypass is never silent.
         """
         self.client = tool_server_client or get_tool_server_client()
         self.tenant_id = tenant_id
         self.safety = safety or VMSafetyController()
         self.enforce_safety = enforce_safety
+        self.engagement_manager = engagement_manager
+        self.engagement_id = engagement_id
+        self.require_authorization = require_authorization
+
+    def _get_engagement_manager(self) -> Any:
+        """Return the engagement manager, creating the canonical default once.
+
+        Returns:
+            The :class:`EngagementManager` used for ROE authorization.
+        """
+        if self.engagement_manager is None:
+            # Lazy import keeps the offensive core decoupled from the research
+            # package until authorization is actually enforced.
+            from vorsyghta.research.engagement import EngagementManager
+
+            self.engagement_manager = EngagementManager()
+        return self.engagement_manager
+
+    def _authorize_target(self, target: str) -> None:
+        """Fail-closed rules-of-engagement gate for a sequence target.
+
+        Enforces that ``target`` is authorised under the configured engagement
+        via the canonical :meth:`EngagementManager.is_authorized` before any
+        offensive tool is dispatched.
+
+        Args:
+            target: The target IP / host / URL the sequence will act against.
+
+        Raises:
+            EngagementNotAuthorizedError: If authorization is required and the
+                target is not in scope of an active, approved engagement, or no
+                engagement was configured.
+        """
+        if not self.require_authorization:
+            logger.warning(
+                "ROE authorization BYPASSED for target %s (require_authorization=False)",
+                target,
+            )
+            return
+
+        if not self.engagement_id:
+            raise EngagementNotAuthorizedError(
+                target,
+                "no engagement_id configured; an approved engagement is required "
+                "before any attack sequence may run",
+            )
+
+        manager = self._get_engagement_manager()
+        authorized, reason = manager.is_authorized(self.engagement_id, target)
+        if not authorized:
+            raise EngagementNotAuthorizedError(target, reason)
+        logger.info(
+            "ROE authorization granted: engagement=%s target=%s",
+            self.engagement_id,
+            target,
+        )
 
     async def create_attack_sequence_from_scenario(
         self,
@@ -231,6 +320,11 @@ class AttackOrchestrator:
         This is the main execution loop — it iterates through the
         sequence steps, executes each via the tool server, and
         records results.
+
+        Before any tool runs, the sequence target is validated against the
+        configured engagement's rules-of-engagement (fail-closed). If the
+        target is not authorised the sequence is refused and NO command is
+        executed; the returned dict carries ``status='unauthorized'``.
         """
         from vorsyghta.db.session import get_session
         from vorsyghta.db.models.tool_tracking import (
@@ -254,6 +348,26 @@ class AttackOrchestrator:
             seq = seq_result.scalar_one_or_none()
             if not seq:
                 return {"sequence_id": sequence_id, "error": "Sequence not found"}
+
+            # Rules-of-engagement authorization (fail-closed). This runs BEFORE
+            # any step executes, so an out-of-scope or unauthorised target never
+            # reaches the tool server.
+            try:
+                self._authorize_target(seq.target_ip or seq.target_system)
+            except EngagementNotAuthorizedError as exc:
+                seq.sequence_status = "unauthorized"
+                seq.result_summary = f"Blocked by ROE gate: {exc.reason}"
+                await session.commit()
+                logger.warning(
+                    "Attack sequence %s refused: %s", sequence_id, exc.reason
+                )
+                return {
+                    "sequence_id": sequence_id,
+                    "status": "unauthorized",
+                    "error": str(exc),
+                    "reason": exc.reason,
+                    "target": seq.target_ip or seq.target_system,
+                }
 
             # Get pending steps
             steps_result = await session.execute(
