@@ -55,6 +55,15 @@ class PydanticAIProvider(BaseLLMProvider):
         self.temperature = float(config.get("temperature", 0.7))
         self.max_tokens = int(config.get("max_tokens", 3000))
 
+        # Resiliency bounds shared with AzureOpenAIProvider: every request is
+        # time-bounded and SDK-level retries are capped (Power of 10 rule 2).
+        self.timeout_seconds = self._coerce_positive_float(
+            config.get("timeout_seconds"), default=60.0, name="timeout_seconds"
+        )
+        self.max_retries = self._coerce_non_negative_int(
+            config.get("retry_attempts"), default=3, name="retry_attempts"
+        )
+
         # Preconditions (fail loud, not silent).
         if not self.endpoint:
             raise ValueError("PydanticAIProvider requires an Azure endpoint")
@@ -65,17 +74,60 @@ class PydanticAIProvider(BaseLLMProvider):
 
         self._model = None  # lazily built OpenAIChatModel
 
+    @staticmethod
+    def _coerce_positive_float(value: Any, default: float, name: str) -> float:
+        """Return a strictly-positive float, falling back to ``default``.
+
+        Rejects non-numeric, zero, and negative values so a misconfiguration
+        can never disable the request timeout.
+        """
+        try:
+            coerced = float(value) if value is not None else default
+        except (TypeError, ValueError):
+            logger.warning("Invalid pydantic_ai %s=%r; using %s", name, value, default)
+            return default
+        if coerced <= 0:
+            logger.warning("Non-positive pydantic_ai %s=%r; using %s", name, value, default)
+            return default
+        return coerced
+
+    @staticmethod
+    def _coerce_non_negative_int(value: Any, default: int, name: str) -> int:
+        """Return a non-negative int (retry count), falling back to ``default``."""
+        try:
+            coerced = int(value) if value is not None else default
+        except (TypeError, ValueError):
+            logger.warning("Invalid pydantic_ai %s=%r; using %s", name, value, default)
+            return default
+        if coerced < 0:
+            logger.warning("Negative pydantic_ai %s=%r; using %s", name, value, default)
+            return default
+        return coerced
+
+    def _build_openai_client(self):
+        """Build a bounded AsyncAzureOpenAI client (timeout + capped retries).
+
+        Passing an explicit client to ``AzureProvider`` is the supported way to
+        control transport-level resiliency; without it pydantic-ai builds a
+        default client with no request timeout.
+        """
+        from openai import AsyncAzureOpenAI
+
+        return AsyncAzureOpenAI(
+            api_key=self.api_key,
+            azure_endpoint=self.endpoint,
+            api_version=self.api_version,
+            timeout=self.timeout_seconds,
+            max_retries=self.max_retries,
+        )
+
     def _get_model(self):
         """Build (once) the pydantic-ai OpenAIChatModel over AzureProvider."""
         if self._model is None:
             from pydantic_ai.models.openai import OpenAIChatModel
             from pydantic_ai.providers.azure import AzureProvider
 
-            provider = AzureProvider(
-                azure_endpoint=self.endpoint,
-                api_version=self.api_version,
-                api_key=self.api_key,
-            )
+            provider = AzureProvider(openai_client=self._build_openai_client())
             self._model = OpenAIChatModel(self.deployment, provider=provider)
         return self._model
 
@@ -164,4 +216,6 @@ class PydanticAIProvider(BaseLLMProvider):
             "deployment": self.deployment,
             "endpoint": self.endpoint,
             "api_version": self.api_version,
+            "timeout_seconds": self.timeout_seconds,
+            "max_retries": self.max_retries,
         }

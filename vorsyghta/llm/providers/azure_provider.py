@@ -34,6 +34,17 @@ class AzureOpenAIProvider(BaseLLMProvider):
         self.deployment = config.get('deployment', config.get('model', 'gpt-4o'))
         self.api_version = config.get('api_version', '2024-10-21')
         self.model = config.get('model', self.deployment)
+
+        # Resiliency: bound every request and cap SDK-level retries. Sourced
+        # from config (see config.yaml azure.timeout_seconds / retry_attempts)
+        # and normalized so a malformed config can never yield an unbounded
+        # wait or a negative retry count (Power of 10 rule 2: bounded loops).
+        self.timeout_seconds = self._coerce_positive_float(
+            config.get('timeout_seconds'), default=60.0, name='timeout_seconds'
+        )
+        self.max_retries = self._coerce_non_negative_int(
+            config.get('retry_attempts'), default=3, name='retry_attempts'
+        )
         self._client = None
 
         if not self.api_key:
@@ -42,6 +53,36 @@ class AzureOpenAIProvider(BaseLLMProvider):
             raise ValueError("Azure OpenAI endpoint is required")
         if not self.deployment:
             raise ValueError("Azure OpenAI deployment name is required")
+
+    @staticmethod
+    def _coerce_positive_float(value: Any, default: float, name: str) -> float:
+        """Return a strictly-positive float, falling back to ``default``.
+
+        Any non-numeric, zero, or negative value is rejected (with a warning)
+        so an operator misconfiguration can never disable the request timeout.
+        """
+        try:
+            coerced = float(value) if value is not None else default
+        except (TypeError, ValueError):
+            logger.warning("Invalid azure %s=%r; using %s", name, value, default)
+            return default
+        if coerced <= 0:
+            logger.warning("Non-positive azure %s=%r; using %s", name, value, default)
+            return default
+        return coerced
+
+    @staticmethod
+    def _coerce_non_negative_int(value: Any, default: int, name: str) -> int:
+        """Return a non-negative int (retry count), falling back to ``default``."""
+        try:
+            coerced = int(value) if value is not None else default
+        except (TypeError, ValueError):
+            logger.warning("Invalid azure %s=%r; using %s", name, value, default)
+            return default
+        if coerced < 0:
+            logger.warning("Negative azure %s=%r; using %s", name, value, default)
+            return default
+        return coerced
 
     def _get_client(self):
         """Get or create Azure OpenAI client."""
@@ -52,6 +93,8 @@ class AzureOpenAIProvider(BaseLLMProvider):
                     api_key=self.api_key,
                     azure_endpoint=self.endpoint,
                     api_version=self.api_version,
+                    timeout=self.timeout_seconds,
+                    max_retries=self.max_retries,
                 )
             except ImportError:
                 raise ImportError(
@@ -158,5 +201,7 @@ class AzureOpenAIProvider(BaseLLMProvider):
             "deployment": self.deployment,
             "endpoint": self.endpoint,
             "api_version": self.api_version,
+            "timeout_seconds": self.timeout_seconds,
+            "max_retries": self.max_retries,
             "configured": bool(self.api_key and self.endpoint and self.deployment)
         }

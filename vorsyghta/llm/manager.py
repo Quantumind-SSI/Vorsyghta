@@ -200,6 +200,11 @@ class LLMManager:
                     'model': azure_config.get('model', azure_deployment),
                     'temperature': azure_config.get('temperature', 0.7),
                     'max_tokens': azure_config.get('max_tokens', 3000),
+                    # Resiliency: forward the configured request timeout and
+                    # retry cap so both the direct Azure client and the
+                    # pydantic-ai client are time-bounded (never unbounded).
+                    'timeout_seconds': azure_config.get('timeout_seconds', 60),
+                    'retry_attempts': azure_config.get('retry_attempts', 3),
                 }
                 self._providers['azure'] = AzureOpenAIProvider(azure_provider_config)
                 logger.info("Azure OpenAI provider initialized")
@@ -321,37 +326,61 @@ class LLMManager:
             logger.warning(f"Failed to initialize local providers: {e}")
 
     def _auto_detect_ollama(self) -> bool:
-        """Auto-detect if Ollama is available on the system."""
+        """Auto-detect if Ollama is available on the system.
+
+        This is a synchronous probe invoked during provider initialisation. It
+        must not leak coroutines or aiohttp sessions, and must not attempt to
+        drive an event loop that is already running (which would leave the probe
+        coroutine un-awaited and raise an unraisable-exception warning under
+        Python 3.11+).
+
+        Returns:
+            True if an Ollama server answers ``/api/tags`` with HTTP 200 within
+            the probe timeout; False on any error, timeout, or missing dependency.
+        """
+        import asyncio
+
+        # If a loop is already running in this thread (e.g. inside an async test
+        # or an ASGI worker), a synchronous probe cannot safely block on it.
+        # Skip detection rather than leak a coroutine.
+        try:
+            asyncio.get_running_loop()
+            return False
+        except RuntimeError:
+            pass  # No running loop: safe to drive one below.
+
         try:
             import aiohttp
-            import asyncio
+        except ImportError:
+            return False
 
-            async def check_ollama():
-                try:
-                    session = await self._get_session()
-                    if session is None:
-                        return False
-                    timeout = aiohttp.ClientTimeout(total=2)
-                    base = os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')
-                    async with session.get(f'{base}/api/tags', timeout=timeout) as response:
-                        return response.status == 200
-                except:
-                    return False
-
-            # Run the check
+        async def check_ollama() -> bool:
+            # Use a dedicated, locally-scoped session so the probe never touches
+            # or leaks self._session (which is bound to the caller's loop).
+            timeout = aiohttp.ClientTimeout(total=2)
+            base = os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')
             try:
-                loop = asyncio.get_event_loop()
-                return loop.run_until_complete(check_ollama())
-            except:
-                # Create new event loop if none exists
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                result = loop.run_until_complete(check_ollama())
-                loop.close()
-                return result
+                async with aiohttp.ClientSession(timeout=timeout) as session:
+                    async with session.get(f'{base}/api/tags') as response:
+                        return response.status == 200
+            except (aiohttp.ClientError, asyncio.TimeoutError, OSError):
+                return False
 
+        # Drive the probe on a private event loop we fully own and tear down,
+        # so no global loop state or unclosed resources survive the call.
+        loop = asyncio.new_event_loop()
+        try:
+            asyncio.set_event_loop(loop)
+            return loop.run_until_complete(check_ollama())
         except Exception:
             return False
+        finally:
+            try:
+                loop.run_until_complete(loop.shutdown_asyncgens())
+            except Exception:
+                pass
+            asyncio.set_event_loop(None)
+            loop.close()
 
     async def generate_content(
         self,
