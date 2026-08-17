@@ -11,7 +11,7 @@ import asyncio
 import json
 import os
 import sys
-from typing import Optional
+from typing import Any, Optional
 
 import click
 from rich.console import Console
@@ -231,6 +231,7 @@ def red_team():
 @click.option("--timeout", type=int, default=300, help="Timeout per step in seconds (standalone mode)")
 @click.option("--engagement-id", "-e", help="Approved engagement ID authorising this target (required unless --allow-unauthorized)")
 @click.option("--allow-unauthorized", is_flag=True, default=False, help="DANGER: skip the rules-of-engagement authorization gate (sanctioned-lab smoke tests only)")
+@click.option("--no-ai", is_flag=True, default=False, help="Disable the AI planner and use the deterministic MITRE tool map (default is AI-driven)")
 def attack(
     scenario: str,
     target: str,
@@ -246,6 +247,7 @@ def attack(
     timeout: int,
     engagement_id: Optional[str],
     allow_unauthorized: bool,
+    no_ai: bool,
 ):
     """Launch an autonomous penetration test.
 
@@ -269,8 +271,29 @@ def attack(
     else:
         asyncio.run(_attack_standalone_async(
             scenario, target, output, tenant, techniques, timeout,
-            engagement_id, allow_unauthorized,
+            engagement_id, allow_unauthorized, use_ai=not no_ai,
         ))
+
+
+def _build_planner() -> Optional[Any]:
+    """Construct the AI planner from the configured LLM manager.
+
+    Returns:
+        An :class:`AIAttackPlanner` bound to the platform LLM manager, or
+        ``None`` if the LLM stack cannot be initialised (the orchestrator then
+        falls back to the deterministic map and flags the run degraded).
+    """
+    try:
+        from vorsyghta.llm.manager import LLMManager
+        from vorsyghta.core.ai_planner import AIAttackPlanner
+
+        return AIAttackPlanner(LLMManager())
+    except Exception as exc:  # noqa: BLE001 - reported, degrade to deterministic
+        console.print(
+            f"[yellow]AI planner unavailable ({exc}); using deterministic "
+            f"MITRE plan.[/yellow]"
+        )
+        return None
 
 
 async def _attack_standalone_async(
@@ -282,8 +305,16 @@ async def _attack_standalone_async(
     timeout: int,
     engagement_id: Optional[str] = None,
     allow_unauthorized: bool = False,
+    use_ai: bool = True,
 ):
-    """Standalone attack using AttackOrchestrator — no external API needed."""
+    """Standalone attack using AttackOrchestrator — AI-driven by default.
+
+    When ``use_ai`` is True (default), an :class:`AIAttackPlanner` plans the
+    steps with the LLM and adapts after each step based on real tool output.
+    The orchestrator still owns the fail-closed safety gate, the ROE gate, and
+    DB persistence. When AI planning is unavailable the run falls back to the
+    deterministic MITRE map and is flagged ``degraded`` (never fabricated).
+    """
     from vorsyghta.core.attack_orchestrator import AttackOrchestrator
 
     # Load scenario
@@ -329,32 +360,56 @@ async def _attack_standalone_async(
             "gate is bypassed. Use only against sanctioned lab targets.[/yellow]"
         )
 
+    # Build the AI planner (default). None -> deterministic fallback.
+    planner = _build_planner() if use_ai else None
+    if planner is not None:
+        console.print("[dim]Engine: AI-driven (LLM planning + adaptation)[/dim]")
+    else:
+        console.print("[dim]Engine: deterministic MITRE tool map[/dim]")
+
     # Create orchestrator
     try:
         orchestrator = AttackOrchestrator(
             tenant_id=tenant,
             engagement_id=engagement_id,
             require_authorization=not allow_unauthorized,
+            planner=planner,
         )
     except Exception as e:
         console.print(f"[red]Failed to initialize AttackOrchestrator: {e}[/red]")
         console.print("[yellow]Ensure the tool server is running (vorsyghta mcp start)[/yellow]")
         return
 
-    # Create attack sequence
+    # Create attack sequence. The AI path plans steps with the LLM; if AI is
+    # off or unavailable it falls back to the deterministic map (degraded).
     console.print("\n[bold cyan]Creating attack sequence...[/bold cyan]")
     try:
-        seq_result = await orchestrator.create_attack_sequence_from_scenario(
-            scenario_name=scenario.get("name", "Custom Scenario"),
-            target=target,
-            mitre_techniques=mitre_techniques,
-        )
+        if planner is not None:
+            seq_result = await orchestrator.create_ai_attack_sequence(
+                scenario_name=scenario.get("name", "Custom Scenario"),
+                target=target,
+                mitre_techniques=mitre_techniques,
+                context=scenario.get("target_info") or scenario.get("context"),
+            )
+        else:
+            seq_result = await orchestrator.create_attack_sequence_from_scenario(
+                scenario_name=scenario.get("name", "Custom Scenario"),
+                target=target,
+                mitre_techniques=mitre_techniques,
+            )
     except Exception as e:
         console.print(f"[red]Failed to create attack sequence: {e}[/red]")
         return
 
+    if seq_result.get("degraded"):
+        console.print(
+            f"[yellow]AI planning degraded: {seq_result.get('degraded_reason', 'unknown')}. "
+            f"Using deterministic MITRE plan.[/yellow]"
+        )
+
     console.print(Panel(
         f"Sequence ID:  [bold]{seq_result['sequence_id']}[/bold]\n"
+        f"AI planned:   {seq_result.get('ai_planned', False)}\n"
         f"Total steps:  {seq_result['total_steps']}\n"
         f"Executable:   {seq_result['executable_steps']}\n"
         f"Skipped:      {seq_result['skipped_steps']}",

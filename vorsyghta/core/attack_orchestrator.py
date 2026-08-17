@@ -124,6 +124,7 @@ class AttackOrchestrator:
         engagement_manager: Optional[Any] = None,
         engagement_id: Optional[str] = None,
         require_authorization: bool = True,
+        planner: Optional[Any] = None,
     ):
         """Initialize the orchestrator.
 
@@ -149,6 +150,15 @@ class AttackOrchestrator:
                 before any tool runs. Setting False (explicit opt-out, e.g. an
                 internal sanctioned-lab smoke test) skips the ROE gate and is
                 logged as a warning so the bypass is never silent.
+            planner: Optional :class:`~vorsyghta.core.ai_planner.AIAttackPlanner`.
+                When supplied, the orchestrator becomes AI-driven: it plans the
+                attack steps with the LLM (:meth:`create_ai_attack_sequence`) and
+                adapts after each executed step based on real tool output. The
+                planner only reasons — this orchestrator still owns execution,
+                the fail-closed safety gate, the ROE gate, and persistence. When
+                the planner is absent or its LLM is unavailable, the orchestrator
+                falls back to the deterministic ``MITRE_TO_TOOL_MAP`` and marks
+                the run degraded (no fabrication).
         """
         self.client = tool_server_client or get_tool_server_client()
         self.tenant_id = tenant_id
@@ -157,6 +167,7 @@ class AttackOrchestrator:
         self.engagement_manager = engagement_manager
         self.engagement_id = engagement_id
         self.require_authorization = require_authorization
+        self.planner = planner
 
     def _get_engagement_manager(self) -> Any:
         """Return the engagement manager, creating the canonical default once.
@@ -225,16 +236,10 @@ class AttackOrchestrator:
         This converts MITRE technique IDs into ordered tool execution
         steps, creating a full attack sequence ready for execution.
         """
-        from vorsyghta.db.session import get_session
-        from vorsyghta.db.models.tool_tracking import (
-            AttackSequenceRecord, AttackSequenceStepRecord,
-        )
-
-        sequence_id = f"seq_{uuid4().hex[:12]}"
-        tactics = set()
+        tactics: set = set()
         steps_data: List[Dict[str, Any]] = []
 
-        for i, technique_id in enumerate(mitre_techniques):
+        for technique_id in mitre_techniques:
             mapping = MITRE_TO_TOOL_MAP.get(technique_id)
             if not mapping:
                 # Skip techniques without a tool mapping
@@ -259,7 +264,166 @@ class AttackOrchestrator:
                 "skipped": False,
             })
 
-        # Create sequence and steps in DB
+        sequence_id = await self._persist_sequence(
+            scenario_name=scenario_name,
+            target=target,
+            steps_data=steps_data,
+            tactics=tactics,
+            mitre_techniques=mitre_techniques,
+            exercise_id=exercise_id,
+            simulation_id=simulation_id,
+            initiated_by=initiated_by,
+            initiated_by_source="orchestrator",
+        )
+
+        return {
+            "sequence_id": sequence_id,
+            "total_steps": len(steps_data),
+            "executable_steps": len([s for s in steps_data if not s["skipped"]]),
+            "skipped_steps": len([s for s in steps_data if s["skipped"]]),
+            "mitre_techniques": mitre_techniques,
+            "target": target,
+        }
+
+    async def create_ai_attack_sequence(
+        self,
+        scenario_name: str,
+        target: str,
+        mitre_techniques: Optional[List[str]] = None,
+        context: Optional[Dict[str, Any]] = None,
+        exercise_id: Optional[str] = None,
+        simulation_id: Optional[str] = None,
+        initiated_by: str = "ai",
+    ) -> Dict[str, Any]:
+        """Create an attack sequence whose steps are planned by the LLM.
+
+        This is the AI-driven entrypoint: the injected planner generates concrete,
+        tool-server-executable steps for ``target``. If no planner is configured,
+        or the planner's LLM is unavailable, the orchestrator falls back to the
+        deterministic :func:`MITRE_TO_TOOL_MAP` path
+        (:meth:`create_attack_sequence_from_scenario`) and flags the result
+        ``degraded`` so a fabricated-plan can never be silently presented as an
+        AI plan (no-fabrication rule).
+
+        Args:
+            scenario_name: Human-readable scenario label.
+            target: The authorised target host/IP/URL.
+            mitre_techniques: Optional technique hints; used for the deterministic
+                fallback and recorded on the sequence.
+            context: Optional extra planning context (known tech/services).
+            exercise_id: Optional owning exercise.
+            simulation_id: Optional owning simulation.
+            initiated_by: Attribution string for the audit trail.
+
+        Returns:
+            A dict with ``sequence_id``, step counts, ``target``, an
+            ``ai_planned`` flag, and ``degraded`` (True when the AI plan could
+            not be produced and the deterministic fallback was used).
+        """
+        if self.planner is None:
+            logger.info("No AI planner configured; using deterministic MITRE plan.")
+            fallback = await self.create_attack_sequence_from_scenario(
+                scenario_name=scenario_name,
+                target=target,
+                mitre_techniques=mitre_techniques or ["T1595", "T1046", "T1190"],
+                exercise_id=exercise_id,
+                simulation_id=simulation_id,
+                initiated_by=initiated_by,
+            )
+            fallback["ai_planned"] = False
+            fallback["degraded"] = True
+            fallback["degraded_reason"] = "no AI planner configured"
+            return fallback
+
+        # Lazy import keeps the offensive core decoupled from the planner module.
+        from vorsyghta.core.ai_planner import PlannerUnavailableError
+
+        try:
+            draft = await self.planner.plan_steps(
+                target=target, scenario_name=scenario_name, context=context
+            )
+        except PlannerUnavailableError as exc:
+            logger.warning(
+                "AI planning unavailable (%s); falling back to deterministic plan.",
+                exc,
+            )
+            fallback = await self.create_attack_sequence_from_scenario(
+                scenario_name=scenario_name,
+                target=target,
+                mitre_techniques=mitre_techniques or ["T1595", "T1046", "T1190"],
+                exercise_id=exercise_id,
+                simulation_id=simulation_id,
+                initiated_by=initiated_by,
+            )
+            fallback["ai_planned"] = False
+            fallback["degraded"] = True
+            fallback["degraded_reason"] = f"AI planner unavailable: {exc}"
+            return fallback
+
+        # Persist the AI-planned steps using the SAME sequence/step schema the
+        # deterministic path uses, so execution/persistence are identical.
+        steps_data = [
+            {
+                "technique_id": s.technique_id,
+                "tool": s.tool,
+                "command": s.command,
+                "phase": s.phase,
+                "name": s.technique_name,
+                "skipped": False,
+            }
+            for s in draft.steps
+        ]
+        techniques = [s.technique_id for s in draft.steps]
+        tactics = {s.phase for s in draft.steps}
+
+        sequence_id = await self._persist_sequence(
+            scenario_name=draft.name or scenario_name,
+            target=target,
+            steps_data=steps_data,
+            tactics=tactics,
+            mitre_techniques=techniques,
+            exercise_id=exercise_id,
+            simulation_id=simulation_id,
+            initiated_by=initiated_by,
+            initiated_by_source="ai_planner",
+        )
+
+        return {
+            "sequence_id": sequence_id,
+            "total_steps": len(steps_data),
+            "executable_steps": len(steps_data),
+            "skipped_steps": 0,
+            "mitre_techniques": techniques,
+            "objectives": draft.objectives,
+            "target": target,
+            "ai_planned": True,
+            "degraded": False,
+        }
+
+    async def _persist_sequence(
+        self,
+        scenario_name: str,
+        target: str,
+        steps_data: List[Dict[str, Any]],
+        tactics: set,
+        mitre_techniques: List[str],
+        exercise_id: Optional[str],
+        simulation_id: Optional[str],
+        initiated_by: str,
+        initiated_by_source: str,
+    ) -> str:
+        """Persist a sequence + its steps and return the new ``sequence_id``.
+
+        Shared by the deterministic and AI planning paths so both produce
+        identical :class:`AttackSequenceRecord`/``AttackSequenceStepRecord`` rows
+        (single source of truth for sequence persistence).
+        """
+        from vorsyghta.db.session import get_session
+        from vorsyghta.db.models.tool_tracking import (
+            AttackSequenceRecord, AttackSequenceStepRecord,
+        )
+
+        sequence_id = f"seq_{uuid4().hex[:12]}"
         async with get_session() as session:
             seq = AttackSequenceRecord(
                 sequence_id=sequence_id,
@@ -268,14 +432,14 @@ class AttackOrchestrator:
                 simulation_id=simulation_id,
                 scenario_name=scenario_name,
                 name=f"Attack: {scenario_name}",
-                description=f"Automated attack sequence for {scenario_name} targeting {target}",
+                description=f"Attack sequence for {scenario_name} targeting {target}",
                 target_system=target,
                 target_ip=target,
                 mitre_tactics=json.dumps(list(tactics)),
                 mitre_techniques=json.dumps(mitre_techniques),
                 total_steps=len([s for s in steps_data if not s["skipped"]]),
                 initiated_by=initiated_by,
-                initiated_by_source="orchestrator",
+                initiated_by_source=initiated_by_source,
             )
             session.add(seq)
 
@@ -298,15 +462,7 @@ class AttackOrchestrator:
                 session.add(step)
 
             await session.commit()
-
-        return {
-            "sequence_id": sequence_id,
-            "total_steps": len(steps_data),
-            "executable_steps": len([s for s in steps_data if not s["skipped"]]),
-            "skipped_steps": len([s for s in steps_data if s["skipped"]]),
-            "mitre_techniques": mitre_techniques,
-            "target": target,
-        }
+        return sequence_id
 
     async def execute_sequence(
         self,
@@ -395,48 +551,152 @@ class AttackOrchestrator:
                 }
             await session.refresh(seq)
 
-            results: List[Dict[str, Any]] = []
-            completed = 0
-            successful = 0
-            failed = 0
-            blocked = 0
-            all_findings: List[str] = []
-
-            for step in steps:
-                outcome = await self._run_step(
-                    session=session,
-                    seq=seq,
-                    step=step,
-                    invoked_by=invoked_by,
-                    timeout_per_step=timeout_per_step,
-                )
-                completed += outcome["completed"]
-                successful += outcome["successful"]
-                failed += outcome["failed"]
-                blocked += outcome["blocked"]
-                all_findings.extend(outcome["findings"])
-                if outcome["result"] is not None:
-                    results.append(outcome["result"])
-                if fail_fast and outcome["stop"]:
-                    break
+            tally = await self._run_step_loop(
+                session=session,
+                seq=seq,
+                steps=list(steps),
+                invoked_by=invoked_by,
+                timeout_per_step=timeout_per_step,
+                fail_fast=fail_fast,
+            )
 
             await self._finalize_sequence(
-                session, seq, completed, successful, failed, blocked, all_findings
+                session, seq,
+                tally["completed"], tally["successful"], tally["failed"],
+                tally["blocked"], tally["findings"],
             )
 
             return {
                 "sequence_id": sequence_id,
                 "status": seq.sequence_status,
                 "overall_success": seq.overall_success,
+                "ai_driven": self.planner is not None,
+                "ai_degraded": tally["ai_degraded"],
                 "total_steps": seq.total_steps,
                 "completed_steps": seq.completed_steps,
                 "successful_steps": seq.successful_steps,
                 "failed_steps": seq.failed_steps,
-                "blocked_steps": blocked,
+                "blocked_steps": tally["blocked"],
                 "total_duration_seconds": seq.total_duration_seconds,
-                "findings_count": len(all_findings),
-                "step_results": results,
+                "findings_count": len(tally["findings"]),
+                "step_results": tally["results"],
             }
+
+    async def _run_step_loop(
+        self,
+        session: Any,
+        seq: Any,
+        steps: List[Any],
+        invoked_by: str,
+        timeout_per_step: int,
+        fail_fast: bool,
+    ) -> Dict[str, Any]:
+        """Run every step, applying AI adaptation between steps when configured.
+
+        Returns an aggregate tally: per-outcome counters, extracted findings,
+        per-step result dicts, and whether AI adaptation degraded at any point.
+
+        Control flow (kept explicit and bounded):
+          - each step runs through the fail-closed safety gate in :meth:`_run_step`;
+          - a step that actually executed (planner set, not skipped/blocked) is
+            followed by an AI adaptation pass that may refine the NEXT step's
+            command (re-validated by the gate) and may stop the run;
+          - without a planner, ``fail_fast`` retains its original stop semantics.
+        """
+        results: List[Dict[str, Any]] = []
+        completed = successful = failed = blocked = 0
+        all_findings: List[str] = []
+        discovered: Dict[str, Any] = {}
+        ai_degraded = False
+
+        for idx, step in enumerate(steps):
+            outcome = await self._run_step(
+                session=session, seq=seq, step=step,
+                invoked_by=invoked_by, timeout_per_step=timeout_per_step,
+            )
+            completed += outcome["completed"]
+            successful += outcome["successful"]
+            failed += outcome["failed"]
+            blocked += outcome["blocked"]
+            all_findings.extend(outcome["findings"])
+            if outcome["result"] is not None:
+                results.append(outcome["result"])
+
+            adaptable = (
+                self.planner is not None
+                and step.step_type == "tool_execution"
+                and not outcome["blocked"]
+            )
+            if adaptable:
+                next_step = steps[idx + 1] if idx + 1 < len(steps) else None
+                decision = await self._adapt_after_step(
+                    session=session, seq=seq, step=step,
+                    next_step=next_step, discovered=discovered,
+                )
+                all_findings.extend(decision.findings)
+                if decision.discovered:
+                    discovered.update(decision.discovered)
+                if decision.degraded:
+                    ai_degraded = True
+                if not decision.should_continue:
+                    logger.info("AI planner decided to stop after step %s", step.step_id)
+                    break
+            elif fail_fast and outcome["stop"]:
+                break
+
+        return {
+            "completed": completed,
+            "successful": successful,
+            "failed": failed,
+            "blocked": blocked,
+            "findings": all_findings,
+            "results": results,
+            "ai_degraded": ai_degraded,
+        }
+
+    async def _adapt_after_step(
+        self,
+        session: Any,
+        seq: Any,
+        step: Any,
+        next_step: Any,
+        discovered: Dict[str, Any],
+    ) -> Any:
+        """Run the AI adaptation pass after one executed step.
+
+        Feeds the step's persisted output to the planner, applies any refined
+        command to ``next_step`` (persisted so the safety gate re-validates it on
+        execution), and returns the planner's :class:`AdaptDecision`.
+
+        The refined command is written to the DB step but is NOT trusted: when
+        ``next_step`` runs, :meth:`_run_step` re-validates it through the
+        fail-closed safety gate, so AI adaptation can never smuggle an unsafe
+        command past the gate.
+        """
+        decision = await self.planner.adapt(
+            target=step.target or seq.target_ip or seq.target_system,
+            technique=step.mitre_technique_id or "T0000",
+            command=step.command or "",
+            exit_code=0 if step.success else 1,
+            output=step.output_summary or "",
+            next_command=(next_step.command if next_step is not None else None),
+            discovered=discovered,
+        )
+
+        # Apply a refined next command, if the planner produced one and it is a
+        # concrete change. It is persisted; execution re-validates it via the gate.
+        if (
+            next_step is not None
+            and decision.refined_next_command
+            and decision.refined_next_command != next_step.command
+        ):
+            logger.info(
+                "AI refined next command for step %s", next_step.step_id
+            )
+            next_step.command = decision.refined_next_command
+            await session.commit()
+
+        return decision
 
     # A sequence may be claimed for execution only from one of these states.
     _RUNNABLE_STATES = ("pending", "created")
