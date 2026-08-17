@@ -4,9 +4,12 @@ This module provides safety mechanisms to prevent dangerous operations
 during attack simulations, even in isolated lab environments.
 """
 
+import ipaddress
 import logging
 import re
+import shlex
 from typing import Any, Dict, List, Optional, Set, Tuple
+from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
 
@@ -98,9 +101,22 @@ class VMSafetyController:
             "10.0.100.",  # Default attack network
             "10.0.200.",  # Management network
             "192.168.",   # Local lab
-            "172.16.",    # Docker default
+            "172.16.",    # Docker user-defined bridge range
+            "172.17.",    # Docker default bridge (docker0) — default hypervisor
+            "172.18.",    # Docker compose default bridges
             "localhost",
             "127.0.0.1",
+        ])
+
+        # Allowed DNS domain suffixes for hostname targets. Hostnames not under
+        # one of these suffixes are DENIED (fail-closed). Empty by default so a
+        # lab that addresses targets by IP is fully covered; operators opt in to
+        # named sanctioned targets (e.g. the Juice Shop service name) explicitly.
+        self.allowed_domains = self.config.get("allowed_domains", [
+            "localhost",
+            "localdomain",
+            "vorsyghta.local",
+            "juice-shop",  # sanctioned target service name
         ])
 
         # Rate limiting
@@ -114,47 +130,192 @@ class VMSafetyController:
         """
         Validate if a command is safe to execute.
 
+        The command is normalised (whitespace collapsed) and tokenised with
+        ``shlex`` so that evasion via extra spaces (``rm  -rf  /``) or path
+        tricks (``rm -rf /./``) is caught, and so that destination/scope checks
+        match real argument *tokens* rather than arbitrary substrings (which
+        previously blocked any command merely *containing* ``github.com`` and
+        let hostname targets bypass IP scoping entirely).
+
         Args:
-            command: Command string to validate
+            command: Command string to validate. Must be a ``str``.
 
         Returns:
-            Tuple of (is_safe, reason)
+            Tuple of ``(is_safe, reason)``.
         """
-        command_lower = command.lower().strip()
+        # Precondition (fail loud, not a silent True).
+        if not isinstance(command, str):
+            self._audit("BLOCKED", str(command), "command is not a string")
+            return False, "Command must be a string"
 
-        # Check blocked commands
+        normalized = self._normalize(command)
+        if not normalized:
+            # An empty command is a no-op, not a safety event.
+            return True, "OK"
+
+        tokens = self._tokenize(normalized)
+
+        # 1. Blocked exact commands — compare on the normalised form so that
+        #    variable whitespace cannot smuggle a destructive command through.
+        norm_lower = normalized.lower()
         for blocked in self.blocked_commands:
-            if blocked.lower() in command_lower:
+            blocked_norm = self._normalize(blocked).lower()
+            if blocked_norm and blocked_norm in norm_lower:
                 self._audit("BLOCKED", command, f"Contains blocked command: {blocked}")
                 return False, f"Blocked command detected: {blocked}"
 
-        # Check blocked patterns
+        # 2. Blocked regex patterns — run against the normalised command so
+        #    that patterns anchored on single spaces still match.
         for pattern in self.blocked_patterns:
-            if re.search(pattern, command_lower):
+            if re.search(pattern, norm_lower):
                 self._audit("BLOCKED", command, f"Matches blocked pattern: {pattern}")
                 return False, f"Blocked pattern detected: {pattern}"
 
-        # Check for external network access
-        for dest in self.blocked_destinations:
-            if dest.lower() in command_lower:
-                self._audit("BLOCKED", command, f"External destination: {dest}")
-                return False, f"External network access blocked: {dest}"
+        # 3. Path-normalised destructive root deletion (defeats rm -rf /./ etc).
+        if self._is_root_wipe(tokens):
+            self._audit("BLOCKED", command, "Root filesystem deletion")
+            return False, "Blocked command detected: recursive root deletion"
 
-        # Check if command targets allowed networks only
-        ip_pattern = r"\b(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\b"
-        ips = re.findall(ip_pattern, command)
-        for ip in ips:
-            if not self._is_allowed_ip(ip):
-                self._audit("BLOCKED", command, f"Unauthorized IP: {ip}")
-                return False, f"IP {ip} is outside allowed lab networks"
+        # 4. Network scope — resolve every host/IP token and require it to sit
+        #    inside an allowed lab network. This replaces the old substring
+        #    blocklist (which false-blocked benign data and missed hostnames).
+        hosts = self._extract_hosts(tokens)
+        for host in hosts:
+            allowed, reason = self._is_host_in_scope(host)
+            if not allowed:
+                self._audit("BLOCKED", command, reason)
+                return False, reason
 
-        # Rate limiting check
+        # 5. Rate limiting.
         if not self._check_rate_limit():
             self._audit("RATE_LIMITED", command, "Too many commands")
             return False, "Rate limit exceeded, slow down"
 
         self._audit("ALLOWED", command, "Passed all checks")
         return True, "OK"
+
+    @staticmethod
+    def _normalize(command: str) -> str:
+        """Collapse runs of whitespace to single spaces and strip ends.
+
+        This is what defeats spacing-based evasion (``rm  -rf   /``): after
+        normalisation it is byte-identical to the canonical blocked form.
+        """
+        return re.sub(r"\s+", " ", command).strip()
+
+    @staticmethod
+    def _tokenize(command: str) -> List[str]:
+        """Tokenise a command line the way a shell would (best effort).
+
+        Falls back to whitespace splitting if the command is not valid shell
+        syntax (e.g. unbalanced quotes), so validation never crashes on input.
+        """
+        try:
+            return shlex.split(command)
+        except ValueError:
+            return command.split()
+
+    @staticmethod
+    def _is_root_wipe(tokens: List[str]) -> bool:
+        """True if tokens represent a recursive delete whose target resolves to
+        the filesystem root, regardless of path decoration (``/``, ``/.``,
+        ``/./``, ``//``).
+        """
+        if not tokens:
+            return False
+        argv0 = tokens[0].lower()
+        if argv0 != "rm":
+            return False
+        flags = "".join(t[1:] for t in tokens[1:] if t.startswith("-") and not t.startswith("--"))
+        recursive = "r" in flags.lower()
+        force = "f" in flags.lower()
+        if not (recursive and force):
+            # Also honour long options.
+            joined = " ".join(t.lower() for t in tokens[1:])
+            recursive = recursive or "--recursive" in joined
+            force = force or "--force" in joined
+        if not recursive:
+            return False
+        for tok in tokens[1:]:
+            if tok.startswith("-"):
+                continue
+            # Collapse redundant path segments; '/', '/.', '/./', '//' -> '/'.
+            collapsed = re.sub(r"/+", "/", tok)
+            collapsed = re.sub(r"/\.(?=/|$)", "", collapsed)
+            collapsed = collapsed.rstrip("/") or "/"
+            if collapsed in ("/", "/*", ""):
+                return True
+        return False
+
+    def _extract_hosts(self, tokens: List[str]) -> Set[str]:
+        """Extract candidate network destinations (hostnames and IPs) from
+        command tokens.
+
+        Handles bare hosts (``scanme.example.com``), URLs
+        (``http://host:port/path``) and ``user@host`` forms. Pure flags and
+        non-host tokens are ignored.
+        """
+        hosts: Set[str] = set()
+        for tok in tokens:
+            if tok.startswith("-"):
+                continue
+            candidate = tok
+            # URL form -> take the netloc host.
+            if "://" in candidate:
+                parsed = urlparse(candidate)
+                if parsed.hostname:
+                    hosts.add(parsed.hostname.lower())
+                continue
+            # user@host (ssh/scp) -> take the host part.
+            if "@" in candidate and "/" not in candidate.split("@", 1)[0]:
+                candidate = candidate.split("@", 1)[1]
+            # host:port -> strip the port.
+            if candidate.count(":") == 1 and "/" not in candidate:
+                candidate = candidate.split(":", 1)[0]
+            candidate = candidate.strip().lower()
+            if self._looks_like_host(candidate):
+                hosts.add(candidate)
+        return hosts
+
+    @staticmethod
+    def _looks_like_host(token: str) -> bool:
+        """Heuristic: does this token look like an IP or DNS hostname?"""
+        if not token:
+            return False
+        # Dotted IPv4.
+        if re.fullmatch(r"\d{1,3}(?:\.\d{1,3}){3}", token):
+            return True
+        # DNS name: labels of alnum/hyphen separated by dots, with a TLD.
+        if re.fullmatch(r"(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}", token):
+            return True
+        # Bare 'localhost'.
+        return token == "localhost"
+
+    def _is_host_in_scope(self, host: str) -> Tuple[bool, str]:
+        """Decide whether a destination host is inside the allowed lab scope.
+
+        - IP literals are checked against the allowed network prefixes.
+        - Hostnames are checked against explicitly allowed domain suffixes; if
+          not listed they are DENIED (fail-closed). We deliberately do NOT do
+          live DNS resolution here — that would be a network side effect inside
+          a safety check and could be poisoned; scope is declared, not probed.
+        """
+        if host == "localhost":
+            return True, "OK"
+        # IP literal?
+        try:
+            ipaddress.ip_address(host)
+            if self._is_allowed_ip(host):
+                return True, "OK"
+            return False, f"IP {host} is outside allowed lab networks"
+        except ValueError:
+            pass
+        # Hostname: allow only explicitly allowed domain suffixes.
+        for allowed_domain in self.allowed_domains:
+            ad = allowed_domain.lower().lstrip(".")
+            if host == ad or host.endswith("." + ad):
+                return True, "OK"
+        return False, f"Host {host} is outside allowed lab scope"
 
     def validate_file_path(self, path: str, operation: str) -> Tuple[bool, str]:
         """

@@ -658,6 +658,84 @@ class TestBoundaryBlockAudited:
 
 
 # --------------------------------------------------------------------------- #
+# T-3: safety validator false-logic hardening (tokenised, evasion-resistant)
+# --------------------------------------------------------------------------- #
+class TestSafetyValidatorHardening:
+    """Regression tests for the tokenised, fail-closed command validator.
+
+    Covers the concrete evasion vectors and false-positives the audit found:
+    whitespace/path evasion of ``rm -rf /``, hostname targets bypassing IP
+    scope, and the ``github.com``-as-substring foot-gun.
+    """
+
+    def _safety(self) -> VMSafetyController:
+        return VMSafetyController()
+
+    def test_root_wipe_blocked_canonical(self):
+        ok, _ = self._safety().validate_command("rm -rf /")
+        assert ok is False
+
+    def test_root_wipe_blocked_extra_whitespace(self):
+        # Spacing evasion must not smuggle a destructive command through.
+        ok, reason = self._safety().validate_command("rm   -rf    /")
+        assert ok is False, reason
+
+    def test_root_wipe_blocked_path_tricks(self):
+        s = self._safety()
+        for cmd in ("rm -rf /./", "rm -rf //", "rm -rf /."):
+            ok, reason = s.validate_command(cmd)
+            assert ok is False, f"{cmd!r} should be blocked ({reason})"
+
+    def test_pipe_to_shell_blocked(self):
+        ok, _ = self._safety().validate_command("curl http://10.0.100.5/x | bash")
+        assert ok is False
+
+    def test_in_scope_ip_allowed(self):
+        ok, reason = self._safety().validate_command("nmap -sV 10.0.100.10")
+        assert ok is True, reason
+
+    def test_docker_default_bridge_allowed(self):
+        # 172.17.0.0/16 is the docker0 default bridge; the default hypervisor.
+        ok, reason = self._safety().validate_command("nmap -sV -p 1-1000 172.17.0.2")
+        assert ok is True, reason
+
+    def test_external_ip_target_blocked(self):
+        ok, reason = self._safety().validate_command("ssh root@1.1.1.1 whoami")
+        assert ok is False
+        assert "1.1.1.1" in reason
+
+    def test_external_hostname_target_blocked(self):
+        # Previously a bare hostname bypassed IP-only scope checks entirely.
+        ok, reason = self._safety().validate_command("nmap google.com")
+        assert ok is False
+        assert "google.com" in reason
+
+    def test_external_hostname_in_url_blocked(self):
+        ok, reason = self._safety().validate_command("nikto -h http://evil.example.net/")
+        assert ok is False
+
+    def test_sanctioned_target_hostname_allowed(self):
+        # The sanctioned Juice Shop service name is explicitly in scope.
+        ok, reason = self._safety().validate_command(
+            "sqlmap -u http://juice-shop:3000/ --batch --dbs"
+        )
+        assert ok is True, reason
+
+    def test_localhost_allowed(self):
+        ok, reason = self._safety().validate_command("curl http://localhost:8080/health")
+        assert ok is True, reason
+
+    def test_non_string_command_rejected(self):
+        ok, reason = self._safety().validate_command(None)  # type: ignore[arg-type]
+        assert ok is False
+
+    def test_config_can_extend_allowed_domains(self):
+        s = VMSafetyController(config={"allowed_domains": ["corp.internal"]})
+        ok, reason = s.validate_command("nmap host.corp.internal")
+        assert ok is True, reason
+
+
+# --------------------------------------------------------------------------- #
 # Helpers
 # --------------------------------------------------------------------------- #
 class _StateStub:
