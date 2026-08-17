@@ -232,6 +232,7 @@ def red_team():
 @click.option("--engagement-id", "-e", help="Approved engagement ID authorising this target (required unless --allow-unauthorized)")
 @click.option("--allow-unauthorized", is_flag=True, default=False, help="DANGER: skip the rules-of-engagement authorization gate (sanctioned-lab smoke tests only)")
 @click.option("--no-ai", is_flag=True, default=False, help="Disable the AI planner and use the deterministic MITRE tool map (default is AI-driven)")
+@click.option("--report", "report_path", help="Write a client vulnerability report (CWE/CVSS) to this path (.md or .json)")
 def attack(
     scenario: str,
     target: str,
@@ -248,6 +249,7 @@ def attack(
     engagement_id: Optional[str],
     allow_unauthorized: bool,
     no_ai: bool,
+    report_path: Optional[str],
 ):
     """Launch an autonomous penetration test.
 
@@ -272,6 +274,7 @@ def attack(
         asyncio.run(_attack_standalone_async(
             scenario, target, output, tenant, techniques, timeout,
             engagement_id, allow_unauthorized, use_ai=not no_ai,
+            report_path=report_path,
         ))
 
 
@@ -306,6 +309,7 @@ async def _attack_standalone_async(
     engagement_id: Optional[str] = None,
     allow_unauthorized: bool = False,
     use_ai: bool = True,
+    report_path: Optional[str] = None,
 ):
     """Standalone attack using AttackOrchestrator — AI-driven by default.
 
@@ -481,14 +485,75 @@ async def _attack_standalone_async(
             )
         console.print(step_table)
 
-    # Save results
+    # Structured CWE/CVSS findings (the client-deliverable content).
+    structured = exec_result.get("structured_findings", [])
+    if structured:
+        vuln_table = Table(title="Vulnerability Findings (CWE / CVSS)")
+        vuln_table.add_column("Severity", style="bold")
+        vuln_table.add_column("Title")
+        vuln_table.add_column("CWE")
+        vuln_table.add_column("CVSS", justify="right")
+        sev_color = {"critical": "red", "high": "red", "medium": "yellow",
+                     "low": "cyan", "info": "dim"}
+        for f in structured:
+            sev = f.get("severity", "info")
+            vuln_table.add_row(
+                f"[{sev_color.get(sev, 'white')}]{sev.upper()}[/{sev_color.get(sev, 'white')}]",
+                f.get("title", ""),
+                f.get("cwe_id", ""),
+                str(f.get("cvss_score", 0.0)),
+            )
+        console.print(vuln_table)
+
+    # Save raw results JSON.
     if output:
         with open(output, "w") as f:
             json.dump(exec_result, f, indent=2, default=str)
         console.print(f"\n[green]Results saved to: {output}[/green]")
-    else:
-        console.print(f"\n[dim]Use --output to save full results to a file[/dim]")
+
+    # Generate a client vulnerability report (CWE/CVSS deliverable).
+    if report_path:
+        _write_client_report(
+            report_path=report_path,
+            structured=structured,
+            target=target,
+            engagement_id=engagement_id or "",
+            tools_used=sorted({sr.get("tool") for sr in step_results if sr.get("tool")}),
+            ai_driven=bool(exec_result.get("ai_driven")),
+        )
+
+    if not output and not report_path:
+        console.print(f"\n[dim]Use --output for raw JSON or --report for a client report[/dim]")
         console.print(f"[dim]Sequence ID for later reference: {seq_result['sequence_id']}[/dim]")
+
+
+def _write_client_report(
+    report_path: str,
+    structured: list,
+    target: str,
+    engagement_id: str,
+    tools_used: list,
+    ai_driven: bool,
+) -> None:
+    """Render and save a client vulnerability report from structured findings.
+
+    Format is inferred from the file extension (.json -> JSON, else markdown).
+    """
+    from vorsyghta.research.vuln_report import ReportGenerator
+
+    report = ReportGenerator().generate_from_attack_result(
+        findings=structured,
+        target=target,
+        engagement_id=engagement_id,
+        tools_used=tools_used,
+        ai_driven=ai_driven,
+    )
+    fmt = "json" if report_path.lower().endswith(".json") else "markdown"
+    report.save(report_path, format=fmt)
+    console.print(
+        f"\n[green]Client report ({len(structured)} findings) saved to: "
+        f"{report_path}[/green]"
+    )
 
 
 async def _attack_legacy_async(

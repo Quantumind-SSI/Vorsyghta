@@ -45,6 +45,50 @@ class EngagementNotAuthorizedError(RuntimeError):
         super().__init__(f"Engagement authorization denied for {target}: {reason}")
 
 
+class _RunAccumulator:
+    """Mutable tally for one sequence execution.
+
+    Collects per-step outcome counters, findings, per-step result dicts, and the
+    ``(tool, output, technique)`` observations used for structured classification,
+    plus the AI adaptation carry-state (``discovered``, ``ai_degraded``). Keeping
+    this in one object lets the step loop stay small and single-purpose.
+    """
+
+    def __init__(self) -> None:
+        self.completed = 0
+        self.successful = 0
+        self.failed = 0
+        self.blocked = 0
+        self.findings: List[str] = []
+        self.results: List[Dict[str, Any]] = []
+        self.observations: List[tuple] = []
+        self.discovered: Dict[str, Any] = {}
+        self.ai_degraded = False
+
+    def record(self, outcome: Dict[str, Any], step: Any, executed: bool) -> None:
+        """Fold one step's outcome into the tally.
+
+        Args:
+            outcome: The normalized per-step outcome from ``_run_step``.
+            step: The executed step ORM row (for observation capture).
+            executed: True if the step actually ran a tool (not skipped/blocked);
+                only then is its output captured for finding classification.
+        """
+        self.completed += outcome["completed"]
+        self.successful += outcome["successful"]
+        self.failed += outcome["failed"]
+        self.blocked += outcome["blocked"]
+        self.findings.extend(outcome["findings"])
+        if outcome["result"] is not None:
+            self.results.append(outcome["result"])
+        if executed:
+            self.observations.append((
+                step.tool_name or "",
+                step.output_summary or "",
+                step.mitre_technique_id or "",
+            ))
+
+
 # MITRE technique → tool mapping for common attack phases
 MITRE_TO_TOOL_MAP: Dict[str, Dict[str, Any]] = {
     # Reconnaissance
@@ -168,6 +212,10 @@ class AttackOrchestrator:
         self.engagement_id = engagement_id
         self.require_authorization = require_authorization
         self.planner = planner
+        # Deterministic, evidence-based classifier turning tool output into
+        # structured CWE/CVSS findings for the client report (no fabrication).
+        from vorsyghta.research.finding_classifier import FindingClassifier
+        self._classifier = FindingClassifier()
 
     def _get_engagement_manager(self) -> Any:
         """Return the engagement manager, creating the canonical default once.
@@ -566,8 +614,17 @@ class AttackOrchestrator:
                 tally["blocked"], tally["findings"],
             )
 
+            # Classify measured output into structured CWE/CVSS findings and
+            # persist the canonical result (attack_plans/attack_results/
+            # attack_steps). This is what turns a run into a client deliverable.
+            classified = self._classifier.classify_many(tally["observations"])
+            result_id = await self._persist_attack_result(
+                session, seq, tally, classified
+            )
+
             return {
                 "sequence_id": sequence_id,
+                "result_id": result_id,
                 "status": seq.sequence_status,
                 "overall_success": seq.overall_success,
                 "ai_driven": self.planner is not None,
@@ -579,8 +636,114 @@ class AttackOrchestrator:
                 "blocked_steps": tally["blocked"],
                 "total_duration_seconds": seq.total_duration_seconds,
                 "findings_count": len(tally["findings"]),
+                "structured_findings": [
+                    {
+                        "title": f.title, "cwe_id": f.cwe_id,
+                        "cvss_score": f.cvss_score, "cvss_vector": f.cvss_vector,
+                        "severity": f.severity, "description": f.description,
+                        "evidence": f.evidence, "remediation": f.remediation,
+                        "tool": f.tool, "technique_id": f.technique_id,
+                        "references": f.references,
+                    }
+                    for f in classified
+                ],
                 "step_results": tally["results"],
             }
+
+    async def _persist_attack_result(
+        self,
+        session: Any,
+        seq: Any,
+        tally: Dict[str, Any],
+        classified: List[Any],
+    ) -> str:
+        """Persist the canonical red-team result rows for this run.
+
+        Writes one :class:`AttackPlanRecord`, one :class:`AttackResultRecord`
+        (with the structured findings as its summary payload), and one
+        :class:`AttackStepRecord` per executed step. These are the previously
+        unwritten tables that make a pentest a queryable, reportable deliverable.
+
+        Args:
+            session: Active async DB session.
+            seq: The finalized sequence ORM row.
+            tally: Aggregate run tally from :meth:`_run_step_loop`.
+            classified: Structured :class:`ClassifiedFinding` objects for the run.
+
+        Returns:
+            The ``result_id`` of the persisted :class:`AttackResultRecord`.
+        """
+        from vorsyghta.db.models.red_team import (
+            AttackPlanRecord, AttackResultRecord, AttackStepRecord,
+        )
+
+        plan_id = f"plan_{uuid4().hex[:12]}"
+        result_id = f"res_{uuid4().hex[:12]}"
+
+        session.add(AttackPlanRecord(
+            plan_id=plan_id,
+            tenant_id=self.tenant_id,
+            exercise_id=seq.exercise_id,
+            scenario_name=seq.scenario_name or seq.name,
+            threat_type="ai_pentest" if self.planner is not None else "scripted_pentest",
+            objective=seq.description,
+            status="completed",
+        ))
+        # Flush so the plan row exists before the result FK references it.
+        await session.flush()
+
+        summary_payload = {
+            "target": seq.target_ip or seq.target_system,
+            "overall_success": seq.overall_success,
+            "findings": [
+                {
+                    "title": f.title, "cwe_id": f.cwe_id,
+                    "cvss_score": f.cvss_score, "cvss_vector": f.cvss_vector,
+                    "severity": f.severity, "description": f.description,
+                    "evidence": f.evidence, "remediation": f.remediation,
+                    "tool": f.tool, "technique_id": f.technique_id,
+                    "references": f.references,
+                }
+                for f in classified
+            ],
+        }
+        session.add(AttackResultRecord(
+            result_id=result_id,
+            plan_id=plan_id,
+            tenant_id=self.tenant_id,
+            success=bool(seq.overall_success),
+            total_steps=tally["completed"],
+            successful_steps=tally["successful"],
+            start_time=seq.start_time,
+            end_time=seq.end_time,
+            summary=json.dumps(summary_payload),
+        ))
+        await session.flush()
+
+        # Persist per-step rows from the sequence's steps (read them back so we
+        # capture the final, possibly AI-refined, command and output).
+        from vorsyghta.db.models.tool_tracking import AttackSequenceStepRecord
+        step_rows = (await session.execute(
+            select_stmt(AttackSequenceStepRecord, seq.sequence_id)
+        )).scalars().all()
+        for s in step_rows:
+            session.add(AttackStepRecord(
+                step_id=f"astep_{uuid4().hex[:12]}",
+                result_id=result_id,
+                tenant_id=self.tenant_id,
+                step_name=s.step_name,
+                technique_id=s.mitre_technique_id,
+                command=s.command,
+                output=(s.output_summary or "")[:4000],
+                success=bool(s.success),
+                duration_seconds=s.duration_seconds,
+            ))
+        await session.commit()
+        logger.info(
+            "Persisted attack result %s (plan %s, %d findings)",
+            result_id, plan_id, len(classified),
+        )
+        return result_id
 
     async def _run_step_loop(
         self,
@@ -603,56 +766,60 @@ class AttackOrchestrator:
             command (re-validated by the gate) and may stop the run;
           - without a planner, ``fail_fast`` retains its original stop semantics.
         """
-        results: List[Dict[str, Any]] = []
-        completed = successful = failed = blocked = 0
-        all_findings: List[str] = []
-        discovered: Dict[str, Any] = {}
-        ai_degraded = False
+        acc = _RunAccumulator()
 
         for idx, step in enumerate(steps):
             outcome = await self._run_step(
                 session=session, seq=seq, step=step,
                 invoked_by=invoked_by, timeout_per_step=timeout_per_step,
             )
-            completed += outcome["completed"]
-            successful += outcome["successful"]
-            failed += outcome["failed"]
-            blocked += outcome["blocked"]
-            all_findings.extend(outcome["findings"])
-            if outcome["result"] is not None:
-                results.append(outcome["result"])
+            executed = step.step_type == "tool_execution" and not outcome["blocked"]
+            acc.record(outcome, step, executed)
 
-            adaptable = (
-                self.planner is not None
-                and step.step_type == "tool_execution"
-                and not outcome["blocked"]
-            )
-            if adaptable:
+            if self.planner is not None and executed:
                 next_step = steps[idx + 1] if idx + 1 < len(steps) else None
-                decision = await self._adapt_after_step(
-                    session=session, seq=seq, step=step,
-                    next_step=next_step, discovered=discovered,
-                )
-                all_findings.extend(decision.findings)
-                if decision.discovered:
-                    discovered.update(decision.discovered)
-                if decision.degraded:
-                    ai_degraded = True
-                if not decision.should_continue:
-                    logger.info("AI planner decided to stop after step %s", step.step_id)
+                stop = await self._apply_adaptation(session, seq, step, next_step, acc)
+                if stop:
                     break
             elif fail_fast and outcome["stop"]:
                 break
 
         return {
-            "completed": completed,
-            "successful": successful,
-            "failed": failed,
-            "blocked": blocked,
-            "findings": all_findings,
-            "results": results,
-            "ai_degraded": ai_degraded,
+            "completed": acc.completed,
+            "successful": acc.successful,
+            "failed": acc.failed,
+            "blocked": acc.blocked,
+            "findings": acc.findings,
+            "results": acc.results,
+            "observations": acc.observations,
+            "ai_degraded": acc.ai_degraded,
         }
+
+    async def _apply_adaptation(
+        self,
+        session: Any,
+        seq: Any,
+        step: Any,
+        next_step: Any,
+        acc: "_RunAccumulator",
+    ) -> bool:
+        """Run one AI adaptation pass and fold its decision into ``acc``.
+
+        Returns True when the planner decided to stop the run (the caller breaks).
+        """
+        decision = await self._adapt_after_step(
+            session=session, seq=seq, step=step,
+            next_step=next_step, discovered=acc.discovered,
+        )
+        acc.findings.extend(decision.findings)
+        if decision.discovered:
+            acc.discovered.update(decision.discovered)
+        if decision.degraded:
+            acc.ai_degraded = True
+        if not decision.should_continue:
+            logger.info("AI planner decided to stop after step %s", step.step_id)
+            return True
+        return False
 
     async def _adapt_after_step(
         self,

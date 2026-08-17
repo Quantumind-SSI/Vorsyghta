@@ -338,6 +338,81 @@ class ReportGenerator:
 
         return report
 
+    def generate_from_attack_result(
+        self,
+        findings: List[dict],
+        target: str,
+        client: str = "",
+        engagement_id: str = "",
+        tools_used: Optional[List[str]] = None,
+        ai_driven: bool = False,
+    ) -> VulnerabilityReport:
+        """Generate a client report from a pentest run's structured findings.
+
+        This is the bridge from the red-team engine (AttackOrchestrator) to a
+        deliverable. ``findings`` are the structured, evidence-based findings the
+        :class:`~vorsyghta.research.finding_classifier.FindingClassifier` produced
+        (each already carries CWE/CVSS/remediation), typically taken from the run
+        result's ``structured_findings`` or a persisted ``AttackResultRecord``.
+
+        Args:
+            findings: List of structured finding dicts (title, cwe_id, cvss_score,
+                cvss_vector, severity, description, evidence, remediation, tool,
+                technique_id, references).
+            target: The assessed target (host/IP/URL).
+            client: Client name.
+            engagement_id: Engagement identifier.
+            tools_used: Tools exercised during the run.
+            ai_driven: Whether the run was AI-driven (affects the methodology).
+
+        Returns:
+            A :class:`VulnerabilityReport` ready for markdown/JSON delivery.
+        """
+        report_findings: List[VulnerabilityFinding] = []
+        for f in findings:
+            report_findings.append(VulnerabilityFinding(
+                title=f.get("title", "Finding"),
+                cwe_id=f.get("cwe_id", "CWE-Unknown"),
+                cvss_score=float(f.get("cvss_score", 0.0)),
+                cvss_vector=f.get("cvss_vector", ""),
+                severity=f.get("severity", self._cvss_to_severity(f.get("cvss_score", 0.0))),
+                description=f.get("description", ""),
+                affected_component=target,
+                attack_vector="network",
+                proof_of_concept=f.get("evidence", ""),
+                reproduction_steps=[
+                    f"Target: {target}",
+                    f"Tool: {f.get('tool', 'n/a')} (MITRE {f.get('technique_id', 'n/a')})",
+                    f"Observed evidence: {f.get('evidence', '')}",
+                ],
+                remediation=f.get("remediation", "Review and remediate per secure coding guidance."),
+                references=f.get("references", []),
+                status="confirmed",
+                discovery_method="ai_pentest" if ai_driven else "pentest",
+            ))
+
+        severity_order = {"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}
+        report_findings.sort(key=lambda x: severity_order.get(x.severity, 5))
+
+        engine = "an AI-driven autonomous agent" if ai_driven else "the deterministic engine"
+        return VulnerabilityReport(
+            title=f"Penetration Test Report — {target}",
+            client=client,
+            engagement_id=engagement_id,
+            scope=target,
+            executive_summary=self._generate_exec_summary(report_findings, None),
+            findings=report_findings,
+            methodology=(
+                f"An authorized penetration test was conducted against {target} "
+                f"within the Vorsyghta platform, driven by {engine}. Offensive "
+                "tools were executed through a fail-closed safety gate and "
+                "rules-of-engagement authorization. Findings below are derived "
+                "from measured tool output and mapped to CWE identifiers with "
+                "CVSS v3.1 base scores."
+            ),
+            tools_used=tools_used or [],
+        )
+
     # -----------------------------------------------------------------------
     # Helpers
     # -----------------------------------------------------------------------
