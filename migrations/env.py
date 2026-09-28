@@ -14,6 +14,9 @@ from alembic import context
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from vorsyghta.db.base import Base
+import vorsyghta.db.models  # noqa: F401
+
 # Alembic Config object
 config = context.config
 
@@ -22,11 +25,18 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # Database URL from environment
+# SQLAlchemy 2.x resolves a bare postgresql:// URL to the psycopg (v3) dialect,
+# which is not installed; the shipped driver is psycopg2-binary. Normalize the
+# scheme so migrations run on the installed driver in every environment.
 database_url = os.getenv("DATABASE_URL", "postgresql://localhost/vorsyghta")
+if database_url.startswith("postgresql://"):
+    database_url = database_url.replace("postgresql://", "postgresql+psycopg2://", 1)
+elif database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql+psycopg2://", 1)
 config.set_main_option("sqlalchemy.url", database_url)
 
-# Target metadata (not using SQLAlchemy ORM, so None)
-target_metadata = None
+# Keep Alembic autogeneration aligned with the complete ORM registry.
+target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:

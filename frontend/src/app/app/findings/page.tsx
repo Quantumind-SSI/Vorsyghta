@@ -8,6 +8,14 @@ import { hasProductAccess } from "@/lib/billing";
 import { formatDateTime } from "@/lib/format";
 import { requireSession } from "@/lib/session";
 
+// /api/attack-tracking/sequences requires analyst or higher (403 for viewers).
+const MAY_VIEW_FINDINGS: Record<string, boolean> = {
+  admin: true,
+  analyst: true,
+  viewer: false,
+  pilot_sponsor: false,
+};
+
 export const metadata: Metadata = {
   title: "Findings register",
   description: "Recorded attack sequences and step reports for this tenant.",
@@ -66,6 +74,19 @@ function FindingsTable({ findings }: { findings: FindingList }) {
   );
 }
 
+function FindingsScopePanel() {
+  return (
+    <section className="data-panel activity-panel data-panel--scope" aria-labelledby="findings-scope-heading">
+      <p className="card-kicker">Role-scoped view</p>
+      <h2 id="findings-scope-heading">Findings are restricted</h2>
+      <p>
+        Viewer accounts can see tenant-level aggregates, but recorded attack sequences are
+        available only to analyst-capable roles. No findings request was made for this view.
+      </p>
+    </section>
+  );
+}
+
 function UnavailablePanel({ title, detail }: { title: string; detail: string }) {
   return (
     <section className="data-panel data-panel--unavailable" role="status">
@@ -89,8 +110,11 @@ export default async function FindingsPage() {
   }
   if (!hasProductAccess(billing.data)) redirect("/start-trial?reason=not-entitled");
 
-  const findings: ApiResult<FindingList> = await fetchFindings(session.token);
-  if (!findings.ok && (findings.kind === "unauthorized" || findings.kind === "forbidden")) redirect("/sign-in?next=%2Fapp%2Ffindings");
+  const mayViewFindings = MAY_VIEW_FINDINGS[session.user.role] ?? false;
+  const findings: ApiResult<FindingList> | null = mayViewFindings
+    ? await fetchFindings(session.token)
+    : null;
+  if (findings !== null && !findings.ok && (findings.kind === "unauthorized" || findings.kind === "forbidden")) redirect("/sign-in?next=%2Fapp%2Ffindings");
 
   return (
     <main className="app-main" id="main-content">
@@ -105,7 +129,9 @@ export default async function FindingsPage() {
         </div>
       </div>
 
-      {!findings.ok ? (
+      {findings === null ? (
+        <FindingsScopePanel />
+      ) : !findings.ok ? (
         <UnavailablePanel
           title="Findings unavailable"
           detail="The attack-tracking endpoint did not return valid data. No substitute data is shown."
