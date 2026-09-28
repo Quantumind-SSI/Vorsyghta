@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 
 import { signInAction } from "@/actions/auth";
@@ -48,7 +49,11 @@ export function SignInForm({ nextPath }: SignInFormProps) {
           {state.message}
         </p>
       ) : null}
-      <SubmitButton pendingLabel="Verifying...">Sign in securely</SubmitButton>
+      <p className="field-aux">
+        <Link href="/forgot-password">Forgot password?</Link>
+        <span className="field-aux__hint">No verification email is used — sign-in works immediately after registration.</span>
+      </p>
+      <SubmitButton pendingLabel="Signing in...">Sign in securely</SubmitButton>
     </form>
   );
 }

@@ -1,0 +1,87 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+
+import { saveOnboardingUseCasesAction } from "@/actions/onboarding";
+import { OnboardingForm } from "@/components/onboarding-form";
+import { fetchBillingStatus } from "@/lib/api/client";
+import { hasProductAccess } from "@/lib/billing";
+import { requireSession } from "@/lib/session";
+import { OnboardingStepNav } from "@/components/onboarding-step-nav";
+
+export const metadata: Metadata = {
+  title: "Onboarding — use cases",
+  description: "Which capabilities you need and how you will measure success.",
+  robots: { index: false, follow: false },
+};
+
+export const dynamic = "force-dynamic";
+
+const CAPABILITIES: ReadonlyArray<{ value: string; label: string; hint: string }> = [
+  { value: "colour_teams", label: "Colour-team exercises", hint: "Red attacks, Blue defends, Purple coaches" },
+  { value: "intelligence_stack", label: "Threat intelligence", hint: "CVE, KEV, OSINT, digital twin" },
+  { value: "zero_day_research", label: "Zero-day research", hint: "Fuzzing, SAST, crash triage" },
+  { value: "quantum_pqc", label: "Quantum / PQC readiness", hint: "Crypto inventory, migration planning" },
+  { value: "saas_product", label: "Evidence workspace", hint: "Findings, reports, provenance" },
+  { value: "bank_pilot", label: "Bank pilot", hint: "Regulated-industry validation" },
+  { value: "simulation_paradigms", label: "Advanced simulation", hint: "Six paradigm engines" },
+  { value: "rl_rlhf", label: "Agent training (RL/RLHF)", hint: "Learned reward models" },
+];
+const PERSONAS: ReadonlyArray<{ value: string; label: string }> = [
+  { value: "ciso", label: "CISO / security leader" },
+  { value: "red_team_lead", label: "Red-team lead" },
+  { value: "analyst", label: "Security analyst" },
+  { value: "pilot_sponsor", label: "Pilot sponsor / approver" },
+];
+
+export default async function OnboardingUseCasesPage() {
+  const session = await requireSession("/onboarding/use-cases");
+  if (session.state === "unavailable") redirect("/sign-in?next=%2Fonboarding%2Fuse-cases");
+  const billing = await fetchBillingStatus(session.token);
+  if (!billing.ok && (billing.kind === "unauthorized" || billing.kind === "forbidden")) redirect("/sign-in?next=%2Fonboarding%2Fuse-cases");
+  if (!billing.ok || !hasProductAccess(billing.data)) redirect("/start-trial?reason=not-entitled");
+
+  return (
+    <main className="app-main onboarding-main" id="main-content">
+      <OnboardingStepNav current={2} />
+      <div className="app-page-heading onboarding-heading">
+        <div>
+          <p className="eyebrow">Onboarding · step 2 of 4</p>
+          <h1>Use cases</h1>
+          <p>Select what you need — this sets assessment defaults and report templates.</p>
+        </div>
+      </div>
+      <section className="data-panel onboarding-panel">
+        <OnboardingForm action={saveOnboardingUseCasesAction} submitLabel="Save and continue">
+          <fieldset className="onboarding-field">
+            <legend>Capabilities you need (select at least one)</legend>
+            <div className="onboarding-choices-grid">
+              {CAPABILITIES.map((capability) => (
+                <label className="onboarding-choice onboarding-choice--card" key={capability.value}>
+                  <input type="checkbox" name="capabilities" value={capability.value} />
+                  <span><strong>{capability.label}</strong><small>{capability.hint}</small></span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          <fieldset className="onboarding-field">
+            <legend>Primary persona</legend>
+            {PERSONAS.map((persona, index) => (
+              <label className="onboarding-choice" key={persona.value}>
+                <input type="radio" name="persona" value={persona.value} required defaultChecked={index === 0} />
+                <span>{persona.label}</span>
+              </label>
+            ))}
+          </fieldset>
+          <div className="onboarding-field">
+            <label htmlFor="success_criteria">How will you measure success? (optional)</label>
+            <textarea id="success_criteria" name="success_criteria" maxLength={600} rows={3} placeholder="e.g. detection coverage mapped to MITRE, executive-ready AAR per quarter" />
+          </div>
+          <p className="onboarding-skip">
+            <Link className="button button--small button--outline-dark" href="/onboarding/profile">Back</Link>
+          </p>
+        </OnboardingForm>
+      </section>
+    </main>
+  );
+}

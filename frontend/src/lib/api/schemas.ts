@@ -315,6 +315,39 @@ export const findingRecordSchema = z.object({
 
 export const findingListSchema = z.array(findingRecordSchema).max(200);
 
+// --- Onboarding (post-registration wizard; persisted as knowledge entries) ---
+
+const COMPLIANCE_FRAMEWORKS = ["pci_dss", "ndpr", "gdpr", "soc_2", "iso_27001", "cbn", "hipaa"] as const;
+const ADAPTER_CATEGORIES = ["containers", "cloud", "files", "web_apps_apis", "external_infrastructure", "directories_crm", "media"] as const;
+const CAPABILITIES = ["colour_teams", "intelligence_stack", "zero_day_research", "quantum_pqc", "saas_product", "bank_pilot", "simulation_paradigms", "rl_rlhf"] as const;
+const PERSONAS = ["ciso", "red_team_lead", "analyst", "pilot_sponsor"] as const;
+const MATURITIES = ["none", "ad_hoc", "defined", "managed"] as const;
+
+export const onboardingProfileSchema = z.object({
+  industry: z.string().trim().min(2).max(80),
+  company_size: z.enum(["1-10", "11-50", "51-200", "201-1000", "1000+"]),
+  regions: z.string().trim().min(2).max(160),
+  security_maturity: z.enum(MATURITIES),
+  compliance_frameworks: z.array(z.enum(COMPLIANCE_FRAMEWORKS)).max(COMPLIANCE_FRAMEWORKS.length),
+});
+
+export const onboardingUseCasesSchema = z.object({
+  capabilities: z.array(z.enum(CAPABILITIES)).min(1).max(CAPABILITIES.length),
+  persona: z.enum(PERSONAS),
+  success_criteria: z.string().trim().max(600),
+});
+
+export const onboardingEnvironmentsSchema = z.object({
+  adapter_categories: z.array(z.enum(ADAPTER_CATEGORIES)).max(ADAPTER_CATEGORIES.length),
+  cloud_providers: z.array(z.enum(["aws", "azure", "gcp", "huawei"])).max(4),
+  sanctioned_targets_only: z.literal(true),
+});
+
+export const onboardingReviewSchema = z.object({
+  terms_accepted: z.literal(true),
+  acceptable_use_accepted: z.literal(true),
+});
+
 export type TokenResponse = z.infer<typeof tokenResponseSchema>;
 export type CurrentUser = z.infer<typeof currentUserSchema>;
 export type ThreatActor = z.infer<typeof threatActorSchema>;
@@ -327,6 +360,9 @@ export type TemplateCatalog = z.infer<typeof templateCatalogSchema>;
 export type TemplateDetail = z.infer<typeof templateDetailSchema>;
 export type FindingRecord = z.infer<typeof findingRecordSchema>;
 export type FindingList = z.infer<typeof findingListSchema>;
+export type OnboardingProfile = z.infer<typeof onboardingProfileSchema>;
+export type OnboardingUseCases = z.infer<typeof onboardingUseCasesSchema>;
+export type OnboardingEnvironments = z.infer<typeof onboardingEnvironmentsSchema>;
 export type BillingOffer = z.infer<typeof billingOfferSchema>;
 export type BillingStatus = z.infer<typeof billingStatusSchema>;
 export type BillingStatusValue = z.infer<typeof billingStatusValueSchema>;

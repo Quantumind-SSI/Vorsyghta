@@ -81,8 +81,10 @@ export async function registerAction(
   }
 
   const next = safeReturnPath(formData.get("next"));
-  const query = new URLSearchParams({ status: "account-created", next });
-  redirect(`/sign-in?${query.toString()}`);
+  if (next !== "/app" && next.startsWith("/app/")) {
+    redirect(`/sign-in?${new URLSearchParams({ status: "account-created", next }).toString()}`);
+  }
+  redirect("/onboarding");
 }
 
 export async function signOutAction(): Promise<void> {

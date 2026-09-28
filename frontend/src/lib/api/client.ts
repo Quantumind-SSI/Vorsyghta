@@ -211,3 +211,14 @@ export function fetchFindings(token: string, limit = 50) {
     { token },
   );
 }
+
+export function saveOnboardingStep(
+  token: string,
+  step: { title: string; content: string; category: string; tags: string[] },
+) {
+  return apiRequest(
+    "/api/knowledge/entries",
+    z.object({ entry_id: z.string().min(1).max(64), message: z.string().max(256).optional() }),
+    { token, method: "POST", json: step },
+  );
+}
