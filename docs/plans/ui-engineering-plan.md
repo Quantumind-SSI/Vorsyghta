@@ -584,6 +584,69 @@ unanswered items persist as `"unanswered"`, never as a default.
 - **No password reset exists.** The sign-in form links a "Forgot password?" route that renders an explicit unavailable state: password recovery is not yet available; contact the support link in the footer. No fake "reset link sent" state.
 - Backend prerequisite (planned, not built): `POST /api/auth/forgot-password` + token-based reset + email delivery. Until both exist, the surfaces above render unavailable and never simulate success.
 
+### 7.8 Application page scope (the actual product pages)
+
+The onboarding screens (§7.7) are journey scaffolding. The **actual product pages** are the
+authenticated application surface that delivers the eight capabilities. This section scopes
+that surface against the verified endpoint reality (probed live, 2026-09-28): every page is
+classified as **shipped**, **Tier A** (endpoint live, page buildable now), **Tier B** (blocked
+on backend prerequisites), or **unmounted** (backend module exists, no API — page blocked on
+a mounted router). No page ships as a stub; missing data renders as unavailable.
+
+#### 7.8.1 Page map by capability (the eight pillars)
+
+| # | Capability | Pages | Route | Status | Live endpoint evidence |
+|---|---|---|---|---|---|
+| 1 | **Colour teams + orchestrator** | Workspace overview | `/app` | **shipped** | `/health` 200, stats 200 |
+| | | Findings register | `/app/findings` | **shipped** (read-only, role-scoped) | sequences 200 analyst / 403 viewer |
+| | | **Exercise console** | `/app/exercises` | **Tier A** | `GET /api/exercises/` 200 analyst (list, run, status, report, replay); viewer → 403 role-scoped panel |
+| | | **Scenario templates** | `/app/templates(/:id)` | **shipped** | 200 (catalog + detail) |
+| 2 | **Intelligence stack** | Threat intelligence | `/app/intelligence` | **shipped** | actors/campaigns/indicators/ttps 200 |
+| | | **Knowledge base** | `/app/knowledge` | **Tier A** | `GET /api/knowledge/stats` 200 (entries live); entries + search endpoints live |
+| | | **Detection rules workbench** | `/app/detect` | **unmounted** | no API router; analytics generators exist in `vorsyghta/analytics/` — blocked until a router lands |
+| | | Environments hub | `/app/environments` | **shipped** (Tier A hub) | client-data adapters; connection storage Tier B |
+| 3 | **Zero-day research** | **Disclosure register** | `/app/disclosures` | **Tier A** | `GET /api/disclosures` 200 (full CVD lifecycle in `research/disclosure.py`) |
+| | | **Research campaigns** | `/app/research` | **Tier B** | crash-pipeline/mutator run over SSH — needs the durable job model + SSE |
+| 4 | **Quantum / PQC** | **Quantum workspace** | `/app/quantum` | **unmounted** | `api/routers/quantum.py` exists but is not mounted (404) — blocked until mounted + RBAC |
+| 5 | **Commercial SaaS** | Billing settings | `/app/settings/billing` | **shipped** | status 200; offer 503 until Stripe configured (honest) |
+| | | Engagements | `/app/engagements(/new)(/:id)` | **Tier B** | router 200 but global plaintext storage, no route RBAC — disqualifying |
+| | | Assessments | `/app/assessments(/new)(/:id)` | **Tier B** | durable job model + SSE + canonical safety path |
+| | | Reports | `/app/reports(/:id)` | **Tier B** | durable artifacts + approval workflow |
+| 6 | **Bank pilot** | (inherits engagements/assessments/reports + compliance) | — | **Tier B** | compliance records live in DB; no page yet |
+| | | **Compliance dashboard** | `/app/compliance` | **Tier A** | compliance gap/framework records live (`db/models/orange_team.py`); needs a read API — blocked until one lands → reclassify **Tier B** |
+| 7 | **Simulation paradigms** | (inherits exercise console) | — | **planned** | paradigm engines not built |
+| 8 | **RL / RLHF** | **Feedback loop** | `/app/feedback` | **unmounted** | feedback router exists (7 paths) but path shape unverified; analyzer/enhancer live in `vorsyghta/feedback/` |
+| — | Cross-cutting | Audit events | `/app/audit` | **Tier A, gated** | 200 analyst / 403 viewer — blocked until server-side tenant filtering |
+| | | Integrations status | `/app/admin/integrations` | **Tier A** | 6 paths live, analyst 403 |
+| | | Secrets providers | `/app/admin/secrets` | **Tier A, restricted** | 403 admin; **never returns raw values in the UI** |
+| | | Datasets | `/app/datasets` | **unmounted** | `vorsyghta/datasets/` processors exist; no API router |
+| | | Admin: system / users | `/app/admin/system`, `/app/admin/users` | **Tier A** | health/ready live |
+
+#### 7.8.2 The actual-application navigation (target state)
+
+```
+Overview · Engagements · Assessments · Findings · Reports · Intelligence ·
+Environments · Templates · Exercises · Research · Compliance · Datasets ·
+Detection · Quantum · Feedback · Administration
+```
+
+The current 8-item nav covers onboarding-era value. The target nav groups the
+actual product pages by capability and renders Tier B/unmounted entries as
+explicit "requires backend" states — never hidden, never fabricated.
+
+#### 7.8.3 Build order for the actual pages
+
+| Wave | Pages | Prerequisite |
+|---|---|---|
+| A1 | Exercise console, Disclosure register, Knowledge base, Integrations status, Secrets providers, Admin system/users | none — endpoints live today |
+| A2 | Audit events | server-side tenant filtering on `/audit/events` |
+| B1 | Engagements → Assessments → Reports | durable tenant-bound records + RBAC + signed approvals; durable job model + SSE |
+| B2 | Research campaigns, Compliance dashboard | durable jobs; compliance read API |
+| B3 | Detection rules, Datasets, Quantum workspace, Feedback loop | routers must land first (unmounted modules) |
+
+Wave A1 is the highest-value next step: five real product pages on live endpoints with no
+new backend contracts. Waves B* land only after their backend prerequisites exist.
+
 ## 8. Evidence and Safety UX
 
 Every result view displays:

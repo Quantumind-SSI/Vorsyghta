@@ -14,7 +14,9 @@ export default function ApplicationLayout({ children }: Readonly<{ children: Rea
           </Link>
           <nav aria-label="Application navigation">
             <Link href="/app">Overview</Link>
+            <Link href="/app/exercises">Exercises</Link>
             <Link href="/app/findings">Findings</Link>
+            <Link href="/app/disclosures">Disclosures</Link>
             <Link href="/app/intelligence">Intelligence</Link>
             <Link href="/app/templates">Templates</Link>
             <Link href="/app/environments">Environments</Link>

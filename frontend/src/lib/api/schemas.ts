@@ -348,6 +348,49 @@ export const onboardingReviewSchema = z.object({
   acceptable_use_accepted: z.literal(true),
 });
 
+// --- Exercise console (read-only view of completed colour-team exercises) ----
+
+export const exerciseSummarySchema = z.object({
+  exercise_id: z.string().min(1).max(64),
+  scenario_name: z.string().min(1).max(256),
+  status: z.string().min(1).max(40),
+  start_time: apiTimestampSchema,
+  end_time: nullableDate,
+  red_team_stages: z.number().int().nonnegative(),
+  blue_team_alerts: z.number().int().nonnegative(),
+  has_aar: z.boolean(),
+  has_score: z.boolean(),
+});
+
+export const exerciseListSchema = z.object({
+  total: z.number().int().nonnegative(),
+  exercises: z.array(exerciseSummarySchema).max(200),
+});
+
+// --- Disclosure register (read-only view of the CVD lifecycle) ---------------
+
+export const disclosureRecordSchema = z.object({
+  id: z.string().min(1).max(64),
+  engagement_id: z.string().min(1).max(64),
+  finding_id: z.string().min(1).max(64),
+  title: z.string().min(1).max(512),
+  cve_id: z.string().max(32).nullable(),
+  severity: z.enum(["critical", "high", "medium", "low", "info", "unknown"]),
+  cvss_score: z.number().min(0).max(10),
+  vendor: z.string().min(1).max(256),
+  product: z.string().min(1).max(256),
+  status: z.string().min(1).max(64),
+  vendor_response: z.string().max(64),
+  notified_at: z.string().max(64).nullable(),
+  patch_released_at: z.string().max(64).nullable(),
+  public_disclosure_date: z.string().max(64).nullable(),
+  embargo_end_date: z.string().max(64).nullable(),
+  embargo_days: z.number().int().nonnegative(),
+  days_until_disclosure: z.number().int(),
+});
+
+export const disclosureListSchema = z.array(disclosureRecordSchema).max(200);
+
 export type TokenResponse = z.infer<typeof tokenResponseSchema>;
 export type CurrentUser = z.infer<typeof currentUserSchema>;
 export type ThreatActor = z.infer<typeof threatActorSchema>;
@@ -363,6 +406,10 @@ export type FindingList = z.infer<typeof findingListSchema>;
 export type OnboardingProfile = z.infer<typeof onboardingProfileSchema>;
 export type OnboardingUseCases = z.infer<typeof onboardingUseCasesSchema>;
 export type OnboardingEnvironments = z.infer<typeof onboardingEnvironmentsSchema>;
+export type ExerciseSummary = z.infer<typeof exerciseSummarySchema>;
+export type ExerciseList = z.infer<typeof exerciseListSchema>;
+export type DisclosureRecord = z.infer<typeof disclosureRecordSchema>;
+export type DisclosureList = z.infer<typeof disclosureListSchema>;
 export type BillingOffer = z.infer<typeof billingOfferSchema>;
 export type BillingStatus = z.infer<typeof billingStatusSchema>;
 export type BillingStatusValue = z.infer<typeof billingStatusValueSchema>;

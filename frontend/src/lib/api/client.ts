@@ -7,6 +7,8 @@ import {
   billingOfferSchema,
   billingStatusSchema,
   currentUserSchema,
+  disclosureListSchema,
+  exerciseListSchema,
   findingListSchema,
   healthSchema,
   hostedUrlSchema,
@@ -221,4 +223,12 @@ export function saveOnboardingStep(
     z.object({ entry_id: z.string().min(1).max(64), message: z.string().max(256).optional() }),
     { token, method: "POST", json: step },
   );
+}
+
+export function fetchExercises(token: string) {
+  return apiRequest("/api/exercises/", exerciseListSchema, { token });
+}
+
+export function fetchDisclosures(token: string) {
+  return apiRequest("/api/disclosures", disclosureListSchema, { token });
 }
