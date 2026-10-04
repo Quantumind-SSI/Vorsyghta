@@ -9,6 +9,7 @@ Usage::
 
     from vorsyghta.db.models import SimulationResultRecord, AlertRecord
 """
+
 from __future__ import annotations
 
 from vorsyghta.db.models.simulation import SimulationResultRecord, SimulationStageRecord
@@ -16,6 +17,11 @@ from vorsyghta.db.models.red_team import AttackPlanRecord, AttackResultRecord, A
 from vorsyghta.db.models.blue_team import AlertRecord, IncidentRecord
 from vorsyghta.db.models.audit import AuditEventRecord
 from vorsyghta.db.models.auth import TenantRecord, UserRecord
+from vorsyghta.db.models.billing import (
+    BillingStatus,
+    StripeWebhookEventRecord,
+    TenantSubscriptionRecord,
+)
 
 # Orange Team (compliance & governance)
 from vorsyghta.db.models.orange_team import (
@@ -72,6 +78,10 @@ __all__ = [
     # Auth
     "TenantRecord",
     "UserRecord",
+    # Billing
+    "BillingStatus",
+    "StripeWebhookEventRecord",
+    "TenantSubscriptionRecord",
     # Orange Team
     "ComplianceGapRecord",
     "FrameworkMappingRecord",

@@ -1,5 +1,7 @@
 # Changelog
 
+> **Platform scope.** This changelog tracks delivery across Vorsyghta's **seven capability areas** — see **[README § Platform scope — the full target](README.md#platform-scope--the-full-target)**.
+
 All notable changes to Vorsyghta will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
@@ -24,6 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Nothing yet
+
+### Removed
+- **Bank-pilot (ZestPayment) documentation and scope** — the bank pilot is no longer part of the product. Removed the Huawei Cloud CCE deployment guide and manifests (`deployments/zestpayment/`), the client requirements document, pilot readiness reports and timelines, the maintainer staffing briefs (`docs/internal/maintainers/`, `dev-docs/`), the pilot cold-email template, and the CLI pilot runbook. The platform scope is restated as **seven capabilities** (renumbering simulation paradigms → #6, RL/RLHF → #7) across the README, docs banners, and the licensing component matrix.
 
 ### Fixed
 - Nothing yet

@@ -14,8 +14,8 @@ Covered fixes
 5.  grant_extension() handles None embargo_end_date (research/disclosure.py)
 6.  _set_nested() does not crash on out-of-range indices / missing keys
     (research/llm_mutator.py)
-7.  Self-registration ignores client role/tenant and forces viewer/default
-    (api/routers/auth.py) — closes privilege-escalation + tenant isolation
+7.  Self-registration rejects client role/tenant fields
+    (api/routers/auth.py) and requires organization-scoped registration
 
 Additional structural assertions
 --------------------------------
@@ -33,9 +33,9 @@ import sys
 import tempfile
 import warnings
 from datetime import datetime, timedelta
-from unittest.mock import patch
 
 import pytest
+from starlette.exceptions import StarletteDeprecationWarning
 
 # Ensure VORSYGHTA_SECRET_KEY is set before importing rbac/auth modules.
 # Use a stable, obviously-non-production value.
@@ -46,19 +46,13 @@ os.environ.setdefault(
 
 # Silence Pydantic V2 / Starlette deprecation noise from third-party code.
 warnings.filterwarnings("ignore", category=DeprecationWarning)
-try:
-    from starlette.exceptions import StarletteDeprecationWarning
-
-    warnings.filterwarnings(
-        "ignore", category=StarletteDeprecationWarning
-    )
-except ImportError:  # pragma: no cover — older starlette
-    pass
+warnings.filterwarnings("ignore", category=StarletteDeprecationWarning)
 
 
 # ============================================================================
 # Fixtures
 # ============================================================================
+
 
 @pytest.fixture
 def tmp_storage_dir():
@@ -70,6 +64,7 @@ def tmp_storage_dir():
 # ============================================================================
 # 1. LLMResponse.tokens_used
 # ============================================================================
+
 
 class TestLLMResponseTokensUsed:
     """Fix: LLMResponse.__init__ now initialises self.tokens_used = 0."""
@@ -92,6 +87,7 @@ class TestLLMResponseTokensUsed:
 # ============================================================================
 # 2 & 3. Engagement.is_active() timezone handling
 # ============================================================================
+
 
 def _make_engagement(start_date=None, end_date=None):
     """Build a minimal ACTIVE Engagement for is_active() tests."""
@@ -159,6 +155,7 @@ class TestIsActiveTimezoneHandling:
 # 4. Invalid enum values in saved data
 # ============================================================================
 
+
 class TestInvalidEnumInFromDict:
     """Fix: _from_dict catches ValueError on bad enum values instead of crashing."""
 
@@ -184,9 +181,9 @@ class TestInvalidEnumInFromDict:
         eng = mgr._from_dict(data)
 
         assert ResearchMethod.FUZZING in eng.rules.allowed_methods
-        assert all(
-            m != "totally_invalid_method" for m in eng.rules.allowed_methods
-        ), "invalid allowed_method must be skipped, not stored as a string"
+        assert all(m != "totally_invalid_method" for m in eng.rules.allowed_methods), (
+            "invalid allowed_method must be skipped, not stored as a string"
+        )
 
     def test_disclosure_falls_back_on_invalid_enums(self, tmp_storage_dir):
         from vorsyghta.research.disclosure import (
@@ -213,6 +210,7 @@ class TestInvalidEnumInFromDict:
 # ============================================================================
 # 5. grant_extension() with None embargo_end_date
 # ============================================================================
+
 
 class TestGrantExtensionNoneEmbargo:
     """Fix: when embargo_end_date is None, the extension is computed from now."""
@@ -274,6 +272,7 @@ class TestGrantExtensionNoneEmbargo:
 # 6. _set_nested() bounds validation
 # ============================================================================
 
+
 class TestSetNestedBoundsValidation:
     """Fix: _set_nested() returns silently on out-of-range / missing paths
     instead of raising IndexError / KeyError.
@@ -320,145 +319,59 @@ class TestSetNestedBoundsValidation:
 
 
 # ============================================================================
-# 7. Admin self-registration is blocked
+# 7. Self-registration input is tenant-safe
 # ============================================================================
 
-class TestAdminRegistrationBlocked:
-    """Fix: POST /auth/register ignores client-supplied role/tenant and
-    always creates a ``viewer`` account in the ``default`` tenant.
 
-    This closes the privilege-escalation + tenant-isolation vector where an
-    unauthenticated caller could self-register as ``admin`` (or any elevated
-    role) under an arbitrary tenant. Client-supplied ``role`` and
-    ``tenant_id`` are accepted in the request body for backward compatibility
-    but are never honored.
-    """
+class TestRegistrationInputIsolation:
+    """Registration accepts only identity and organization fields."""
 
-    # pytest.ini sets `filterwarnings = error`, which promotes the
-    # Starlette httpx-deprecation warning to an error during TestClient
-    # setup.  We suppress it per-test below via @pytest.mark.filterwarnings.
+    def test_role_and_tenant_fields_are_rejected(self):
+        from pydantic import ValidationError
 
-    @pytest.fixture
-    def client_and_captured(self):
-        # Patch the async DB/Redis helpers before constructing the client
-        # so the endpoint never touches real infrastructure. Capture the
-        # role/tenant that the handler actually persists so tests can assert
-        # they are forced to viewer/default regardless of client input.
-        import vorsyghta.api.routers.auth as auth_mod
+        from vorsyghta.api.routers.auth import RegisterRequest
 
-        captured: dict = {}
+        with pytest.raises(ValidationError):
+            RegisterRequest.model_validate(
+                {
+                    "email": "owner@example.test",
+                    "password": "correct-horse-battery",
+                    "organization_name": "Example Org",
+                    "tenant_id": "victim",
+                    "role": "admin",
+                }
+            )
 
-        async def _fake_load(email):
-            return None
+    def test_password_bounds_are_enforced(self):
+        from pydantic import ValidationError
 
-        async def _fake_save(email, hashed_password, tenant_id, role):
-            captured["tenant_id"] = tenant_id
-            captured["role"] = role
-            return "user_test"
+        from vorsyghta.api.routers.auth import RegisterRequest
 
-        with patch.object(auth_mod, "_load_user", _fake_load), \
-             patch.object(auth_mod, "_save_user", _fake_save):
-            # Starlette's TestClient emits a StarletteDeprecationWarning
-            # when only `httpx` (not `httpx2`) is installed.  pytest.ini's
-            # `filterwarnings = error` would turn that into a hard failure,
-            # so we suppress it locally during import + client construction.
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                from fastapi import FastAPI
-                from fastapi.testclient import TestClient
+        with pytest.raises(ValidationError):
+            RegisterRequest(
+                email="owner@example.test",
+                password="too-short",
+                organization_name="Example Org",
+            )
+        with pytest.raises(ValidationError):
+            RegisterRequest(
+                email="owner@example.test",
+                password="é" * 72,
+                organization_name="Example Org",
+            )
 
-                app = FastAPI()
-                app.include_router(auth_mod.router)
-                with TestClient(app) as c:
-                    yield c, captured
 
-    @pytest.mark.filterwarnings(
-        "ignore::starlette.exceptions.StarletteDeprecationWarning"
-    )
-    def test_admin_role_is_downgraded_to_viewer(self, client_and_captured):
-        client, captured = client_and_captured
-        resp = client.post(
-            "/auth/register",
-            json={
-                "email": "newadmin@test.local",
-                "password": "Password123!",
-                "tenant_id": "evil_tenant",
-                "role": "admin",
-            },
-        )
-        assert resp.status_code == 201, (
-            f"admin self-registration is downgraded (not rejected); "
-            f"expected 201, got {resp.status_code}: {resp.text}"
-        )
-        # The persisted account must be viewer in the default tenant,
-        # regardless of what the client requested.
-        assert captured["role"] == "viewer"
-        assert captured["tenant_id"] == "default"
+def test_oauth_metadata_uses_mounted_token_route():
+    """Generated OpenAPI clients receive the mounted token endpoint."""
+    from vorsyghta.security.rbac import oauth2_scheme
 
-    @pytest.mark.filterwarnings(
-        "ignore::starlette.exceptions.StarletteDeprecationWarning"
-    )
-    def test_analyst_role_is_downgraded_to_viewer(self, client_and_captured):
-        client, captured = client_and_captured
-        resp = client.post(
-            "/auth/register",
-            json={
-                "email": "analyst@test.local",
-                "password": "Password123!",
-                "tenant_id": "tenant_test",
-                "role": "analyst",
-            },
-        )
-        assert resp.status_code == 201, (
-            f"registration should succeed (201), got "
-            f"{resp.status_code}: {resp.text}"
-        )
-        assert captured["role"] == "viewer"
-        assert captured["tenant_id"] == "default"
-
-    @pytest.mark.filterwarnings(
-        "ignore::starlette.exceptions.StarletteDeprecationWarning"
-    )
-    def test_invalid_role_is_ignored_not_rejected(self, client_and_captured):
-        # An invalid client-supplied role is ignored (not validated) because
-        # the endpoint no longer trusts the field at all.
-        client, captured = client_and_captured
-        resp = client.post(
-            "/auth/register",
-            json={
-                "email": "bogus@test.local",
-                "password": "Password123!",
-                "tenant_id": "tenant_test",
-                "role": "superuser",  # not a valid Role — ignored entirely
-            },
-        )
-        assert resp.status_code == 201
-        assert captured["role"] == "viewer"
-        assert captured["tenant_id"] == "default"
-
-    @pytest.mark.filterwarnings(
-        "ignore::starlette.exceptions.StarletteDeprecationWarning"
-    )
-    def test_arbitrary_tenant_is_ignored(self, client_and_captured):
-        # Tenant isolation: a client cannot place itself into an arbitrary
-        # tenant via self-registration.
-        client, captured = client_and_captured
-        resp = client.post(
-            "/auth/register",
-            json={
-                "email": "takeover@evil.com",
-                "password": "Password123!",
-                "tenant_id": "victim_tenant",
-                "role": "viewer",
-            },
-        )
-        assert resp.status_code == 201
-        assert captured["tenant_id"] == "default"
+    assert oauth2_scheme.model.flows.password.tokenUrl == "/api/auth/token"
 
 
 # ============================================================================
 # 8. asyncpg = None fallback (postgres_event_store.py)
 # ============================================================================
+
 
 class TestAsyncpgFallbackImport:
     """Fix: when asyncpg is not importable, the module sets asyncpg = None
@@ -483,6 +396,7 @@ class TestAsyncpgFallbackImport:
 # ============================================================================
 # 9. LLM providers set tokens_used post-construction
 # ============================================================================
+
 
 class TestProviderTokensUsedAssignment:
     """Fix: OpenAI / Anthropic providers no longer pass tokens_used=... into
@@ -519,6 +433,7 @@ class TestProviderTokensUsedAssignment:
 # 10. validate_env.py checks VORSYGHTA_SECRET_KEY
 # ============================================================================
 
+
 class TestValidateEnvSecretKeyName:
     """Fix: validate_env.py now checks VORSYGHTA_SECRET_KEY (matching rbac.py)
     instead of the old SECRET_KEY name.
@@ -528,9 +443,5 @@ class TestValidateEnvSecretKeyName:
         from vorsyghta.config import validate_env
 
         names = [v.name for v in validate_env.REQUIRED_VARS]
-        assert "VORSYGHTA_SECRET_KEY" in names, (
-            "validate_env must check VORSYGHTA_SECRET_KEY (the name rbac.py reads)"
-        )
-        assert "SECRET_KEY" not in names, (
-            "old SECRET_KEY name should no longer be in REQUIRED_VARS"
-        )
+        assert "VORSYGHTA_SECRET_KEY" in names, "validate_env must check VORSYGHTA_SECRET_KEY (the name rbac.py reads)"
+        assert "SECRET_KEY" not in names, "old SECRET_KEY name should no longer be in REQUIRED_VARS"

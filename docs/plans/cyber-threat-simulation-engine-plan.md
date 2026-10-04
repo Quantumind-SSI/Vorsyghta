@@ -1,5 +1,7 @@
 # Cyber Threat Simulation Engine - Full Implementation Plan
 
+> **Platform scope.** This document defines **capability #6 of seven** in Vorsyghta's full scope: the six simulation paradigms (DES/ABM/GAP/GTE/CRE/HME). See the canonical statement in **[README § Platform scope — the full target](../../README.md#platform-scope--the-full-target)**.
+
 ## Executive Summary
 
 This document outlines the comprehensive plan for building an AI-powered cyber threat simulation engine that enables realistic penetration testing and threat simulation through autonomous AI agents. The system combines multiple simulation environments (network emulation, virtualization, containers, digital twins) with advanced AI agents capable of executing real cyber attacks in isolated, safe environments.

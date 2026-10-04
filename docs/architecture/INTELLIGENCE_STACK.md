@@ -1,5 +1,7 @@
 # The Vorsyghta Intelligence Stack
 
+> **Platform scope.** This document describes **capability #2 of seven** in Vorsyghta's full target scope (the union of every plan in `docs/plans/`). The canonical, status-annotated statement of the whole platform lives in **[README § Platform scope — the full target](../../README.md#platform-scope--the-full-target)**.
+
 The Intelligence Stack is Vorsyghta's proprietary differentiator — a unified, event-sourced threat intelligence pipeline that connects every team, every simulation, and every detection back to a single source of truth. Unlike traditional security tools that silo intelligence within individual teams, Vorsyghta's stack flows intelligence **bidirectionally** across red team, blue team, ML/AI, compliance, and infrastructure, creating a closed-loop system where each team's output becomes another team's input.
 
 ## Why It's Proprietary
@@ -257,10 +259,6 @@ vorsyghta blue-team hunt search --all
 
 ## Related Documentation
 
-- [MITRE ATT&CK Full Coverage](../../dev-docs/architecture/ENGINE_PARADIGMS_AND_FIDELITY_LEVELS.md)
-- [Kill Chain Intelligence Output](../../dev-docs/architecture/VORSYGHTA_KILL_CHAIN_INTELLIGENCE_OUTPUT.md)
-- [Intelligence Reporting Capabilities](../../dev-docs/architecture/VORSYGHTA_INTELLIGENCE_REPORTING_CAPABILITIES.md)
-- [Detection Rule Generation](../../dev-docs/architecture/DETECTION_RULE_GENERATION_MECHANISM.md)
 - [Event Sourcing Implementation](../../vorsyghta/core/event_sourcing.py)
 - [Dark Web Monitor Service](../../vorsyghta/intelligence/services.py)
 - [ZestPayment Dark Web Monitoring Template](../../templates/zestpayment/zestpayment_dark_web_monitoring.yaml)

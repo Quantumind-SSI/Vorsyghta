@@ -1,5 +1,7 @@
 # Security Policy
 
+> **Platform scope.** Vorsyghta is one platform with **seven capabilities** — see **[README § Platform scope — the full target](README.md#platform-scope--the-full-target)**. This policy covers the whole surface.
+
 > **For comprehensive security documentation, see [SECURITY_GUIDE.md](SECURITY_GUIDE.md)**
 
 ## Supported Versions

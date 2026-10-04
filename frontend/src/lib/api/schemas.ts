@@ -319,7 +319,7 @@ export const findingListSchema = z.array(findingRecordSchema).max(200);
 
 const COMPLIANCE_FRAMEWORKS = ["pci_dss", "ndpr", "gdpr", "soc_2", "iso_27001", "cbn", "hipaa"] as const;
 const ADAPTER_CATEGORIES = ["containers", "cloud", "files", "web_apps_apis", "external_infrastructure", "directories_crm", "media"] as const;
-const CAPABILITIES = ["colour_teams", "intelligence_stack", "zero_day_research", "quantum_pqc", "saas_product", "bank_pilot", "simulation_paradigms", "rl_rlhf"] as const;
+const CAPABILITIES = ["colour_teams", "intelligence_stack", "zero_day_research", "quantum_pqc", "saas_product", "simulation_paradigms", "rl_rlhf"] as const;
 const PERSONAS = ["ciso", "red_team_lead", "analyst", "pilot_sponsor"] as const;
 const MATURITIES = ["none", "ad_hoc", "defined", "managed"] as const;
 

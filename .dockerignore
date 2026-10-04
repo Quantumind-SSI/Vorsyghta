@@ -1,0 +1,30 @@
+# The API image copies only the paths re-included below. Deny-by-default keeps
+# Git history, virtual environments, frontend build output, local secrets,
+# caches, coverage, and generated runtime data out of the Docker build context.
+**
+
+!.dockerignore
+!Dockerfile
+!requirements.txt
+!requirements-dev.txt
+!pyproject.toml
+!alembic.ini
+!config.yaml
+
+!vorsyghta/
+!vorsyghta/**
+!templates/
+!templates/**
+!migrations/
+!migrations/**
+# Re-exclude generated files nested inside required source directories.
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/.coverage
+**/.coverage.*
+**/coverage.xml
+**/htmlcov/
+**/output/

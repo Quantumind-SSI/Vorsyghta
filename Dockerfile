@@ -17,16 +17,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements
-COPY requirements.txt requirements-dev.txt ./
+# Copy runtime requirements
+COPY requirements.txt ./
 
 # Create virtual environment and install dependencies
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Install Python packages (including dev dependencies for demo/test runs)
+# Install runtime Python packages
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir -r requirements-dev.txt
+    pip install --no-cache-dir -r requirements.txt
 
 # Stage 2: Runtime
 FROM python:3.11-slim
@@ -64,8 +64,6 @@ COPY --chown=vorsyghta:vorsyghta templates/ /app/templates/
 COPY --chown=vorsyghta:vorsyghta config.yaml /app/
 COPY --chown=vorsyghta:vorsyghta pyproject.toml /app/
 COPY --chown=vorsyghta:vorsyghta migrations/ /app/migrations/
-COPY --chown=vorsyghta:vorsyghta demos/ /app/demos/
-COPY --chown=vorsyghta:vorsyghta tests/ /app/tests/
 COPY --chown=vorsyghta:vorsyghta alembic.ini /app/
 
 # Create necessary directories
@@ -80,7 +78,7 @@ EXPOSE 8000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+    CMD curl -f http://localhost:8000/ready || exit 1
 
 # Default command - run API server
 CMD ["python", "-m", "uvicorn", "vorsyghta.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]

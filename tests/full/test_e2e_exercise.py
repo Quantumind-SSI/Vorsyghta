@@ -3,7 +3,7 @@
 Validates the full red → blue → purple → black pipeline without requiring
 external services (LLM, database, or network). All LLM calls are mocked.
 
-Exit criteria from docs/plans/maintainer-timelines-bank-pilot-readiness.md:
+Exit criteria for the color-team exercise flow:
     ✓ Attack generated (red team stages emitted)
     ✓ Blue team detected (alerts on event bus)
     ✓ AAR produced (purple team after-action report)
@@ -84,7 +84,7 @@ def mock_simulator():
 @pytest.fixture
 def bec_scenario() -> ThreatScenario:
     return ThreatScenario(
-        name="BEC Wire Fraud — Bank Pilot",
+        name="BEC Wire Fraud",
         threat_type=ThreatType.PHISHING,
         description="Business Email Compromise targeting a bank's wire-transfer team.",
         target_systems=["email", "wire-transfer-system"],
@@ -332,7 +332,7 @@ class TestExerciseOrchestrator:
     async def test_full_exercise_produces_complete_result(self, bec_scenario, mock_simulator):
         """Full e2e: red → blue → purple → black, all teams produce output."""
         with patch("vorsyghta.core.exercise_orchestrator.Simulator", return_value=mock_simulator):
-            orchestrator = ExerciseOrchestrator(tenant_id="bank-pilot-test")
+            orchestrator = ExerciseOrchestrator(tenant_id="exercise-e2e-test")
             result = await orchestrator.run_exercise(
                 scenario=bec_scenario,
                 teams=["red", "blue", "purple", "black"],
@@ -341,7 +341,7 @@ class TestExerciseOrchestrator:
 
         assert result.status == "completed"
         assert result.exercise_id == "e2e-test-001"
-        assert result.tenant_id == "bank-pilot-test"
+        assert result.tenant_id == "exercise-e2e-test"
         assert result.scenario_name == bec_scenario.name
         assert result.start_time is not None
         assert result.end_time is not None

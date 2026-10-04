@@ -611,6 +611,7 @@ class TestDatabaseHealth:
 
 
 def _mock_conn(*, select_result=1, table_exists_result=True,
+               revision_result="004_stripe_billing",
                raise_on_select: Optional[Exception] = None,
                raise_on_table: Optional[Exception] = None):
     """Build a mock engine whose ``connect()`` yields a mock connection."""
@@ -621,6 +622,9 @@ def _mock_conn(*, select_result=1, table_exists_result=True,
 
     table_result_obj = MagicMock()
     table_result_obj.scalar.return_value = table_exists_result
+
+    revision_result_obj = MagicMock()
+    revision_result_obj.scalar.return_value = revision_result
 
     async def execute(stmt):
         # Distinguish the two queries by the SQL text.
@@ -633,6 +637,8 @@ def _mock_conn(*, select_result=1, table_exists_result=True,
             if raise_on_table:
                 raise raise_on_table
             return table_result_obj
+        if "alembic_version" in sql:
+            return revision_result_obj
         return MagicMock()
 
     conn.execute = execute
@@ -684,6 +690,15 @@ class TestCheckDatabaseHealth:
             result = await check_database_health(engine)
         assert result.healthy is True
         assert result.message == "Database is healthy"
+
+    @pytest.mark.asyncio
+    async def test_outdated_schema_revision_is_unhealthy(self, caplog):
+        engine, _ = _mock_conn(revision_result="003_persistence_layer")
+        with caplog.at_level(logging.WARNING, logger="vorsyghta.db.health"):
+            result = await check_database_health(engine)
+        assert result.healthy is False
+        assert "schema revision is outdated" in result.message
+        assert "004_stripe_billing" in (result.detail or "")
 
     @pytest.mark.asyncio
     async def test_uses_singleton_engine_when_none_given(

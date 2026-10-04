@@ -5,7 +5,6 @@ orchestrator to route events between color teams (Red, Blue, Purple, White,
 Black). All events are persisted to the event store for audit trail.
 
 Owner: Ajibola Shokunbi (@jiboo2022) — Core Software Lead
-See dev-docs/maintainers/ThreatScene/maintainers/AJIBOLA_SHOKUNBI_CORE_IMPLEMENTATION.md
 """
 
 from __future__ import annotations

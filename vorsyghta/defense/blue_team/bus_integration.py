@@ -5,7 +5,6 @@ modules to the shared event bus in a single operation. Each module also exposes
 its own ``subscribe_to_event_bus`` method for fine-grained use.
 
 Owner: David Onoja (@ocheme1107) — Blue Team Lead (Advanced)
-See dev-docs/maintainers/ThreatScene/maintainers/DAVID_ONOJA_BLUE_TEAM_IMPLEMENTATION.md
 """
 
 from __future__ import annotations

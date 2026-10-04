@@ -1,5 +1,7 @@
 # Vorsyghta — Full Application Audit (Current State)
 
+> **Platform scope.** This audit is measured against Vorsyghta's **seven-capability target** — see **[README § Platform scope — the full target](../README.md#platform-scope--the-full-target)**.
+
 **Date:** 2026-08-16
 **Auditor:** Automated + manual review (OpenCode)
 **Commit:** `0495391` (All the changes left for Vorsyghta)

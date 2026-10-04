@@ -1,5 +1,7 @@
 # Vorsyghta — Team Architecture & Re-Engineering Plan
 
+> **Platform scope.** Vorsyghta is one platform with **seven capabilities** (the union of every plan in `docs/plans/`): the eight colour teams + exercise orchestrator, the intelligence stack, zero-day research, quantum/PQC readiness, the commercial SaaS product, six simulation paradigms, and RL/RLHF. The canonical, status-annotated statement of that scope lives in **[README § Platform scope — the full target](../../README.md#platform-scope--the-full-target)**. This document is the code-anchored taxonomy for capability #1.
+
 **Status:** Authoritative plan (2026-08-16). Supersedes README marketing claims where they conflict.
 **Engineering standard:** SWEBOK v4.0 · NASA Power of 10 · Zero Framework Tolerance (CTO-MCP constitution).
 **Prime directive:** *Implementation is the only truth.* No stubs, no fabricated results, no fake detection. Every "result" a CISO sees must be **measured**, not simulated — or explicitly labelled `simulation=true`.

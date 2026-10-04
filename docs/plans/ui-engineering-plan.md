@@ -1,6 +1,6 @@
 # Vorsyghta Frontend Product and Engineering Scope
 
-> **Platform scope.** This document defines **capability #5 of eight** in Vorsyghta's full scope: the commercial SaaS product (Next.js app, Stripe trial, engagements→assessments→findings→reports). See the canonical statement in **[README § Platform scope — the full target](../../README.md#platform-scope--the-full-target)**.
+> **Platform scope.** This document defines **capability #5 of seven** in Vorsyghta's full scope: the commercial SaaS product (Next.js app, Stripe trial, engagements→assessments→findings→reports). See the canonical statement in **[README § Platform scope — the full target](../../README.md#platform-scope--the-full-target)**.
 
 Status: Approved for foundational implementation
 
@@ -544,7 +544,7 @@ enrichment) and the engagement workflow consume later.
 Landing → Register (account + tenant created atomically)
        → Onboarding wizard (4 steps)
             1. Organization profile   — industry, size, region, security-team maturity
-            2. Use cases              — which of the eight capabilities they bought/need
+            2. Use cases              — which of the seven capabilities they bought/need
             3. Environment intent     — what they will connect (§7.6 Environments)
             4. Review & activate      — summary, terms acceptance, workspace entry
        → /app (Evidence workspace, onboarding state recorded)
@@ -559,7 +559,7 @@ unanswered items persist as `"unanswered"`, never as a default.
 | Step | Data captured | Consumed by |
 |---|---|---|
 | 1. Organization profile | industry vertical, company size band, operating regions, security-team maturity (none → ad-hoc → defined → managed), compliance obligations in scope (PCI-DSS, NDPR, GDPR, SOC 2, ISO 27001, CBN, HIPAA) | Engagement scoping (§7.4), compliance mapping (Orange), GRC reporting |
-| 2. Use cases | capability selection (eight pillars), primary persona (CISO, red-team lead, analyst, pilot sponsor), success criteria free-text | Product focus, assessment defaults, report templates |
+| 2. Use cases | capability selection (seven pillars), primary persona (CISO, red-team lead, analyst, pilot sponsor), success criteria free-text | Product focus, assessment defaults, report templates |
 | 3. Environment intent | which adapter categories they plan to connect (containers, cloud, files, web apps & APIs, external infrastructure, directories/CRM, media), cloud providers, whether targets are sanctioned/lab | Environments hub defaults (§7.6), Pillar 2 digital-twin ingestion |
 | 4. Review & activate | terms acceptance timestamp, onboarding completion | Onboarding state, trial-abuse signals |
 
@@ -587,13 +587,13 @@ unanswered items persist as `"unanswered"`, never as a default.
 ### 7.8 Application page scope (the actual product pages)
 
 The onboarding screens (§7.7) are journey scaffolding. The **actual product pages** are the
-authenticated application surface that delivers the eight capabilities. This section scopes
+authenticated application surface that delivers the seven capabilities. This section scopes
 that surface against the verified endpoint reality (probed live, 2026-09-28): every page is
 classified as **shipped**, **Tier A** (endpoint live, page buildable now), **Tier B** (blocked
 on backend prerequisites), or **unmounted** (backend module exists, no API — page blocked on
 a mounted router). No page ships as a stub; missing data renders as unavailable.
 
-#### 7.8.1 Page map by capability (the eight pillars)
+#### 7.8.1 Page map by capability (the seven pillars)
 
 | # | Capability | Pages | Route | Status | Live endpoint evidence |
 |---|---|---|---|---|---|
@@ -612,10 +612,9 @@ a mounted router). No page ships as a stub; missing data renders as unavailable.
 | | | Engagements | `/app/engagements(/new)(/:id)` | **Tier B** | router 200 but global plaintext storage, no route RBAC — disqualifying |
 | | | Assessments | `/app/assessments(/new)(/:id)` | **Tier B** | durable job model + SSE + canonical safety path |
 | | | Reports | `/app/reports(/:id)` | **Tier B** | durable artifacts + approval workflow |
-| 6 | **Bank pilot** | (inherits engagements/assessments/reports + compliance) | — | **Tier B** | compliance records live in DB; no page yet |
 | | | **Compliance dashboard** | `/app/compliance` | **Tier A** | compliance gap/framework records live (`db/models/orange_team.py`); needs a read API — blocked until one lands → reclassify **Tier B** |
-| 7 | **Simulation paradigms** | (inherits exercise console) | — | **planned** | paradigm engines not built |
-| 8 | **RL / RLHF** | **Feedback loop** | `/app/feedback` | **unmounted** | feedback router exists (7 paths) but path shape unverified; analyzer/enhancer live in `vorsyghta/feedback/` |
+| 6 | **Simulation paradigms** | (inherits exercise console) | — | **planned** | paradigm engines not built |
+| 7 | **RL / RLHF** | **Feedback loop** | `/app/feedback` | **unmounted** | feedback router exists (7 paths) but path shape unverified; analyzer/enhancer live in `vorsyghta/feedback/` |
 | — | Cross-cutting | Audit events | `/app/audit` | **Tier A, gated** | 200 analyst / 403 viewer — blocked until server-side tenant filtering |
 | | | Integrations status | `/app/admin/integrations` | **Tier A** | 6 paths live, analyst 403 |
 | | | Secrets providers | `/app/admin/secrets` | **Tier A, restricted** | 403 admin; **never returns raw values in the UI** |
@@ -789,9 +788,7 @@ still requires HTTPS.
 Staging must set `VORSYGHTA_BILLING_REQUIRED=true`, use Stripe test mode with
 `STRIPE_EXPECTED_LIVEMODE=false`, and configure non-loopback HTTPS Checkout and
 Portal return URLs. Production uses live mode and the same non-loopback HTTPS
-rule. The customer-specific Kubernetes manifest under `deployments/zestpayment`
-is outside this generic foundation and remains a separate launch blocker until
-it receives its own reviewed integration.
+rule.
 
 ### 10.3 Failure behavior
 

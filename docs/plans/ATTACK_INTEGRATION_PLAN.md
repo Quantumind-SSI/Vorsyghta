@@ -1,5 +1,7 @@
 # Vorsyghta Attack Integration & Multi-Team Defense Plan
 
+> **Platform scope.** This plan supplies the offensive engine for **capability #1 of seven** (eight colour teams + orchestrator) and the telemetry for **capability #2** (intelligence stack). See the canonical statement in **[README § Platform scope — the full target](../../README.md#platform-scope--the-full-target)**.
+
 ## Executive Summary
 
 Integrate [Vorsyghta Attack](https://github.com/vxcontrol/pentagi) as the autonomous offensive engine for Vorsyghta,

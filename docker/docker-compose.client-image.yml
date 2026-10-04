@@ -12,8 +12,8 @@
 # What this layer does:
 #   * Replaces `build:` with `image: ghcr.io/quantumindssi/vorsyghta:${CLIENT_IMAGE_TAG:-latest}`
 #     for BOTH `vorsyghta-api` and the `migrate` one-shot. The pre-built image
-#     already bakes in the application code, migrations, and demos (see Dockerfile),
-#     so the migrate service can run `alembic upgrade head` straight from it.
+#     already bakes in the application code and migrations (see Dockerfile), so
+#     the migrate service can run `alembic upgrade head` straight from it.
 #   * Sets `pull_policy: always` so a stale local cache can't shadow a freshly
 #     published client image — every `up` fetches the current digest from ghcr.io.
 #   * Hardens the API env for a secure, network-isolated run:
@@ -43,12 +43,12 @@
 # Optional .env entries:
 #   CLIENT_IMAGE_TAG=latest   (ghcr.io tag to pull)
 #   API_PORT=8001             (host port for the API)
-#   CORS_ORIGINS=http://localhost:8001   (comma-separated allowed origins)
+#   ALLOWED_ORIGINS=http://localhost:8001   (comma-separated allowed origins)
 # =============================================================================
 services:
   # ---- One-shot migration runner (use the pulled client image) ------------
   migrate:
-    # Drop the integration layer's `build:` block — compose merges maps, so
+    # Drop the base/integration `build:` block because compose merges maps, so
     # without !reset both `build:` and `image:` would survive and compose would
     # try to build AND pull. !reset clears build: so only the pulled image is used.
     build: !reset null
@@ -79,8 +79,7 @@ services:
       # ---- Stable JWT signer (rbac.py reads VORSYGHTA_SECRET_KEY) ----
       - VORSYGHTA_SECRET_KEY=${VORSYGHTA_SECRET_KEY:?Set VORSYGHTA_SECRET_KEY in .env}
       # ---- CORS locked to the API host only (no wildcard) ----
-      - ENABLE_CORS=true
-      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:8001}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:8001}
       # ---- Ollama provider (inherited from integration override, repeated
       #      here so this layer is self-documenting if inspected alone) ----
       - OLLAMA_BASE_URL=http://ollama:11434

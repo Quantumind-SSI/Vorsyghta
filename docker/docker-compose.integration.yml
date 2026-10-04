@@ -3,13 +3,10 @@
 # =============================================================================
 # Layered on top of docker-compose.yml. Brings up the FULL stack from the base
 # compose (PostgreSQL, Redis, Ollama, vorsyghta-api, Prometheus, Grafana) and
-# additionally:
+# overrides it for a deterministic integration run:
 #
-#   * runs Alembic migrations via a one-shot `migrate` service BEFORE the API
-#     starts — this fixes the DB health check (audit.events table only comes
-#     from migration 001, not from Base.metadata.create_all) and avoids the
-#     DuplicateTable error (create_all runs after migrations and is then a
-#     no-op because checkfirst=True)
+#   * preserves the base one-shot Alembic `migrate` service and its API startup
+#     dependency while using the integration image build
 #   * sets DEFAULT_LLM_PROVIDER=ollama so the API uses the Ollama container
 #     on the Docker network for REAL LLM output (no cloud API keys needed,
 #     everything stays in your network)
@@ -38,10 +35,8 @@
 # =============================================================================
 services:
   # ---- One-shot migration runner -----------------------------------------
-  # Runs `alembic upgrade head` against the fresh Postgres before the API
-  # starts. The API's _init_database does Base.metadata.create_all which would
-  # create ORM tables first, causing migration 003 to fail with DuplicateTable.
-  # By running migrations first, create_all becomes a no-op.
+  # Runs `alembic upgrade head` against Postgres before the API starts. Alembic
+  # is the sole schema authority; application startup never creates tables.
   migrate:
     build:
       context: .

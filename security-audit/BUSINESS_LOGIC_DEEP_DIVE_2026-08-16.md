@@ -1,5 +1,7 @@
 # Vorsyghta — Business Logic Deep Dive
 
+> **Platform scope.** This review classifies each capability of Vorsyghta's **seven-capability target** as REAL / SIMULATED / STUBBED. Capability definitions: **[README § Platform scope — the full target](../README.md#platform-scope--the-full-target)**.
+
 **Date:** 2026-08-16
 **Method:** Traced real execution paths (not README claims). Classified each capability as
 REAL / PARTIALLY-REAL / STUBBED / SIMULATED / FAKE-DATA with file:line evidence.

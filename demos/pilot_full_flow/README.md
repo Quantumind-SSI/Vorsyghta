@@ -5,30 +5,22 @@ in full flow across all 8 color teams.
 
 ## Quick Start
 
-### Option 1: Pull the pre-built Docker image (recommended)
+### Option 1: Pull the pre-built API image
 
 ```bash
 # Pull from GitHub Container Registry
 docker pull ghcr.io/quantumindssi/vorsyghta:latest
 
-# Run the full pilot demo inside the container
-docker run --rm ghcr.io/quantumindssi/vorsyghta:latest \
-    bash demos/pilot_full_flow/run_pilot_demo.sh
-
-# Quick mode (skips the 8-team exercise run)
-docker run --rm ghcr.io/quantumindssi/vorsyghta:latest \
-    bash demos/pilot_full_flow/run_pilot_demo.sh --quick
-
 # Start the API server (port 8000)
 docker run --rm -p 8000:8000 ghcr.io/quantumindssi/vorsyghta:latest
 
 # Full stack with docker-compose (API + PostgreSQL + Redis + Ollama + monitoring)
-export POSTGRES_PASSWORD=yourpassword
-export SECRET_KEY=$(openssl rand -hex 32)
+cp .env.example .env
+# Replace the database, JWT, Grafana, and PgAdmin placeholder secrets in .env.
 docker compose up --build -d
 ```
 
-### Option 2: Run locally with Python
+### Option 2: Run the demo from the repository
 
 ```bash
 # Full demo (offline, mocked LLM — no API keys needed)

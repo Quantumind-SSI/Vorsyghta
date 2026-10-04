@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class EnvVar:
     """Environment variable specification."""
+
     name: str
     required: bool = False
     required_in_production: bool = False
@@ -62,31 +63,16 @@ REQUIRED_VARS = [
         name="VORSYGHTA_SECRET_KEY",
         required_in_production=True,
         pattern=r"^[a-f0-9]{32,}$|^.{32,}$",  # At least 32 chars
-        description="Application secret key for session security"
+        description="Application secret key for session security",
     ),
 ]
 
 # API Key variables (at least one should be set for LLM functionality)
 API_KEY_VARS = [
-    EnvVar(
-        name="OPENAI_API_KEY",
-        pattern=r"^sk-[a-zA-Z0-9]{20,}$",
-        description="OpenAI API key"
-    ),
-    EnvVar(
-        name="ANTHROPIC_API_KEY",
-        pattern=r"^sk-ant-[a-zA-Z0-9-]+$",
-        description="Anthropic Claude API key"
-    ),
-    EnvVar(
-        name="OPENROUTER_API_KEY",
-        pattern=r"^sk-or-[a-zA-Z0-9-]+$",
-        description="OpenRouter API key"
-    ),
-    EnvVar(
-        name="AZURE_OPENAI_API_KEY",
-        description="Azure OpenAI API key"
-    ),
+    EnvVar(name="OPENAI_API_KEY", pattern=r"^sk-[a-zA-Z0-9]{20,}$", description="OpenAI API key"),
+    EnvVar(name="ANTHROPIC_API_KEY", pattern=r"^sk-ant-[a-zA-Z0-9-]+$", description="Anthropic Claude API key"),
+    EnvVar(name="OPENROUTER_API_KEY", pattern=r"^sk-or-[a-zA-Z0-9-]+$", description="OpenRouter API key"),
+    EnvVar(name="AZURE_OPENAI_API_KEY", description="Azure OpenAI API key"),
 ]
 
 # Production-required variables
@@ -95,38 +81,19 @@ PRODUCTION_VARS = [
         name="DATABASE_URL",
         required_in_production=True,
         pattern=r"^postgres(ql)?://",
-        description="PostgreSQL connection string"
+        description="PostgreSQL connection string",
     ),
-    EnvVar(
-        name="REDIS_URL",
-        required_in_production=True,
-        pattern=r"^redis://",
-        description="Redis connection string"
-    ),
+    EnvVar(name="REDIS_URL", required_in_production=True, pattern=r"^redis://", description="Redis connection string"),
 ]
 
 # Security configuration variables
 SECURITY_VARS = [
-    EnvVar(
-        name="ENABLE_CONTENT_FILTERING",
-        description="Enable content safety filtering"
-    ),
-    EnvVar(
-        name="ENABLE_AUDIT_LOGGING",
-        description="Enable audit logging"
-    ),
-    EnvVar(
-        name="API_AUTHENTICATION_ENABLED",
-        required_in_production=True,
-        description="Enable API authentication"
-    ),
+    EnvVar(name="ENABLE_CONTENT_FILTERING", description="Enable content safety filtering"),
+    EnvVar(name="ENABLE_AUDIT_LOGGING", description="Enable audit logging"),
 ]
 
 
-def validate_environment(
-    exit_on_error: bool = True,
-    require_llm_key: bool = True
-) -> Tuple[bool, List[str]]:
+def validate_environment(exit_on_error: bool = True, require_llm_key: bool = True) -> Tuple[bool, List[str]]:
     """Validate all required environment variables.
 
     Args:
@@ -164,8 +131,7 @@ def validate_environment(
     # Check that at least one LLM API key is set
     if require_llm_key:
         has_llm_key = any(
-            os.getenv(var.name) and not os.getenv(var.name, "").startswith("your_")
-            for var in API_KEY_VARS
+            os.getenv(var.name) and not os.getenv(var.name, "").startswith("your_") for var in API_KEY_VARS
         )
 
         # Also check for Ollama (local LLM)
@@ -234,7 +200,6 @@ def print_environment_status():
     security_settings = [
         ("ENABLE_CONTENT_FILTERING", "Content Filtering"),
         ("ENABLE_AUDIT_LOGGING", "Audit Logging"),
-        ("API_AUTHENTICATION_ENABLED", "API Authentication"),
         ("ENABLE_SAFETY_VALIDATION", "Safety Validation"),
     ]
 

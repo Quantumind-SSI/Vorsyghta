@@ -135,7 +135,7 @@ async def list_templates_by_category(
     category: str,
     current_user: CurrentUser = Depends(get_current_user),
 ):
-    """List templates in a specific category (e.g., 'zestpayment', 'root')."""
+    """List templates in a specific category (e.g., 'sanctioned_targets', 'root')."""
     templates_dir = _find_templates_dir()
 
     # "root" is a virtual category for templates at the top level

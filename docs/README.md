@@ -2,6 +2,8 @@
 
 Welcome to the Vorsyghta documentation. This directory contains all official documentation organized by category.
 
+> **Start here — the full platform scope.** Vorsyghta is one platform with **seven capabilities**: the eight colour teams + exercise orchestrator, the intelligence stack, zero-day research, quantum/PQC readiness, the commercial SaaS product, six simulation paradigms, and RL/RLHF. The canonical, status-annotated statement of that scope (shipped · shipped-partial · in-build · planned) lives in **[README § Platform scope — the full target](../README.md#platform-scope--the-full-target)**. Every architecture and plan document in this tree is a detailed view of one capability within it.
+
 ## Documentation Structure
 
 ### [Guides](./guides/)

@@ -7,6 +7,42 @@ on:
     branches: [ main, master, develop ]
 
 jobs:
+  frontend:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 10.19.0
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: "24"
+        cache: pnpm
+        cache-dependency-path: frontend/pnpm-lock.yaml
+
+    - name: Install frontend dependencies
+      run: pnpm --dir frontend install --frozen-lockfile
+
+    - name: Lint frontend
+      run: pnpm --dir frontend lint
+
+    - name: Type-check frontend
+      run: pnpm --dir frontend typecheck
+
+    - name: Test frontend
+      run: pnpm --dir frontend test
+
+    - name: Build frontend
+      run: pnpm --dir frontend build
+
+    - name: Audit production dependencies
+      run: pnpm --dir frontend audit --prod --audit-level high
+
   test:
     runs-on: ubuntu-latest
     strategy:
@@ -32,10 +68,8 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install -r requirements-dev.txt || true
-        pip install -e "." || true
-        pip install ruff bandit pytest pytest-cov pytest-asyncio
+        pip install -r requirements-dev.txt
+        pip install -e ".[dev,test]"
     
     - name: Lint with ruff
       run: ruff check vorsyghta/ tests/
@@ -46,8 +80,76 @@ jobs:
     - name: Security scan with bandit
       run: bandit -r vorsyghta/ -c pyproject.toml --severity-level medium
 
+  deployment-validation:
+    runs-on: ubuntu-latest
+
+    env:
+      DATABASE_URL: postgresql://vorsyghta:ci-password@localhost:5432/vorsyghta
+      POSTGRES_PASSWORD: ci-postgres-password
+      VORSYGHTA_SECRET_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      GRAFANA_ADMIN_PASSWORD: ci-grafana-password
+      PGADMIN_PASSWORD: ci-pgadmin-password
+      VORSYGHTA_BILLING_REQUIRED: "false"
+      STRIPE_EXPECTED_LIVEMODE: "false"
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+
+    - name: Install migration validation dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .
+
+    - name: Validate single Alembic head
+      run: |
+        python - <<'PY'
+        from alembic.config import Config
+        from alembic.script import ScriptDirectory
+
+        heads = ScriptDirectory.from_config(Config("alembic.ini")).get_heads()
+        if len(heads) != 1:
+            raise SystemExit(f"Expected exactly one Alembic head, found: {heads}")
+        print(f"Alembic head: {heads[0]}")
+        PY
+
+    - name: Render PostgreSQL migration upgrade SQL
+      run: alembic upgrade head --sql > "${RUNNER_TEMP}/alembic-upgrade.sql"
+
+    - name: Render PostgreSQL migration downgrade SQL
+      run: alembic downgrade head:base --sql > "${RUNNER_TEMP}/alembic-downgrade.sql"
+
+    - name: Verify rendered migration SQL
+      run: |
+        python - <<'PY'
+        import os
+        from pathlib import Path
+
+        root = Path(os.environ["RUNNER_TEMP"])
+        for name in ("alembic-upgrade.sql", "alembic-downgrade.sql"):
+            path = root / name
+            if not path.is_file() or path.stat().st_size == 0:
+                raise SystemExit(f"Migration rendering produced no SQL: {path}")
+        PY
+
+    - name: Validate base Compose model
+      run: docker compose --profile web config --quiet
+
+    - name: Validate integration Compose model
+      run: docker compose -f docker-compose.yml -f docker/docker-compose.integration.yml config --quiet
+
+    - name: Build API container
+      run: docker build --file Dockerfile --tag vorsyghta-api:ci .
+
+    - name: Build frontend container
+      run: docker build --file frontend/Dockerfile --tag vorsyghta-web:ci frontend
+
   build:
-    needs: test
+    needs: [frontend, test, deployment-validation]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
 

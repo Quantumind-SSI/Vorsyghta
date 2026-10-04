@@ -1,5 +1,7 @@
 # End-to-End Implementation Audit
 
+> **Platform scope.** This audit measures how far the codebase is from the **seven-capability target** defined in **[README § Platform scope — the full target](../../README.md#platform-scope--the-full-target)**. Findings below map to capabilities #1–#6.
+
 Comprehensive audit of bugs, faults, happy-path-only code, stubs, TODOs, inefficiencies, and flow breaks that hinder a true end-to-end implementation of Vorsyghta.
 
 ## Totals

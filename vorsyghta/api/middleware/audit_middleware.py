@@ -8,6 +8,7 @@ makes any tampering with audit records detectable.
 Owner: Jeremiah Okino (@okino007) — Compliance Lead
 Phase 1 — Tamper-evident audit trail (P0-5)
 """
+
 from __future__ import annotations
 
 import logging
@@ -43,12 +44,10 @@ class AuditMiddleware(BaseHTTPMiddleware):
     def __init__(self, app: ASGIApp) -> None:
         super().__init__(app)
 
-    async def dispatch(
-        self, request: Request, call_next: Callable
-    ) -> Response:
+    async def dispatch(self, request: Request, call_next: Callable) -> Response:
         # Skip health checks to avoid noise
         path = request.url.path
-        if path in ("/health", "/", "/docs", "/openapi.json", "/redoc"):
+        if path in ("/health", "/ready", "/", "/docs", "/openapi.json", "/redoc"):
             return await call_next(request)
 
         correlation_id = request.headers.get("X-Correlation-ID") or str(uuid.uuid4())
@@ -122,6 +121,7 @@ class AuditMiddleware(BaseHTTPMiddleware):
         token = auth_header[7:]
         try:
             from jose import jwt as jose_jwt
+
             # Decode without verification — just for audit attribution
             payload = jose_jwt.get_unverified_claims(token)
             return {

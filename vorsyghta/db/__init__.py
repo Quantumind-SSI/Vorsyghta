@@ -17,7 +17,6 @@ Phase 2 (domain models) will add submodules under ``vorsyghta.db.models``
 that define the actual ORM tables.
 
 Owner: Ajibola Shokunbi (@jiboo2022) — Core Software Lead
-Phase 1 of the persistence layer fix (see docs/plans/persistence-layer-maintainer-assignment.md).
 """
 
 from vorsyghta.db.base import (

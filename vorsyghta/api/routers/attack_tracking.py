@@ -16,6 +16,7 @@ Endpoints:
 
 Owner: Vorsyghta Core Team
 """
+
 from __future__ import annotations
 
 import logging
@@ -27,17 +28,35 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy import select, func, update
 
-from vorsyghta.security.rbac import CurrentUser, get_current_user, require_analyst
+from vorsyghta.security.rbac import CurrentUser, require_analyst, require_viewer
 from vorsyghta.core.audit_logger import AuditCategory, AuditSeverity, get_audit_logger
 from vorsyghta.core.tool_server_client import get_tool_server_client
+from vorsyghta.integrations.stripe_billing import (
+    StripeBillingConfigurationError,
+    billing_required_from_env,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/attack-tracking", tags=["Attack Tracking"])
 
 
+def require_direct_execution_enabled() -> None:
+    """Hide legacy direct execution paths from SaaS deployments."""
+    try:
+        billing_required = billing_required_from_env()
+    except StripeBillingConfigurationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Execution policy is not configured",
+        ) from exc
+    if billing_required:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+
+
 # =============================================================================
 # Request / Response Models
 # =============================================================================
+
 
 class AttackSequenceCreate(BaseModel):
     name: str
@@ -81,6 +100,7 @@ class ToolExecuteRequest(BaseModel):
 
 class SequenceExecuteRequest(BaseModel):
     """Execute all pending steps in a sequence via the tool server."""
+
     timeout_per_step: int = Field(300, description="Timeout per step in seconds")
     fail_fast: bool = Field(False, description="Stop on first failure")
 
@@ -88,6 +108,7 @@ class SequenceExecuteRequest(BaseModel):
 # =============================================================================
 # Attack Sequence Endpoints
 # =============================================================================
+
 
 @router.post("/sequences", status_code=status.HTTP_201_CREATED)
 async def create_sequence(
@@ -146,23 +167,19 @@ async def list_sequences(
     sequence_status: Optional[str] = None,
     skip: int = 0,
     limit: int = 50,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_analyst),
 ):
     """List attack sequences for the current tenant."""
     from vorsyghta.db.session import get_session
     from vorsyghta.db.models.tool_tracking import AttackSequenceRecord
 
     async with get_session() as session:
-        query = select(AttackSequenceRecord).where(
-            AttackSequenceRecord.tenant_id == current_user.tenant_id
-        )
+        query = select(AttackSequenceRecord).where(AttackSequenceRecord.tenant_id == current_user.tenant_id)
         if exercise_id:
             query = query.where(AttackSequenceRecord.exercise_id == exercise_id)
         if sequence_status:
             query = query.where(AttackSequenceRecord.sequence_status == sequence_status)
-        query = query.offset(skip).limit(limit).order_by(
-            AttackSequenceRecord.created_at.desc()
-        )
+        query = query.offset(skip).limit(limit).order_by(AttackSequenceRecord.created_at.desc())
         result = await session.execute(query)
         sequences = result.scalars().all()
         return [
@@ -187,7 +204,7 @@ async def list_sequences(
 @router.get("/sequences/{sequence_id}")
 async def get_sequence(
     sequence_id: str,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_analyst),
 ):
     """Get a specific attack sequence with all its steps."""
     from vorsyghta.db.session import get_session
@@ -206,9 +223,9 @@ async def get_sequence(
             raise HTTPException(status_code=404, detail="Attack sequence not found")
 
         steps_result = await session.execute(
-            select(AttackSequenceStepRecord).where(
-                AttackSequenceStepRecord.sequence_id == sequence_id
-            ).order_by(AttackSequenceStepRecord.step_order)
+            select(AttackSequenceStepRecord)
+            .where(AttackSequenceStepRecord.sequence_id == sequence_id)
+            .order_by(AttackSequenceStepRecord.step_order)
         )
         steps = steps_result.scalars().all()
 
@@ -329,6 +346,7 @@ async def execute_sequence(
     sequence_id: str,
     request: SequenceExecuteRequest,
     current_user: CurrentUser = Depends(require_analyst),
+    _execution_enabled: None = Depends(require_direct_execution_enabled),
 ):
     """Execute all pending steps in an attack sequence via the tool server.
 
@@ -338,7 +356,9 @@ async def execute_sequence(
     """
     from vorsyghta.db.session import get_session
     from vorsyghta.db.models.tool_tracking import (
-        AttackSequenceRecord, AttackSequenceStepRecord, AttackExecutionRecord,
+        AttackSequenceRecord,
+        AttackSequenceStepRecord,
+        AttackExecutionRecord,
     )
     import json
 
@@ -356,10 +376,12 @@ async def execute_sequence(
 
         # Get pending steps
         steps_result = await session.execute(
-            select(AttackSequenceStepRecord).where(
+            select(AttackSequenceStepRecord)
+            .where(
                 AttackSequenceStepRecord.sequence_id == sequence_id,
                 AttackSequenceStepRecord.step_status == "pending",
-            ).order_by(AttackSequenceStepRecord.step_order)
+            )
+            .order_by(AttackSequenceStepRecord.step_order)
         )
         steps = steps_result.scalars().all()
 
@@ -383,10 +405,7 @@ async def execute_sequence(
         if getattr(claim, "rowcount", 0) != 1:
             raise HTTPException(
                 status_code=409,
-                detail=(
-                    f"Sequence is '{seq.sequence_status}', not runnable "
-                    f"(already running or in a terminal state)"
-                ),
+                detail=(f"Sequence is '{seq.sequence_status}', not runnable (already running or in a terminal state)"),
             )
         await session.refresh(seq)
 
@@ -472,14 +491,16 @@ async def execute_sequence(
                     break
 
             completed += 1
-            results.append({
-                "step_id": step.step_id,
-                "step_name": step.step_name,
-                "tool": step.tool_name,
-                "success": tool_result["success"],
-                "duration_seconds": tool_result.get("duration_seconds", 0),
-                "usage_id": tool_result.get("usage_id"),
-            })
+            results.append(
+                {
+                    "step_id": step.step_id,
+                    "step_name": step.step_name,
+                    "tool": step.tool_name,
+                    "success": tool_result["success"],
+                    "duration_seconds": tool_result.get("duration_seconds", 0),
+                    "usage_id": tool_result.get("usage_id"),
+                }
+            )
             await session.commit()
 
         # Update sequence. The three accumulator counters are updated atomically
@@ -535,6 +556,7 @@ async def execute_sequence(
 # Tool Usage Endpoints
 # =============================================================================
 
+
 @router.get("/tool-usage")
 async def list_tool_usage(
     exercise_id: Optional[str] = None,
@@ -543,16 +565,14 @@ async def list_tool_usage(
     success: Optional[bool] = None,
     skip: int = 0,
     limit: int = 100,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_analyst),
 ):
     """List tool usage records."""
     from vorsyghta.db.session import get_session
     from vorsyghta.db.models.tool_tracking import ToolUsageRecord
 
     async with get_session() as session:
-        query = select(ToolUsageRecord).where(
-            ToolUsageRecord.tenant_id == current_user.tenant_id
-        )
+        query = select(ToolUsageRecord).where(ToolUsageRecord.tenant_id == current_user.tenant_id)
         if exercise_id:
             query = query.where(ToolUsageRecord.exercise_id == exercise_id)
         if simulation_id:
@@ -561,9 +581,7 @@ async def list_tool_usage(
             query = query.where(ToolUsageRecord.tool_name == tool_name)
         if success is not None:
             query = query.where(ToolUsageRecord.success == success)
-        query = query.offset(skip).limit(limit).order_by(
-            ToolUsageRecord.started_at.desc()
-        )
+        query = query.offset(skip).limit(limit).order_by(ToolUsageRecord.started_at.desc())
         result = await session.execute(query)
         records = result.scalars().all()
         return [
@@ -592,7 +610,7 @@ async def list_tool_usage(
 @router.get("/tool-usage/{usage_id}")
 async def get_tool_usage(
     usage_id: str,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_analyst),
 ):
     """Get a specific tool usage record with full output."""
     from vorsyghta.db.session import get_session
@@ -640,9 +658,11 @@ async def get_tool_usage(
 # Tool Server Direct Endpoints
 # =============================================================================
 
+
 @router.get("/tools/available")
 async def list_available_tools(
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_analyst),
+    _execution_enabled: None = Depends(require_direct_execution_enabled),
 ):
     """List tools available on the tool server."""
     client = get_tool_server_client()
@@ -657,6 +677,7 @@ async def list_available_tools(
 async def execute_tool(
     request: ToolExecuteRequest,
     current_user: CurrentUser = Depends(require_analyst),
+    _execution_enabled: None = Depends(require_direct_execution_enabled),
 ):
     """Execute a single tool via the tool server.
 
@@ -709,23 +730,24 @@ async def execute_tool(
 # Statistics
 # =============================================================================
 
+
 @router.get("/stats")
 async def tracking_stats(
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_viewer),
 ):
     """Get attack tracking statistics for the current tenant."""
     from vorsyghta.db.session import get_session
     from vorsyghta.db.models.tool_tracking import (
-        ToolUsageRecord, AttackSequenceRecord, AttackSequenceStepRecord,
+        ToolUsageRecord,
+        AttackSequenceRecord,
+        AttackSequenceStepRecord,
     )
 
     stats: Dict[str, Any] = {}
     async with get_session() as session:
         # Total sequences
         total_seq = await session.execute(
-            select(func.count(AttackSequenceRecord.id)).where(
-                AttackSequenceRecord.tenant_id == current_user.tenant_id
-            )
+            select(func.count(AttackSequenceRecord.id)).where(AttackSequenceRecord.tenant_id == current_user.tenant_id)
         )
         stats["total_sequences"] = total_seq.scalar_one()
 
@@ -741,9 +763,7 @@ async def tracking_stats(
 
         # Total tool usage
         total_tools = await session.execute(
-            select(func.count(ToolUsageRecord.id)).where(
-                ToolUsageRecord.tenant_id == current_user.tenant_id
-            )
+            select(func.count(ToolUsageRecord.id)).where(ToolUsageRecord.tenant_id == current_user.tenant_id)
         )
         stats["total_tool_usage"] = total_tools.scalar_one()
 
@@ -761,14 +781,13 @@ async def tracking_stats(
             select(
                 ToolUsageRecord.tool_name,
                 func.count(ToolUsageRecord.id).label("count"),
-                func.sum(ToolUsageRecord.success.cast(__import__('sqlalchemy').Integer)).label("successes"),
-            ).where(
-                ToolUsageRecord.tenant_id == current_user.tenant_id
-            ).group_by(ToolUsageRecord.tool_name)
+                func.sum(ToolUsageRecord.success.cast(__import__("sqlalchemy").Integer)).label("successes"),
+            )
+            .where(ToolUsageRecord.tenant_id == current_user.tenant_id)
+            .group_by(ToolUsageRecord.tool_name)
         )
         stats["tools_by_name"] = [
-            {"tool": row.tool_name, "count": row.count, "successes": row.successes or 0}
-            for row in tool_counts
+            {"tool": row.tool_name, "count": row.count, "successes": row.successes or 0} for row in tool_counts
         ]
 
         # Total steps

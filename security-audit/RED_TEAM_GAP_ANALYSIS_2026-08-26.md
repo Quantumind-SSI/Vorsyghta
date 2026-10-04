@@ -1,5 +1,7 @@
 # Vorsyghta Red-Team Suite Gap Analysis
 
+> **Platform scope.** This analysis covers the offensive side of **capability #1** (eight colour teams) and **capability #3** (zero-day research). Canonical scope: **[README § Platform scope — the full target](../README.md#platform-scope--the-full-target)**.
+
 **Date:** 2026-08-26
 
 **Audited commit:** `444f4ad` (`master`, aligned with `origin/master` at audit time)

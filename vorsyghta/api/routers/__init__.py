@@ -14,6 +14,7 @@ from .disclosure import router as disclosure_router
 from .secrets import router as secrets_router
 from .sso import router as sso_router
 from .integrations import router as integrations_router
+from .billing import router as billing_router
 
 __all__ = [
     "manuals_router",
@@ -30,4 +31,5 @@ __all__ = [
     "secrets_router",
     "sso_router",
     "integrations_router",
+    "billing_router",
 ]

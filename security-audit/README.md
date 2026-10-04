@@ -1,5 +1,7 @@
 # Recursive STRIDE-Guided SAST Pipeline
 
+> **Platform scope.** This pipeline is the ready-made engine for the code-review capability of **capability #1** (Orange team). See the canonical seven-capability scope in **[README § Platform scope — the full target](../README.md#platform-scope--the-full-target)**.
+
 A hybrid static-analysis methodology that chains four stages: automated recon, STRIDE threat modeling, recursive local-inference audit, and triage.
 
 ## Overview

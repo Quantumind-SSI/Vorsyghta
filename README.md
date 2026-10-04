@@ -1,6 +1,14 @@
 # Vorsyghta
 
-**The agentic cyber platform that unifies threat simulation, red team operations, and zero-day vulnerability research — closing the loop between offense, defense, and intelligence.**
+**The one-stop agentic cyber platform: simulate adversaries, defend with evidence, and hunt zero-days — in one closed loop.**
+
+**Why teams buy it**
+
+- 🎯 **One command, every team** — `vorsyghta exercise run --teams all` runs all eight colour teams over one typed event bus: White sets the rules of engagement, Yellow builds the range, Red attacks, Blue defends, Purple coaches, Green remediates, Orange reviews the rebuild, Black scores it.
+- 🧠 **Intelligence aimed at the real organisation** — live OSINT, dark-web exposure monitoring, and full MITRE ATT&CK v14 coverage feed both simulation and detection from a single source of truth.
+- 🔬 **Beyond known CVEs** — a real fuzzing / SAST / binary-analysis / crash-triage toolchain, LLM-guided mutation, and a responsible-disclosure workflow.
+- 🛡️ **Evidence, not theatre** — every result carries provenance (measured · simulated · AI-generated · fallback), so a CISO can defend the number to a board or an auditor.
+- 🔓 **Open core, deployable anywhere** — Apache-2.0 core, commercial enterprise modules, and air-gapped self-hosting for regulated industries.
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: Apache 2.0 + Commercial](https://img.shields.io/badge/license-Apache%202.0%20%2B%20Commercial-blue.svg)](LICENSE)
@@ -12,9 +20,32 @@
 
 ---
 
+## Platform scope — the full target
+
+Vorsyghta is **one platform with seven capabilities**. This is the true core of the
+application: the union of every roadmap in `docs/plans/`. Status is stated per
+capability, because the repository's prime directive is that nothing is claimed
+unless it is measured.
+
+| # | Capability | What it delivers | Status |
+|---|---|---|---|
+| **1** | **Eight colour teams + orchestrator** | One command — `vorsyghta exercise run --scenario <path> --teams all` — runs White (rules of engagement) → Yellow (provision) → Red (attack) → Blue (defend) → Purple (AAR) → Green (remediate) → Orange (code review) → White (verify) → Black (score) over one typed event bus. | **Shipped (partial)** — all eight engines and the orchestrator exist; the exercise path's Blue detection and Yellow provisioning are still simulated. |
+| **2** | **Intelligence stack** *(commercial differentiator)* | OSINT enrichment, dark-web exposure monitoring, MITRE ATT&CK v14 full coverage, event-sourced audit trail, hypothesis-driven threat hunting, auto-generated detection rules — plus **digital-twin ingestion** of client infrastructure (GNS3 topology; AWS/Azure/GCP IAM, security groups, bucket policies). | **Shipped (partial)** — MITRE, CVE/CISA-KEV feeds, detection-rule generation and event store are real; dark-web and digital-twin ingestion are partial. |
+| **3** | **Zero-day research** | Coverage-guided fuzzing, SAST, binary analysis, LLM-guided mutation, crash triage and a responsible (CVD) disclosure workflow. | **Shipped** — real toolchain over SSH'd research VMs. |
+| **4** | **Quantum / PQC readiness** | Cryptographic inventory, Shor/Grover risk analysis, NIST PQC migration planning, hybrid PQ/TLS validation, Y2Q timeline modelling. | **Shipped (partial)** — modules exist; API router not yet mounted. |
+| **5** | **Commercial SaaS product** | Next.js application, Stripe-hosted Team trial, and the `engagements → assessments → findings → reports` workflow with evidence-provenance UX. Tiers: **Team · Enterprise · Mission**. | **In build** — frontend + verified Stripe billing foundation shipped; operational workflow planned. |
+| **6** | **Six simulation paradigms** | DES (discrete event), ABM (agent-based), GAP (graph attack path), GTE (game-theoretic), CRE (cyber range emulation), HME (human/behaviour). | **Planned** — 4–6 months. |
+| **7** | **RL / RLHF** | A learned reward model and a gymnasium-compatible `CyberAttackEnv` to train attack agents. | **Planned** — design complete. |
+
+**Status legend:** *Shipped* · *Shipped (partial)* · *In build* · *Planned*.
+Capability-level detail, with the measured-vs-simulated seam, lives in
+[`docs/architecture/TEAM_ARCHITECTURE.md`](docs/architecture/TEAM_ARCHITECTURE.md).
+
+---
+
 ## What Vorsyghta Actually Is
 
-Vorsyghta is not just a phishing simulator or a training platform. It is a **full-spectrum agentic cyber operations platform** with three core pillars:
+Vorsyghta is not just a phishing simulator or a training platform. It is a **full-spectrum agentic cyber operations platform**. Three pillars are shipping today; they are the implemented core of the seven-part scope above.
 
 ### 1. Threat Simulation & Red Team Operations
 
@@ -498,7 +529,18 @@ pytest
 
 ## Commercial Licensing & Enterprise
 
-For enterprise licensing, pilot programmes, or to access the commercial modules (intelligence stack, event-sourced audit trail, blue team suite, multi-team orchestration, enterprise integrations), contact **commercial@vorsyghta.io** or see [`docs/licensing/COMPONENT_MATRIX.md`](docs/licensing/COMPONENT_MATRIX.md).
+Vorsyghta is open-core: the simulation engine, CLI, template system, and basic LLM
+provider abstraction are Apache 2.0, while the intelligence stack, event-sourced
+audit trail, blue-team suite, multi-team orchestration, enterprise integrations,
+and compliance automation are licensed commercially.
+
+| Tier | Target | Headline capability |
+|---|---|---|
+| **Team** | Small security teams (≤25 seats) | Intelligence stack, blue-team suite, detection-rule generation, REST API |
+| **Enterprise** | Mid-to-large organisations | Multi-team orchestration, event-sourced audit trail, digital-twin client data, SSO/RBAC, enterprise integrations |
+| **Mission** | Regulated industries (banks, fintech, healthcare) | Compliance automation (PCI-DSS, NDPR, GDPR, SOC 2, ISO 27001, CBN), quantum/PQC readiness, on-premise air-gapped deployment |
+
+For enterprise licensing, pilot programmes, or to access the commercial modules, contact **commercial@vorsyghta.io** or see [`docs/licensing/COMPONENT_MATRIX.md`](docs/licensing/COMPONENT_MATRIX.md).
 
 ---
 

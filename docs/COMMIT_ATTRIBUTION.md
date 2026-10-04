@@ -1,7 +1,9 @@
 # Vorsyghta Commit Attribution Document
 
+> **Platform scope.** Contributions below build Vorsyghta's **seven-capability target** — see **[README § Platform scope — the full target](../README.md#platform-scope--the-full-target)**.
+
 > **Last Updated:** January 17, 2026  
-> **Repository:** QuantumindSSI/Vorsyghta  
+> **Repository:** QuantmindSSI/Vorsyghta  
 > **Purpose:** Comprehensive tracking of all contributions to the codebase
 
 ---

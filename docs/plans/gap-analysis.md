@@ -1,5 +1,7 @@
 # Gap Analysis: Cyber Threat Simulation Engine Plan vs Vorsyghta Codebase
 
+> **Platform scope.** This gap analysis covers **capability #6 of seven** (six simulation paradigms) and the quantum layer of **capability #4**. See the canonical statement in **[README § Platform scope — the full target](../../README.md#platform-scope--the-full-target)**.
+
 **Date:** 2026-06-28  
 **Reference:** `docs/plans/cyber-threat-simulation-engine-plan.md`
 

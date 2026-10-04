@@ -1,5 +1,7 @@
 # RL & RLHF Improvement Plan
 
+> **Platform scope.** This document defines **capability #7 of seven** in Vorsyghta's full scope: the learned reward model and gymnasium `CyberAttackEnv`. See the canonical statement in **[README § Platform scope — the full target](../../README.md#platform-scope--the-full-target)**.
+
 Concrete, file-by-file implementation plan for two efforts:
 
 - **Part A (short-term):** Replace the handcrafted linear reward model in `RLHFOptimizer` with a real learned reward model.

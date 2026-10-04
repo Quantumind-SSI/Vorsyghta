@@ -32,6 +32,30 @@ from vorsyghta.llm.providers.pydantic_ai_provider import PydanticAIProvider
 from vorsyghta.llm.manager import LLMManager
 
 
+@pytest.fixture(autouse=True)
+def _isolated_llm_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep ambient provider env out of these wiring assertions.
+
+    LLMManager._autoload_config() runs load_dotenv(), so any process that
+    earlier built an LLMManager() carries .env values (placeholder API keys,
+    DEFAULT_LLM_PROVIDER, AZURE_OPENAI_* fallbacks) that would otherwise
+    select the wrong provider class or satisfy the os.getenv() fallbacks the
+    empty-credential tests must refute.
+    """
+    for var in (
+        "OPENROUTER_API_KEY",
+        "OPENAI_API_KEY",
+        "ANTHROPIC_API_KEY",
+        "AZURE_OPENAI_API_KEY",
+        "AZURE_OPENAI_ENDPOINT",
+        "AZURE_OPENAI_DEPLOYMENT",
+        "DEFAULT_LLM_PROVIDER",
+        "OLLAMA_BASE_URL",
+        "OLLAMA_MODEL",
+    ):
+        monkeypatch.delenv(var, raising=False)
+
+
 # --------------------------------------------------------------------------- #
 # Fixtures / helpers
 # --------------------------------------------------------------------------- #

@@ -23,7 +23,6 @@ const CAPABILITIES: ReadonlyArray<{ value: string; label: string; hint: string }
   { value: "zero_day_research", label: "Zero-day research", hint: "Fuzzing, SAST, crash triage" },
   { value: "quantum_pqc", label: "Quantum / PQC readiness", hint: "Crypto inventory, migration planning" },
   { value: "saas_product", label: "Evidence workspace", hint: "Findings, reports, provenance" },
-  { value: "bank_pilot", label: "Bank pilot", hint: "Regulated-industry validation" },
   { value: "simulation_paradigms", label: "Advanced simulation", hint: "Six paradigm engines" },
   { value: "rl_rlhf", label: "Agent training (RL/RLHF)", hint: "Learned reward models" },
 ];

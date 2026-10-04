@@ -8,7 +8,6 @@ All domain ORM models (red team, blue team, simulation, intelligence, quantum,
 audit) should inherit from :class:`Base` defined here.
 
 Owner: Ajibola Shokunbi (@jiboo2022) — Core Software Lead
-Phase 1 of the persistence layer fix (see docs/plans/persistence-layer-maintainer-assignment.md).
 """
 
 from __future__ import annotations

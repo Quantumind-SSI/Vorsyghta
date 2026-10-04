@@ -11,16 +11,51 @@
         "owasp"
       ],
       "created_at": "2026-07-08T08:30:18.976399"
+    },
+    "737906bd-8ed1-40eb-91bd-fe87708e3a1e": {
+      "title": "Onboarding \u2014 environment intent",
+      "category": "tool_config",
+      "teams": [
+        "all_teams"
+      ],
+      "tags": [
+        "onboarding",
+        "environments",
+        "azure"
+      ],
+      "created_at": "2026-09-28T15:18:34.564502"
+    },
+    "12a07582-504e-4021-aa09-b4a333beaca5": {
+      "title": "Onboarding \u2014 activated",
+      "category": "training",
+      "teams": [
+        "all_teams"
+      ],
+      "tags": [
+        "onboarding",
+        "activated"
+      ],
+      "created_at": "2026-09-28T15:18:54.731017"
     }
   },
   "categories": {
     "detection_rule": [
       "e2c58200-d809-4ce1-9da1-4af683e96fd6"
+    ],
+    "tool_config": [
+      "737906bd-8ed1-40eb-91bd-fe87708e3a1e"
+    ],
+    "training": [
+      "12a07582-504e-4021-aa09-b4a333beaca5"
     ]
   },
   "teams": {
     "blue_team": [
       "e2c58200-d809-4ce1-9da1-4af683e96fd6"
+    ],
+    "all_teams": [
+      "737906bd-8ed1-40eb-91bd-fe87708e3a1e",
+      "12a07582-504e-4021-aa09-b4a333beaca5"
     ]
   },
   "tags": {
@@ -29,7 +64,20 @@
     ],
     "owasp": [
       "e2c58200-d809-4ce1-9da1-4af683e96fd6"
+    ],
+    "onboarding": [
+      "737906bd-8ed1-40eb-91bd-fe87708e3a1e",
+      "12a07582-504e-4021-aa09-b4a333beaca5"
+    ],
+    "environments": [
+      "737906bd-8ed1-40eb-91bd-fe87708e3a1e"
+    ],
+    "azure": [
+      "737906bd-8ed1-40eb-91bd-fe87708e3a1e"
+    ],
+    "activated": [
+      "12a07582-504e-4021-aa09-b4a333beaca5"
     ]
   },
-  "last_updated": "2026-07-08T08:30:18.976672"
+  "last_updated": "2026-09-28T15:18:54.731537"
 }

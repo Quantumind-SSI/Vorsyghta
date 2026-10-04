@@ -1,5 +1,7 @@
 # Agentic Scientific Research: Vorsyghta as a Unified Cyber Threat Simulation Framework
 
+> **Platform scope.** This paper frames the whole platform. Vorsyghta's full target is **seven capabilities** — colour teams + orchestrator, intelligence stack, zero-day research, quantum/PQC, commercial SaaS, six simulation paradigms, and RL/RLHF. Canonical statement: **[README § Platform scope — the full target](../../README.md#platform-scope--the-full-target)**.
+
 **Document ID:** CIC-RESEARCH-2026-001  
 **Date:** 2026-06-28  
 **Version:** 1.0  

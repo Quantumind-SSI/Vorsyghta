@@ -45,7 +45,7 @@ def exercise_group():
 )
 @click.option(
     "--scenario-name",
-    default="BEC Wire Fraud — Bank Pilot",
+    default="BEC Wire Fraud",
     show_default=True,
     help="Scenario name (used when no YAML file is provided).",
 )

@@ -20,6 +20,8 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 logger = logging.getLogger(__name__)
 
+EXPECTED_SCHEMA_REVISION = "004_stripe_billing"
+
 
 @dataclass
 class DatabaseHealth:
@@ -46,7 +48,7 @@ async def check_database_health(engine: Optional[AsyncEngine] = None) -> Databas
 
     Returns:
         :class:`DatabaseHealth` with ``healthy=True`` if the connection
-        succeeded and the ``audit.events`` table exists.
+        succeeded and Alembic reports the expected schema revision.
     """
     if engine is None:
         from vorsyghta.db.base import get_engine
@@ -67,7 +69,7 @@ async def check_database_health(engine: Optional[AsyncEngine] = None) -> Databas
         logger.error("Database health check failed: %s", detail)
         return DatabaseHealth(healthy=False, message=msg, detail=detail)
 
-    # 2. Schema check — verify audit.events table exists (created by migration 001)
+    # 2. Schema check: verify both the baseline table and current Alembic head.
     try:
         async with engine.connect() as conn:
             result = await conn.execute(
@@ -79,6 +81,8 @@ async def check_database_health(engine: Optional[AsyncEngine] = None) -> Databas
                 )
             )
             events_table_exists = result.scalar() or False
+            revision_result = await conn.execute(text("SELECT version_num FROM alembic_version"))
+            current_revision = revision_result.scalar()
     except Exception as exc:
         msg = "Database reachable but schema query failed"
         detail = f"{type(exc).__name__}: {exc}"
@@ -90,6 +94,15 @@ async def check_database_health(engine: Optional[AsyncEngine] = None) -> Databas
         detail = (
             "The audit.events table does not exist.\n"
             "Run: alembic upgrade head"
+        )
+        logger.warning(msg)
+        return DatabaseHealth(healthy=False, message=msg, detail=detail)
+
+    if current_revision != EXPECTED_SCHEMA_REVISION:
+        msg = "Database reachable but schema revision is outdated"
+        detail = (
+            f"Expected Alembic revision {EXPECTED_SCHEMA_REVISION}, found "
+            f"{current_revision or 'none'}. Run: alembic upgrade head"
         )
         logger.warning(msg)
         return DatabaseHealth(healthy=False, message=msg, detail=detail)

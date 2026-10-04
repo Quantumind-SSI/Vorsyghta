@@ -1,0 +1,24 @@
+{
+  "entry_id": "aa8a47f0-e590-46c2-83d4-5b24bbca1eff",
+  "title": "Onboarding \u2014 use cases",
+  "content": "{\"capabilities\":[\"intelligence_stack\",\"bank_pilot\"],\"persona\":\"ciso\",\"success_criteria\":\"MITRE-mapped detection coverage, executive AAR per quarter\"}",
+  "category": "best_practice",
+  "source": "manual_entry",
+  "teams": [
+    "all_teams"
+  ],
+  "tags": [
+    "onboarding",
+    "use-cases",
+    "ciso"
+  ],
+  "mitre_techniques": [],
+  "severity": null,
+  "confidence": 0.8,
+  "metadata": {},
+  "expires_at": null,
+  "created_at": "2026-09-28T15:18:14.391499",
+  "updated_at": "2026-09-28T15:18:14.391499",
+  "usage_count": 0,
+  "relevance_score": 0.0
+}

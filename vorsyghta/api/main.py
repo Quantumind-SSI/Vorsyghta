@@ -6,19 +6,30 @@ for threat simulation, scenario management, and system health checks.
 
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Depends, status
+from anyio import to_thread
+from fastapi import FastAPI, HTTPException, Depends, Response, status
+from fastapi.openapi.utils import get_openapi
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from dotenv import load_dotenv
 from pydantic import BaseModel, Field
+from redis.exceptions import RedisError
 
 from vorsyghta.core.models import ThreatScenario, SimulationResult, ThreatType
 from vorsyghta.core.simulator import Simulator
 from vorsyghta.llm.manager import LLMManager
 from vorsyghta.core.audit_logger import get_audit_logger, AuditCategory, AuditSeverity
+from vorsyghta.core.redis_client import get_redis_client
+from vorsyghta.db.health import check_database_health
+from vorsyghta.integrations.stripe_billing import (
+    StripeBillingConfigurationError,
+    StripeBillingSettings,
+    billing_required_from_env,
+)
 
 # Import API routers
 from vorsyghta.api.routers import (
@@ -36,10 +47,17 @@ from vorsyghta.api.routers import (
     secrets_router,
     sso_router,
     integrations_router,
+    billing_router,
 )
 
 # Import security dependencies
-from vorsyghta.security.rbac import get_current_user, require_analyst, CurrentUser
+from vorsyghta.security.rbac import (
+    CurrentUser,
+    get_current_user,
+    require_analyst,
+    validate_authentication_configuration,
+)
+from vorsyghta.api.routers.billing import require_entitled_user
 
 # Import audit middleware
 from vorsyghta.api.middleware import AuditMiddleware
@@ -47,6 +65,7 @@ from vorsyghta.api.middleware import AuditMiddleware
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+load_dotenv()
 
 # Global instances
 simulator: Optional[Simulator] = None
@@ -69,9 +88,6 @@ async def lifespan(app: FastAPI):
             context={"environment": os.getenv("ENVIRONMENT", "development")},
             description="Vorsyghta API starting up",
         )
-
-        # Initialize database — create tables if they don't exist
-        await _init_database()
 
         llm_manager = LLMManager()
         simulator = Simulator(llm_provider=llm_manager)
@@ -96,26 +112,10 @@ async def lifespan(app: FastAPI):
     # Dispose DB engine
     try:
         from vorsyghta.db.base import dispose_engine
+
         await dispose_engine()
     except Exception as e:
         logger.warning(f"Failed to dispose DB engine: {e}")
-
-
-async def _init_database() -> None:
-    """Initialize the database by creating all ORM tables if they don't exist.
-
-    This is a lightweight alternative to Alembic migrations for the pilot.
-    In production, use Alembic migrations instead.
-    """
-    try:
-        import vorsyghta.db.models  # noqa: F401 — register all models
-        from vorsyghta.db.base import Base, get_engine
-        engine = get_engine()
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-        logger.info("Database initialized — all ORM tables created")
-    except Exception as e:
-        logger.warning(f"Database initialization skipped (DB may be unavailable): {e}")
 
 
 # Create FastAPI app
@@ -123,7 +123,7 @@ app = FastAPI(
     title="Vorsyghta API",
     version="0.1.0",
     description="Advanced AI-powered threat simulation and analysis platform",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 # Add CORS middleware - Production should configure ALLOWED_ORIGINS env var
@@ -139,25 +139,62 @@ app.add_middleware(
 app.add_middleware(AuditMiddleware)
 
 # Include API routers
-app.include_router(manuals_router, prefix="/api")
-app.include_router(knowledge_router, prefix="/api")
-app.include_router(feedback_router, prefix="/api")
+_ENTITLED = [Depends(require_entitled_user)]
 app.include_router(auth_router, prefix="/api")
-app.include_router(threat_hunting_router, prefix="/api")
-app.include_router(exercise_router, prefix="/api")
-app.include_router(templates_router, prefix="/api")
-app.include_router(threat_intel_router, prefix="/api")
-app.include_router(attack_tracking_router, prefix="/api")
-app.include_router(engagement_router, prefix="/api")
-app.include_router(disclosure_router, prefix="/api")
-app.include_router(secrets_router, prefix="/api")
-app.include_router(sso_router, prefix="/api")
-app.include_router(integrations_router, prefix="/api")
+app.include_router(templates_router, prefix="/api", dependencies=_ENTITLED)
+app.include_router(threat_intel_router, prefix="/api", dependencies=_ENTITLED)
+app.include_router(attack_tracking_router, prefix="/api", dependencies=_ENTITLED)
+app.include_router(billing_router, prefix="/api")
+
+try:
+    _SAAS_MODE = billing_required_from_env()
+except StripeBillingConfigurationError:
+    _SAAS_MODE = True
+
+if not _SAAS_MODE:
+    app.include_router(manuals_router, prefix="/api", dependencies=_ENTITLED)
+    app.include_router(knowledge_router, prefix="/api", dependencies=_ENTITLED)
+    app.include_router(feedback_router, prefix="/api", dependencies=_ENTITLED)
+    app.include_router(threat_hunting_router, prefix="/api", dependencies=_ENTITLED)
+    app.include_router(exercise_router, prefix="/api", dependencies=_ENTITLED)
+    app.include_router(engagement_router, prefix="/api", dependencies=_ENTITLED)
+    app.include_router(disclosure_router, prefix="/api", dependencies=_ENTITLED)
+    app.include_router(secrets_router, prefix="/api", dependencies=_ENTITLED)
+    app.include_router(sso_router, prefix="/api")
+    app.include_router(integrations_router, prefix="/api", dependencies=_ENTITLED)
+
+
+def require_self_hosted_surface() -> None:
+    """Hide legacy process-global operations from billing-required SaaS."""
+    try:
+        if billing_required_from_env():
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    except StripeBillingConfigurationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Deployment mode is not configured",
+        ) from exc
+
+
+_EXTENDED_SURFACE = [Depends(require_entitled_user), Depends(require_self_hosted_surface)]
+_SAAS_HIDDEN_OPENAPI_PATHS = {
+    "/audit/events",
+    "/scenarios",
+    "/simulations",
+    "/simulations/active",
+    "/llm/generate",
+    "/llm/providers",
+    "/llm/status",
+    "/api/attack-tracking/sequences/{sequence_id}/execute",
+    "/api/attack-tracking/tools/execute",
+}
+_openapi_billing_required: bool | None = None
 
 
 # Pydantic models for API
 class ScenarioRequest(BaseModel):
     """Request model for creating threat scenarios."""
+
     name: str = Field(..., description="Name of the threat scenario")
     threat_type: ThreatType = Field(..., description="Type of threat")
     description: str = Field("", description="Detailed description of the scenario")
@@ -169,6 +206,7 @@ class ScenarioRequest(BaseModel):
 
 class ScenarioResponse(BaseModel):
     """Response model for threat scenarios."""
+
     scenario_id: str
     name: str
     threat_type: ThreatType
@@ -182,36 +220,72 @@ class ScenarioResponse(BaseModel):
 
 class SimulationRequest(BaseModel):
     """Request model for simulation execution."""
+
     scenario_id: str = Field(..., description="ID of the scenario to simulate")
     max_stages: Optional[int] = Field(10, description="Maximum number of simulation stages")
 
 
 class HealthResponse(BaseModel):
     """Response model for health checks."""
+
     status: str
     timestamp: datetime
     version: str
     components: Dict[str, str]
 
 
+class ReadinessResponse(BaseModel):
+    """Deployment readiness based on required infrastructure and configuration."""
+
+    status: str
+    timestamp: datetime
+    checks: Dict[str, str]
+
+
+def _billing_configuration_status() -> str:
+    """Return a non-secret readiness state for optional or required billing."""
+    try:
+        if not billing_required_from_env():
+            return "not_required"
+        StripeBillingSettings.from_env()
+    except StripeBillingConfigurationError:
+        return "invalid"
+    return "configured"
+
+
+def _authentication_configuration_status() -> str:
+    """Return whether JWT signing and lifetime settings are usable."""
+    try:
+        validate_authentication_configuration()
+    except HTTPException:
+        return "invalid"
+    return "configured"
+
+
+async def _redis_readiness_status() -> str:
+    """Verify the shared rate-limit store without blocking the event loop."""
+    client = await to_thread.run_sync(get_redis_client)
+    if client is None:
+        return "unavailable"
+    try:
+        healthy = await to_thread.run_sync(client.ping)
+    except RedisError:
+        return "unavailable"
+    return "ready" if healthy else "unavailable"
+
+
 # Dependencies
 def get_simulator() -> Simulator:
     """Get the threat simulator instance."""
     if simulator is None:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Threat simulator not initialized"
-        )
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Threat simulator not initialized")
     return simulator
 
 
 def get_llm_manager() -> LLMManager:
     """Get the LLM manager instance."""
     if llm_manager is None:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="LLM manager not initialized"
-        )
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="LLM manager not initialized")
     return llm_manager
 
 
@@ -219,11 +293,7 @@ def get_llm_manager() -> LLMManager:
 @app.get("/", response_model=Dict[str, str])
 async def read_root():
     """Root endpoint."""
-    return {
-        "message": "Vorsyghta API",
-        "version": "0.1.0",
-        "status": "operational"
-    }
+    return {"message": "Vorsyghta API", "version": "0.1.0", "status": "operational"}
 
 
 @app.get("/health", response_model=HealthResponse)
@@ -234,12 +304,11 @@ async def health_check():
         components = {
             "api": "healthy",
             "simulator": "healthy" if simulator else "unavailable",
-            "llm_manager": "healthy" if llm_manager else "unavailable"
+            "llm_manager": "healthy" if llm_manager else "unavailable",
         }
 
         # Check DB health
         try:
-            from vorsyghta.db.health import check_database_health
             db_health = await check_database_health()
             components["database"] = "healthy" if db_health.healthy else "unavailable"
         except Exception:
@@ -253,26 +322,47 @@ async def health_check():
             components["audit"] = "unavailable"
 
         # Overall status
-        overall_status = "healthy" if all(
-            status == "healthy" for status in components.values()
-        ) else "degraded"
+        overall_status = "healthy" if all(status == "healthy" for status in components.values()) else "degraded"
 
         return HealthResponse(
             status=overall_status,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             version="0.1.0",
-            components=components
+            components=components,
         )
 
     except Exception as e:
         logger.error(f"Health check failed: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Health check failed"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Health check failed")
 
 
-@app.get("/audit/events")
+@app.get("/ready", response_model=ReadinessResponse)
+async def readiness_check(response: Response) -> ReadinessResponse:
+    """Return 200 only when the migrated database and required billing config are ready."""
+    database = await check_database_health()
+    billing = _billing_configuration_status()
+    authentication = _authentication_configuration_status()
+    redis = await _redis_readiness_status()
+    ready = (
+        database.healthy
+        and billing != "invalid"
+        and authentication == "configured"
+        and redis == "ready"
+    )
+    response.status_code = status.HTTP_200_OK if ready else status.HTTP_503_SERVICE_UNAVAILABLE
+    return ReadinessResponse(
+        status="ready" if ready else "not_ready",
+        timestamp=datetime.now(timezone.utc),
+        checks={
+            "database": "ready" if database.healthy else "unavailable",
+            "billing": billing,
+            "authentication": authentication,
+            "redis": redis,
+        },
+    )
+
+
+@app.get("/audit/events", dependencies=_EXTENDED_SURFACE)
 async def get_audit_events(
     limit: int = 100,
     current_user: CurrentUser = Depends(require_analyst),
@@ -283,6 +373,7 @@ async def get_audit_events(
     are also written to stdout/file with SHA-256 hash-chain integrity.
     """
     from vorsyghta.core.audit_logger import MemoryAuditSink, get_audit_logger
+
     audit = get_audit_logger()
     events = []
     for sink in audit.sinks:
@@ -301,7 +392,12 @@ async def get_audit_events(
 
 
 # Scenario management endpoints
-@app.post("/scenarios", response_model=ScenarioResponse, status_code=status.HTTP_201_CREATED)
+@app.post(
+    "/scenarios",
+    response_model=ScenarioResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=_EXTENDED_SURFACE,
+)
 async def create_scenario(request: ScenarioRequest):
     """Create a new threat scenario."""
     try:
@@ -312,40 +408,34 @@ async def create_scenario(request: ScenarioRequest):
             severity=request.severity,
             target_systems=request.target_systems,
             attack_vectors=request.attack_vectors,
-            metadata=request.metadata
+            metadata=request.metadata,
         )
 
         return ScenarioResponse(
             scenario_id=scenario.scenario_id,
             name=scenario.name,
-            threat_type=scenario.threat_type,
+            threat_type=ThreatType(scenario.threat_type),
             description=scenario.description,
             severity=scenario.severity,
             target_systems=scenario.target_systems,
             attack_vectors=scenario.attack_vectors,
             created_at=scenario.created_at,
-            metadata=scenario.metadata
+            metadata=scenario.metadata,
         )
 
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         logger.error(f"Failed to create scenario: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create scenario"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create scenario")
 
 
 # Simulation endpoints
-@app.post("/simulations", status_code=status.HTTP_202_ACCEPTED)
+@app.post("/simulations", status_code=status.HTTP_202_ACCEPTED, dependencies=_EXTENDED_SURFACE)
 async def run_simulation(
     request: SimulationRequest,
     sim: Simulator = Depends(get_simulator),
-    current_user: CurrentUser = Depends(require_analyst)
+    current_user: CurrentUser = Depends(require_analyst),
 ):
     """Execute a threat simulation."""
     try:
@@ -353,7 +443,7 @@ async def run_simulation(
         scenario = ThreatScenario(
             name=f"Scenario_{request.scenario_id}",
             threat_type=ThreatType.CUSTOM,
-            description="API-initiated simulation scenario"
+            description="API-initiated simulation scenario",
         )
 
         # Execute simulation
@@ -365,21 +455,17 @@ async def run_simulation(
             "status": result.status,
             "stages_completed": len(result.stages),
             "success_rate": result.success_rate,
-            "duration_seconds": result.total_duration_seconds
+            "duration_seconds": result.total_duration_seconds,
         }
 
     except Exception as e:
         logger.error(f"Simulation failed: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Simulation failed: {str(e)}"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Simulation failed: {str(e)}")
 
 
-@app.get("/simulations/active")
+@app.get("/simulations/active", dependencies=_EXTENDED_SURFACE)
 async def get_active_simulations(
-    sim: Simulator = Depends(get_simulator),
-    current_user: CurrentUser = Depends(require_analyst)
+    sim: Simulator = Depends(get_simulator), current_user: CurrentUser = Depends(require_analyst)
 ):
     """Get currently active simulations."""
     try:
@@ -392,22 +478,22 @@ async def get_active_simulations(
                     "status": result.status,
                     "scenario_id": result.scenario_id,
                     "stages_completed": len(result.stages),
-                    "start_time": result.start_time.isoformat()
+                    "start_time": result.start_time.isoformat(),
                 }
                 for result_id, result in active.items()
-            ]
+            ],
         }
     except Exception as e:
         logger.error(f"Failed to get active simulations: {str(e)}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to get active simulations"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to get active simulations"
         )
 
 
 # LLM endpoints
 class ContentGenerationRequest(BaseModel):
     """Request model for direct content generation."""
+
     prompt: str = Field(..., description="The prompt for content generation")
     scenario_type: str = Field("custom", description="Type of scenario")
     max_tokens: int = Field(1000, description="Maximum tokens to generate")
@@ -417,6 +503,7 @@ class ContentGenerationRequest(BaseModel):
 
 class ContentGenerationResponse(BaseModel):
     """Response model for content generation."""
+
     content: str
     provider_used: str
     tokens_used: int
@@ -425,15 +512,15 @@ class ContentGenerationResponse(BaseModel):
     metadata: Dict[str, Any]
 
 
-@app.post("/llm/generate", response_model=ContentGenerationResponse)
+@app.post("/llm/generate", response_model=ContentGenerationResponse, dependencies=_EXTENDED_SURFACE)
 async def generate_content(
     request: ContentGenerationRequest,
     llm: LLMManager = Depends(get_llm_manager),
-    current_user: CurrentUser = Depends(get_current_user)
+    current_user: CurrentUser = Depends(get_current_user),
 ):
     """Generate content directly using LLM providers."""
     try:
-        start_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc)
 
         # Generate content using the LLM manager
         response = await llm.generate_content(
@@ -441,19 +528,19 @@ async def generate_content(
             scenario_type=request.scenario_type,
             max_tokens=request.max_tokens,
             temperature=request.temperature,
-            provider_name=request.provider
+            provider_name=request.provider,
         )
 
-        end_time = datetime.utcnow()
+        end_time = datetime.now(timezone.utc)
         generation_time = (end_time - start_time).total_seconds()
 
         # Extract token usage — LLMResponse stores tokens in metadata or as
         # dynamic attribute depending on the provider
-        meta = getattr(response, 'metadata', {}) or {}
+        meta = getattr(response, "metadata", {}) or {}
         tokens_used = (
-            getattr(response, 'tokens_used', None)
-            or meta.get('total_tokens')
-            or (meta.get('prompt_tokens', 0) + meta.get('completion_tokens', 0))
+            getattr(response, "tokens_used", None)
+            or meta.get("total_tokens")
+            or (meta.get("prompt_tokens", 0) + meta.get("completion_tokens", 0))
             or 0
         )
 
@@ -462,62 +549,50 @@ async def generate_content(
             provider_used=response.provider,
             tokens_used=tokens_used,
             generation_time_seconds=generation_time,
-            safety_score=getattr(response, 'safety_score', 1.0),
+            safety_score=getattr(response, "safety_score", 1.0),
             metadata=meta,
         )
 
     except Exception as e:
         logger.error(f"Content generation failed: {str(e)}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Content generation failed: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Content generation failed: {str(e)}"
         )
 
 
-@app.get("/llm/providers")
+@app.get("/llm/providers", dependencies=_EXTENDED_SURFACE)
 async def list_providers(
-    llm: LLMManager = Depends(get_llm_manager),
-    current_user: CurrentUser = Depends(get_current_user)
+    llm: LLMManager = Depends(get_llm_manager), current_user: CurrentUser = Depends(get_current_user)
 ):
     """List available LLM providers."""
     try:
         providers = llm.get_available_providers()
         default = None
-        if hasattr(llm, 'provider') and llm.provider:
-            default = getattr(llm.provider, 'name', type(llm.provider).__name__)
-        return {
-            "providers": providers,
-            "default_provider": default,
-            "total_providers": len(providers)
-        }
+        if hasattr(llm, "provider") and llm.provider:
+            default = getattr(llm.provider, "name", type(llm.provider).__name__)
+        return {"providers": providers, "default_provider": default, "total_providers": len(providers)}
     except Exception as e:
         logger.error(f"Failed to list providers: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to list providers"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to list providers")
 
 
-@app.get("/llm/status")
+@app.get("/llm/status", dependencies=_EXTENDED_SURFACE)
 async def llm_status(llm: LLMManager = Depends(get_llm_manager)):
     """Get LLM provider status."""
     try:
         providers = llm.get_available_providers()
         default = None
-        if hasattr(llm, 'provider') and llm.provider:
-            default = getattr(llm.provider, 'name', type(llm.provider).__name__)
+        if hasattr(llm, "provider") and llm.provider:
+            default = getattr(llm.provider, "name", type(llm.provider).__name__)
         return {
             "llm_manager": "operational" if providers else "no_providers",
             "available_providers": providers,
             "default_provider": default,
-            "status": "ready" if providers else "no_providers_configured"
+            "status": "ready" if providers else "no_providers_configured",
         }
     except Exception as e:
         logger.error(f"Failed to get LLM status: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to get LLM status"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to get LLM status")
 
 
 # Error handlers
@@ -526,11 +601,12 @@ async def http_exception_handler(request, exc):
     """Custom HTTP exception handler."""
     return JSONResponse(
         status_code=exc.status_code,
+        headers=exc.headers,
         content={
             "error": exc.detail,
             "status_code": exc.status_code,
-            "timestamp": datetime.utcnow().isoformat()
-        }
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        },
     )
 
 
@@ -543,11 +619,38 @@ async def general_exception_handler(request, exc):
         content={
             "error": "Internal server error",
             "status_code": 500,
-            "timestamp": datetime.utcnow().isoformat()
-        }
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        },
     )
+
+
+def _custom_openapi():
+    """Hide direct execution contracts from billing-required SaaS schemas."""
+    global _openapi_billing_required
+    try:
+        billing_required = billing_required_from_env()
+    except StripeBillingConfigurationError:
+        billing_required = True
+    if app.openapi_schema is not None and _openapi_billing_required == billing_required:
+        return app.openapi_schema
+    schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        description=app.description,
+        routes=app.routes,
+    )
+    if billing_required:
+        for path in _SAAS_HIDDEN_OPENAPI_PATHS:
+            schema.get("paths", {}).pop(path, None)
+    app.openapi_schema = schema
+    _openapi_billing_required = billing_required
+    return schema
+
+
+setattr(app, "openapi", _custom_openapi)
 
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)

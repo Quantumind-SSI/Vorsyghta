@@ -1,5 +1,7 @@
 # Color Team Architecture: Making Vorsyghta the One-Stop Shop for Agentic Cybersecurity
 
+> **Platform scope.** This is the build target for **capability #1 of seven** in Vorsyghta's full scope: the eight colour teams + exercise orchestrator. See the canonical statement in **[README § Platform scope — the full target](../../README.md#platform-scope--the-full-target)**.
+
 **Date:** 2026-07-01
 **Status:** Proposed — build target for the 8-team model.
 **Depends on:** `ATTACK_INTEGRATION_PLAN.md`, `rl-and-rlhf-improvement-plan.md`, `ui-engineering-plan.md`

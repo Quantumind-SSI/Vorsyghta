@@ -156,7 +156,7 @@ from unittest.mock import MagicMock
 async def demo():
     mgr = InfrastructureManager()
     scenario = MagicMock()
-    scenario.name = "BEC Wire Fraud - Bank Pilot"
+    scenario.name = "BEC Wire Fraud"
     scenario.target_systems = ["email-gateway", "finance-portal", "ad-controller"]
 
     result = await mgr.provision_environment(
@@ -280,7 +280,7 @@ from vorsyghta.core.models import ThreatScenario
 async def run():
     orchestrator = ExerciseOrchestrator(tenant_id="bank-abc")
     scenario = ThreatScenario(
-        name="BEC Wire Fraud - Bank Pilot",
+        name="BEC Wire Fraud",
         threat_type="phishing",
         description="Business email compromise targeting wire transfer authorization",
         target_systems=["email-gateway", "finance-portal"],

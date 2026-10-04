@@ -1,5 +1,7 @@
 # Vorsyghta Component Licensing Matrix
 
+> **Platform scope.** This matrix classifies the components that implement Vorsyghta's **seven capabilities** (see **[README § Platform scope — the full target](../../README.md#platform-scope--the-full-target)**) into the Apache-2.0 core and the commercial modules. Capability → tier mapping is in §9.
+
 **Version:** 1.0
 **Last Updated:** 2026-07-07
 **Owner:** Vorsyghta Core Team
@@ -158,7 +160,28 @@ Yes. The basic content filter and safety models are open source under Apache 2.0
 
 ---
 
-## 8. Contacts
+## 8. Capability → Tier Mapping
+
+Vorsyghta's full target is **seven capabilities** (see
+[README § Platform scope — the full target](../../README.md#platform-scope--the-full-target)).
+The open-core split maps onto them as follows.
+
+| # | Capability | Open source (Apache 2.0) | Commercial |
+|---|---|---|---|
+| 1 | Eight colour teams + orchestrator | Simulation engine, templates, CLI core; Red/Blue agent primitives | Exercise orchestrator, all eight team engines, event bus & types |
+| 2 | Intelligence stack | Basic LLM provider abstraction | OSINT/dark-web, MITRE engine, event sourcing, client-data digital twin, detection rules |
+| 3 | Zero-day research | — (fuzzing/SAST/binary tooling ships in the repo under the core classification) | Crash triage, LLM mutator, discovery MCP tools, disclosure workflow |
+| 4 | Quantum / PQC | — | Entire `vorsyghta/quantum/` module |
+| 5 | Commercial SaaS product | CLI + core engine | REST API, RBAC, persistence, integrations, Stripe billing |
+| 6 | Six simulation paradigms | Core simulator | Paradigm engines (planned) |
+| 7 | RL / RLHF | — | Feedback loop, `rlhf_multiagent`, advanced LLM reasoning |
+
+Tiers: **Team** = capabilities #2 (partial), #3, #5 (API). **Enterprise** = + #1 (full orchestration), #2 (full), #7.
+**Mission** = + #4 and compliance automation.
+
+---
+
+## 9. Contacts
 
 | Role | Contact |
 |---|---|
