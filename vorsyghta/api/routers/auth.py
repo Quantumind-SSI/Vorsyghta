@@ -87,6 +87,7 @@ class RegisterResponse(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    user_id: str
     role: str
     tenant_id: str
 
@@ -276,6 +277,7 @@ async def login(
     )
     return TokenResponse(
         access_token=token,
+        user_id=user.user_id,
         role=user.role,
         tenant_id=user.tenant_id,
     )

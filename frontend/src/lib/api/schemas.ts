@@ -21,6 +21,7 @@ const entitledStatuses = new Set(["trialing", "active"]);
 export const tokenResponseSchema = z.object({
   access_token: z.string().min(1).max(3800),
   token_type: z.literal("bearer"),
+  user_id: boundedText,
   role: z.enum(["admin", "analyst", "viewer", "pilot_sponsor"]),
   tenant_id: boundedText,
 });

@@ -17,6 +17,8 @@ from .providers.openrouter_provider import OpenRouterProvider
 from .providers.ollama_provider import OllamaProvider
 from .providers.azure_provider import AzureOpenAIProvider
 from .providers.pydantic_ai_provider import PydanticAIProvider
+from .providers.deepseek_provider import DeepSeekProvider
+from .providers.nvidia_provider import NVIDIAProvider
 
 # Local model providers (with optional imports)
 try:
@@ -240,6 +242,14 @@ class LLMManager:
                 openrouter_config['api_key'] = openrouter_api_key
                 self._providers['openrouter'] = OpenRouterProvider(openrouter_config)
                 logger.info("OpenRouter provider initialized")
+            # Initialize NVIDIA if configured
+            nvidia_config = self.config.get('nvidia', {})
+            nvidia_api_key = nvidia_config.get('api_key') or os.getenv('NVIDIA_API_KEY')
+            if nvidia_api_key:
+                nvidia_config['api_key'] = nvidia_api_key
+                self._providers['nvidia'] = NVIDIAProvider(nvidia_config)
+                logger.info("NVIDIA provider initialized")
+
 
             # Initialize local model providers
             self._initialize_local_providers()

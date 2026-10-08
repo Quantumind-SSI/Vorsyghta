@@ -38,11 +38,18 @@ export async function signInAction(
     return { status: "error", message };
   }
 
+  const tokenUser = {
+    user_id: token.data.user_id,
+    tenant_id: token.data.tenant_id,
+    role: token.data.role,
+  };
+
   const user = await fetchCurrentUser(token.data.access_token);
   const identityMatches =
     user.ok &&
-    user.data.tenant_id === token.data.tenant_id &&
-    user.data.role === token.data.role;
+    user.data.tenant_id === tokenUser.tenant_id &&
+    user.data.role === tokenUser.role &&
+    user.data.user_id === tokenUser.user_id;
   if (!identityMatches) {
     return { status: "error", message: "Your session could not be verified. Please try again." };
   }

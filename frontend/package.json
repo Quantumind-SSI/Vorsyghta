@@ -8,9 +8,9 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "node api.js && next dev",
+    "build": "node api.js && next build",
+    "start": "node api.js && next start",
     "lint": "oxlint --deny-warnings src next.config.ts vitest.config.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
