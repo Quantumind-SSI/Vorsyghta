@@ -32,6 +32,36 @@ class SecurityTeam(Enum):
     SECURITY_AWARENESS = "security_awareness"
 
 
+# Color-house assignment for teams that have no color of their own.
+# Each colorless team type maps to the exercise color team whose core
+# mission subsumes it:
+#   - SOC and Incident Response are defensive operations -> blue
+#   - Threat Intel bridges adversary TTPs and detection validation -> purple
+#   - GRC is governance, risk and compliance -> orange
+#   - Security Awareness is training and awareness -> green
+TEAM_COLOR_HOUSES: Dict[SecurityTeam, str] = {
+    SecurityTeam.SOC: "blue",
+    SecurityTeam.INCIDENT_RESPONSE: "blue",
+    SecurityTeam.THREAT_INTEL: "purple",
+    SecurityTeam.GRC: "orange",
+    SecurityTeam.SECURITY_AWARENESS: "green",
+}
+
+
+def color_house(team: SecurityTeam) -> str:
+    """Return the color house a security team operates under.
+
+    Colored teams return their own color; colorless teams return the
+    house assigned in :data:`TEAM_COLOR_HOUSES`.
+    """
+    named_colors = {
+        SecurityTeam.BLUE_TEAM: "blue",
+        SecurityTeam.RED_TEAM: "red",
+        SecurityTeam.PURPLE_TEAM: "purple",
+    }
+    return named_colors.get(team) or TEAM_COLOR_HOUSES.get(team, "unassigned")
+
+
 @dataclass
 class TeamPlaybook:
     """Team-specific playbook output."""
