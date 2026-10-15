@@ -39,6 +39,27 @@ class EventBus:
         }
         self._event_store: Optional[Any] = event_store
         self._lock = asyncio.Lock()
+        self._adapter = None
+        if event_store is not None:
+            from vorsyghta.core.contracts import BusEventToEventAdapter
+            self._adapter = BusEventToEventAdapter()
+        else:
+            logger.warning("EventBus created without event_store – persistence disabled for production")
+
+    @property
+    def has_event_store(self) -> bool:
+        """Whether an event store is attached for persistence."""
+        return self._event_store is not None
+
+    def attach_event_store(self, event_store: Any) -> None:
+        """Attach (or replace) the event store used for persistence.
+
+        Enables async construction paths: build the bus synchronously, then
+        attach a store awaited in async context (e.g. ``run_exercise``).
+        """
+        self._event_store = event_store
+        from vorsyghta.core.contracts import BusEventToEventAdapter
+        self._adapter = BusEventToEventAdapter()
 
     def subscribe(self, event_type: EventType, handler: EventHandler) -> None:
         """Register a handler for a specific event type.
@@ -114,12 +135,18 @@ class EventBus:
 
     async def _persist_event(self, event: BusEvent) -> None:
         """Persist the event to the configured event store."""
-        # Avoid leaking optional event store internals into the bus.
-        # The event store is expected to have an async append() method.
+        if self._event_store is None:
+            return
         append = getattr(self._event_store, "append", None)
         if append is None:
             return
-        await append(event.to_dict())
+        if self._adapter:
+            # Adapt BusEvent to Event with versioning
+            adapted = self._adapter.adapt(event, getattr(event, "aggregate_id", None))
+            await append(adapted)
+        else:
+            # Fallback for legacy stores expecting dict
+            await append(event.to_dict())
 
     def get_subscriber_count(self, event_type: EventType) -> int:
         """Return the number of subscribers for an event type."""

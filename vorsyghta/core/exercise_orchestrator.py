@@ -91,12 +91,38 @@ class ExerciseOrchestrator:
         llm_provider: Optional[Any] = None,
     ):
         self.tenant_id = tenant_id
-        self.event_bus = event_bus or EventBus()
+        # Event bus: injected or built in-process. Event store attaches lazily
+        # (build_event_store is async); run_exercise awaits it once per bus.
+        if event_bus is None:
+            event_bus = EventBus()
+        self.event_bus = event_bus
         self.llm_provider = llm_provider
+        self._store_attach_attempted = False
+        self._blue_integration: Optional[Any] = None
         self._active_exercises: Dict[str, ExerciseResult] = {}
 
         # Subscribe blue team handler to red team attack events
         self.event_bus.subscribe(EventType.RED_TEAM_ATTACK_STAGE, self._blue_team_handler)
+
+    async def _ensure_event_store(self) -> None:
+        """Attach a durable event store to the bus if it lacks one.
+
+        build_event_store() is async (Postgres store initializes on create),
+        so attachment happens on first exercise instead of __init__.
+        """
+        if self._store_attach_attempted:
+            return
+        self._store_attach_attempted = True
+        if getattr(self.event_bus, "has_event_store", False):
+            return
+        try:
+            from vorsyghta.core.contracts import build_event_store
+
+            store = await build_event_store()
+            self.event_bus.attach_event_store(store)
+            logger.info("Event bus persistence attached: %s", type(store).__name__)
+        except Exception as exc:  # noqa: BLE001 - persistence is best-effort
+            logger.warning("Event store attach failed, continuing without persistence: %s", exc)
 
     async def run_exercise(
         self,
@@ -114,6 +140,7 @@ class ExerciseOrchestrator:
         Returns:
             ExerciseResult with all team outputs
         """
+        await self._ensure_event_store()
         teams = teams or ["yellow", "white", "red", "blue", "purple", "black", "green", "orange"]
         exercise_id = exercise_id or str(uuid4())
 
@@ -149,9 +176,31 @@ class ExerciseOrchestrator:
             if "yellow" in teams:
                 await self._run_yellow_team(scenario, result)
 
-            # White team approves scope and sets ROE before red team runs
+            # White team approves scope and sets ROE before red team runs.
+            # Denial aborts the exercise before any attack activity.
             if "white" in teams:
                 await self._run_white_team(scenario, result)
+                approval = (result.white_team_report or {}).get("scope_approval", {})
+                if approval.get("approved") is False:
+                    result.status = "aborted"
+                    result.end_time = datetime.now(timezone.utc)
+                    audit.log(
+                        "exercise.aborted",
+                        category=AuditCategory.SECURITY,
+                        severity=AuditSeverity.WARNING,
+                        context={
+                            "exercise_id": exercise_id,
+                            "reason": approval.get("reason"),
+                            "out_of_scope_targets": approval.get("out_of_scope_targets"),
+                            "production_targets": approval.get("production_targets"),
+                        },
+                        description=f"Exercise aborted by white team: {approval.get('reason')}",
+                    )
+                    logger.warning(
+                        "Exercise %s aborted by white team: %s",
+                        exercise_id, approval.get("reason"),
+                    )
+                    return result
 
             if "red" in teams:
                 await self._run_red_team(scenario, result)
@@ -172,6 +221,10 @@ class ExerciseOrchestrator:
             # Orange team maps findings to compliance frameworks
             if "orange" in teams:
                 await self._run_orange_team(result)
+
+            # Yellow team tears the environment down after all teams finish
+            if "yellow" in teams:
+                await self._run_yellow_teardown(result)
 
             result.status = "completed"
             result.end_time = datetime.now(timezone.utc)
@@ -205,6 +258,17 @@ class ExerciseOrchestrator:
         """Run the red team simulation and publish events to the bus."""
         logger.info("Exercise %s: starting red team phase", result.exercise_id)
 
+        # Wire the blue defense modules before the first stage publishes so
+        # every stage is evaluated by SIEM/IDS/EDR in the same run.
+        if self._blue_integration is None:
+            from vorsyghta.defense.blue_team.bus_integration import BlueTeamBusIntegration
+
+            self._blue_integration = BlueTeamBusIntegration(
+                bus=self.event_bus,
+                tenant_id=self.tenant_id,
+                exercise_id=result.exercise_id,
+            )
+
         sim = Simulator(llm_provider=self.llm_provider)
         sim_result = await sim.execute_simulation(scenario)
 
@@ -235,7 +299,13 @@ class ExerciseOrchestrator:
         )
 
     async def _blue_team_handler(self, event: BusEvent) -> None:
-        """Event bus handler: blue team processes red team attack events."""
+        """Event bus handler: blue team evaluates each red team attack stage.
+
+        Detection is delegated to the real blue defense modules (SIEM
+        correlation, IDS, EDR) via :class:`BlueTeamBusIntegration` when
+        available. Each stage is recorded as an alert with an explicit
+        detected flag so downstream scoring/AAR reflect real coverage.
+        """
         exercise_id = event.exercise_id
         if exercise_id is None:
             return
@@ -245,41 +315,149 @@ class ExerciseOrchestrator:
 
         payload = event.payload
         technique_id = payload.get("technique_id", "T0000")
-        detected = self._detect_technique(technique_id)
+        stage_id = payload.get("stage_id")
+        blue = self._blue_integration
+        alerts: List[BlueTeamAlertEvent] = []
 
-        alert = BlueTeamAlertEvent(
-            tenant_id=self.tenant_id,
-            alert_id=str(uuid4()),
-            source_module="siem",
-            technique_id=technique_id,
-            severity="high" if detected else "info",
-            description=(
-                f"{'Detected' if detected else 'Missed'}: {technique_id} "
-                f"in stage '{payload.get('stage_name', '')}'"
-            ),
-            detected=detected,
-            stage_id=payload.get("stage_id"),
-            exercise_id=exercise_id,
-        )
-        result.blue_team_alerts.append(alert.to_dict())
+        # Real detection: run the blue defense modules against the stage.
+        module_alerts = self._run_blue_detection(blue, payload) if blue is not None else []
+
+        if module_alerts:
+            # Aggregate module detections into a single stage alert so the
+            # stage↔alert mapping stays 1:1 for scoring and AAR.
+            source_modules = sorted({a.source for a in module_alerts})
+            severities = [a.severity for a in module_alerts]
+            sev_rank = {"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}
+            top_severity = min(severities, key=lambda s: sev_rank.get(s, 4))
+            alerts.append(BlueTeamAlertEvent(
+                tenant_id=self.tenant_id,
+                alert_id=f"detect-{stage_id or uuid4()}",
+                source_module="+".join(source_modules),
+                technique_id=module_alerts[0].mitre_techniques[0]
+                if module_alerts[0].mitre_techniques else technique_id,
+                severity=top_severity,
+                description=(
+                    f"Detected: {len(module_alerts)} module alert(s) for {technique_id} "
+                    f"in stage '{payload.get('stage_name', '')}'"
+                ),
+                detected=True,
+                stage_id=stage_id,
+                iocs=payload.get("iocs", []),
+                raw_data={
+                    "module_alerts": [
+                        {"title": a.title, "severity": a.severity, "source": a.source,
+                         "description": a.description}
+                        for a in module_alerts
+                    ],
+                },
+                exercise_id=exercise_id,
+                simulation_id=event.simulation_id,
+            ))
+        else:
+            # Stage not detected by any module: record an explicit miss.
+            alerts.append(BlueTeamAlertEvent(
+                tenant_id=self.tenant_id,
+                alert_id=f"miss-{stage_id or uuid4()}",
+                source_module="orchestrator",
+                technique_id=technique_id,
+                severity="info",
+                description=(
+                    f"Missed: {technique_id} in stage '{payload.get('stage_name', '')}'"
+                ),
+                detected=False,
+                stage_id=stage_id,
+                exercise_id=exercise_id,
+                simulation_id=event.simulation_id,
+            ))
+
+        for alert in alerts:
+            result.blue_team_alerts.append(alert.to_dict())
+            try:
+                await self.event_bus.publish(alert)
+            except Exception as e:
+                logger.warning("Failed to publish blue team alert event: %s", e)
+
+    def _run_blue_detection(self, blue: Any, payload: Dict[str, Any]) -> List[Any]:
+        """Run blue defense modules against a single red stage payload.
+
+        Returns raw module alerts (SIEMAlert-shaped) for the stage.
+        """
+        content = payload.get("content", "")
+        technique_id = payload.get("technique_id", "")
+        stage_id = payload.get("stage_id", "")
+        timestamp = datetime.now(timezone.utc).isoformat()
+        alerts: List[Any] = []
+
         try:
-            await self.event_bus.publish(alert)
-        except Exception as e:
-            logger.warning(f"Failed to publish blue team alert event: {e}")
+            # SIEM: ingest stage as a log entry and run correlation rules.
+            from vorsyghta.defense.blue_team.siem_simulator import SIEMSimulator
 
-    def _detect_technique(self, technique_id: str) -> bool:
-        """Deterministic ~70% detection rate based on technique ID hash."""
-        import hashlib
-        # MD5 here is a non-cryptographic bucketing function (deterministic
-        # sampling), never used for security — flagged explicitly for bandit.
-        h = int(
-            hashlib.md5(technique_id.encode(), usedforsecurity=False).hexdigest()[:4],
-            16,
-        )
-        return (h % 10) < 7
+            siem: SIEMSimulator = blue.siem
+            siem.ingest_log({
+                "source": "red_team_simulator",
+                "message": content,
+                "mitre_technique": technique_id,
+                "stage_id": stage_id,
+                "timestamp": timestamp,
+            })
+            alerts.extend(siem.check_correlations())
+        except Exception as exc:  # noqa: BLE001 - per-module isolation
+            logger.debug("SIEM detection failed for stage %s: %s", stage_id, exc)
+
+        try:
+            # IDS: inspect a network packet derived from the stage.
+            from vorsyghta.defense.blue_team.ids_detector import IDSDetector, NetworkPacket
+
+            ids: IDSDetector = blue.ids
+            technique_ports = {
+                "T1046": 80, "T1190": 80, "T1110": 22, "T1003": 445,
+                "T1059": 443, "T1071": 443, "T1041": 443, "T1048": 53,
+                "T1505": 80, "T1136": 445,
+            }
+            packet = NetworkPacket(
+                timestamp=timestamp,
+                protocol="tcp",
+                source_ip="10.0.0.5",
+                source_port=12345,
+                dest_ip="10.0.0.10",
+                dest_port=technique_ports.get(technique_id, 80),
+                payload=content[:1000],
+            )
+            alerts.extend(ids.inspect_packet(packet))
+        except Exception as exc:  # noqa: BLE001 - per-module isolation
+            logger.debug("IDS detection failed for stage %s: %s", stage_id, exc)
+
+        try:
+            # EDR: process/file/network/registry telemetry from stage content.
+            from vorsyghta.defense.blue_team.edr_agent import (
+                EDRAgent, FileEvent, ProcessEvent,
+            )
+
+            edr: EDRAgent = blue.edr
+            process_event = ProcessEvent(
+                pid=1,
+                process_name="attack.exe",
+                command_line=content,
+                user="attacker",
+                timestamp=timestamp,
+            )
+            alerts.extend(edr.monitor_process(process_event))
+
+            file_event = FileEvent(
+                path=f"/tmp/{stage_id}.dat",
+                operation="create",
+                process="attack.exe",
+                user="attacker",
+                timestamp=timestamp,
+            )
+            alerts.extend(edr.monitor_file(file_event))
+        except Exception as exc:  # noqa: BLE001 - per-module isolation
+            logger.debug("EDR detection failed for stage %s: %s", stage_id, exc)
+
+        return alerts
 
     async def _run_blue_team(self, scenario: ThreatScenario, result: ExerciseResult) -> None:
-        """Yield to allow pending event bus handlers to complete."""
+        """Blue team phase: yield to let queued alert handlers complete."""
         logger.info(
             "Exercise %s: blue team phase (%d alerts so far)",
             result.exercise_id, len(result.blue_team_alerts),
@@ -297,6 +475,17 @@ class ExerciseOrchestrator:
             red_team_stages=result.red_team_stages,
             blue_team_alerts=result.blue_team_alerts,
         )
+        await self._publish_typed(
+            EventType.PURPLE_TEAM_AAR,
+            payload={
+                "aar_id": result.exercise_id,
+                "aar": result.aar,
+                "red_team_stages": result.red_team_stages,
+                "blue_team_alerts": result.blue_team_alerts,
+                "score": None,
+            },
+            exercise_id=result.exercise_id,
+        )
 
         logger.info("Exercise %s: AAR generated", result.exercise_id)
 
@@ -311,12 +500,34 @@ class ExerciseOrchestrator:
             blue_team_alerts=result.blue_team_alerts,
             aar=result.aar,
         )
+        await self._publish_typed(
+            EventType.BLACK_TEAM_SCORE,
+            payload={"score": result.score},
+            exercise_id=result.exercise_id,
+        )
 
         logger.info(
             "Exercise %s: black team score = %s",
             result.exercise_id,
             result.score.get("overall_score") if result.score else "N/A",
         )
+
+    async def _publish_typed(
+        self,
+        event_type: EventType,
+        payload: Dict[str, Any],
+        exercise_id: Optional[str] = None,
+    ) -> None:
+        """Publish a generic BusEvent of ``event_type`` on the shared bus."""
+        try:
+            await self.event_bus.publish(BusEvent(
+                event_type=event_type,
+                tenant_id=self.tenant_id,
+                exercise_id=exercise_id,
+                payload=payload,
+            ))
+        except Exception as e:
+            logger.warning("Failed to publish %s event: %s", event_type.value, e)
 
     def get_active_exercises(self) -> Dict[str, ExerciseResult]:
         """Return currently running exercises."""
@@ -331,10 +542,11 @@ class ExerciseOrchestrator:
         logger.info("Exercise %s: starting yellow team phase", result.exercise_id)
 
         from vorsyghta.core.yellow_team import InfrastructureManager
-        manager = InfrastructureManager()
-        env_report = await manager.provision_environment(
+        self._yellow_manager = InfrastructureManager()
+        env_report = await self._yellow_manager.provision_environment(
             scenario=scenario,
             tenant_id=self.tenant_id,
+            exercise_id=result.exercise_id,
         )
         result.yellow_team_report = env_report
 
@@ -343,6 +555,41 @@ class ExerciseOrchestrator:
             result.exercise_id,
             env_report.get("env_id"),
             env_report.get("ready"),
+        )
+        await self._publish_typed(
+            EventType.YELLOW_TEAM_ENV_READY,
+            payload={
+                "env_id": env_report.get("env_id"),
+                "components": env_report.get("components", []),
+                "vm_ids": env_report.get("vm_ids", []),
+                "network_config": env_report.get("network_config", {}),
+                "ready": env_report.get("ready", False),
+                "issues": env_report.get("issues", []),
+            },
+            exercise_id=result.exercise_id,
+        )
+
+    async def _run_yellow_teardown(self, result: ExerciseResult) -> None:
+        """Tear down the provisioned environment and publish the event."""
+        env_report = result.yellow_team_report or {}
+        env_id = env_report.get("env_id")
+        if not env_id:
+            return
+        manager = getattr(self, "_yellow_manager", None)
+        if manager is None:
+            return
+        teardown_report = await manager.teardown_environment(env_id)
+        await self._publish_typed(
+            EventType.YELLOW_TEAM_ENV_TEARDOWN,
+            payload={
+                "env_id": env_id,
+                "status": teardown_report.get("status"),
+            },
+            exercise_id=result.exercise_id,
+        )
+        logger.info(
+            "Exercise %s: yellow team teardown complete (env_id=%s, status=%s)",
+            result.exercise_id, env_id, teardown_report.get("status"),
         )
 
     async def _run_white_team(self, scenario: ThreatScenario, result: ExerciseResult) -> None:
@@ -370,6 +617,17 @@ class ExerciseOrchestrator:
             "risk_pause_threshold": coordinator.risk_pause_threshold,
             "risk_abort_threshold": coordinator.risk_abort_threshold,
         }
+        await self._publish_typed(
+            EventType.WHITE_TEAM_SCOPE_APPROVAL,
+            payload={
+                "approved": scope_approval.get("approved"),
+                "approved_targets": scope_approval.get("approved_targets", []),
+                "out_of_scope_targets": scope_approval.get("out_of_scope_targets", []),
+                "production_targets": scope_approval.get("production_targets", []),
+                "reason": scope_approval.get("reason"),
+            },
+            exercise_id=result.exercise_id,
+        )
 
         logger.info(
             "Exercise %s: white team phase complete (scope_approved=%s, roe_rules=%d)",
@@ -430,7 +688,7 @@ class ExerciseOrchestrator:
 
         compliance_gaps = engine.analyze_compliance_gaps(framework_mapping)
 
-        compliance_report = engine.generate_compliance_report(
+        compliance_report = await engine.generate_compliance_report(
             exercise_id=result.exercise_id,
             framework_mapping=framework_mapping,
             compliance_gaps=compliance_gaps,
