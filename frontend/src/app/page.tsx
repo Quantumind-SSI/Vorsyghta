@@ -26,6 +26,17 @@ export default function HomePage() {
       <main id="main-content">
         <section className="hero section-dark">
           <div className="hero__grid" aria-hidden="true" />
+          <video
+            className="hero__video"
+            autoPlay
+            muted
+            loop
+            playsInline
+            aria-hidden="true"
+            poster="/videos/hero-poster.jpg"
+          >
+            <source src="/videos/hero.mp4" type="video/mp4" />
+          </video>
           <div className="hero__content page-width">
             <div className="hero__copy">
               <p className="eyebrow"><span>Authorized use</span> / evidence first</p>

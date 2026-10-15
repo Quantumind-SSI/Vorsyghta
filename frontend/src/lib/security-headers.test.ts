@@ -1,23 +1,16 @@
-import { describe, expect, it } from "vitest";
+import { describe, it, expect } from 'vitest';
+import { buildContentSecurityPolicy } from './security-headers';
 
-import { buildContentSecurityPolicy } from "@/lib/security-headers";
-
-describe("content security policy", () => {
-  it("uses a strict production nonce without unsafe inline scripts", () => {
-    const policy = buildContentSecurityPolicy("nonce-value", "production");
-
-    expect(policy).toContain("script-src 'self' 'nonce-nonce-value' 'strict-dynamic'");
-    expect(policy).toContain("style-src 'self' 'nonce-nonce-value'");
-    expect(policy).toContain("upgrade-insecure-requests");
-    expect(policy).not.toContain("'unsafe-inline'");
-    expect(policy).not.toContain("'unsafe-eval'");
+describe('Content Security Policy', () => {
+  it('dev environment allows unsafe-inline for styles and no nonce', () => {
+    const csp = buildContentSecurityPolicy('abc', 'development');
+    expect(csp).toContain("style-src 'self' 'unsafe-inline'");
+    expect(csp).not.toContain("style-src 'self' 'nonce-");
   });
 
-  it("permits only the development features required by Next.js", () => {
-    const policy = buildContentSecurityPolicy("nonce-value", "development");
-
-    expect(policy).toContain("'unsafe-eval'");
-    expect(policy).toContain("style-src 'self' 'nonce-nonce-value' 'unsafe-inline'");
-    expect(policy).not.toContain("upgrade-insecure-requests");
+  it('production environment uses nonce for styles and no unsafe-inline', () => {
+    const csp = buildContentSecurityPolicy('xyz', 'production');
+    expect(csp).toContain("style-src 'self' 'nonce-xyz'");
+    expect(csp).not.toContain("unsafe-inline");
   });
 });

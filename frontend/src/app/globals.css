@@ -1,31 +1,31 @@
 :root {
-  /* Structural base: deep slate-teal (replaces midnight-violet) */
-  --midnight: #0e1b22;
-  --ink-violet: #14262e;
-  --violet-deep: #1f4a52;
-  --violet-mid: #4f7d80;
-  --violet-soft: #d3e4e6;
-  /* Surfaces: cool paper (replaces warm parchment) */
-  --warm: #f2f5f4;
-  --warm-deep: #e3e9e7;
-  --paper: #fbfdfc;
+  /* Structural base: deep slate from moodboard */
+  --midnight: #0b0f14;
+  --ink-violet: #1e293b;
+  --violet-deep: #2c3e50;
+  --violet-mid: #2bbfd7;
+  --violet-soft: #b9d4e2;
+  /* Surfaces: warm paper from moodboard */
+  --warm: #e8e0d5;
+  --warm-deep: #d8cfc2;
+  --paper: #f5f3f0;
   --white: #ffffff;
-  /* Signal: electric cyan for primary action and verified state */
-  --lime: #3fd6d0;
-  --lime-dark: #0b4f4c;
-  --pink: #7fb3fa;
+  /* Signal: orange primary action from moodboard */
+  --lime: #ff7a1a;
+  --lime-dark: #7a3a00;
+  --pink: #4fb3c6;
   --red: #b32638;
   --red-soft: #fbeef0;
   --green: #1f6a4a;
   --green-soft: #e4f7ee;
-  --amber: #7a4d00;
+  --amber: #f59e0b;
   --amber-soft: #fff4d6;
-  --hairline-dark: #27424a;
-  --hairline-light: #cdd8d4;
-  --muted-dark: #c2d3d6;
+  --hairline-dark: #2c3e50;
+  --hairline-light: #d1c7b8;
+  --muted-dark: #6b7280;
   --muted-light: #5c6a6e;
   --focus-inner: #ffffff;
-  --focus-outer: #005fcc;
+  --focus-outer: #ff7a1a;
   --shadow-hard: 7px 7px 0 var(--midnight);
   --radius-sm: 4px;
   --radius-md: 8px;
@@ -2011,4 +2011,15 @@ td {
 
 .field-aux__hint {
   color: var(--muted-light);
+}
+
+.hero__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.35;
+  z-index: 0;
+  pointer-events: none;
 }
