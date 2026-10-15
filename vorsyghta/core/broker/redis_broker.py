@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 from typing import Any, AsyncIterator
 
@@ -8,6 +9,8 @@ import redis.asyncio as aioredis
 
 from vorsyghta.core.broker.contracts import EventBroker
 from vorsyghta.core.event_types import BusEvent
+
+logger = logging.getLogger(__name__)
 
 
 def encode_event(event: BusEvent) -> str:
@@ -45,20 +48,22 @@ class RedisStreamsBroker:
         msg_id = await client.xadd(topic, {"payload": encode_event(event)}, id=key or "*")
         return msg_id
 
-    async def subscribe(self, topic: str, handler):  # pragma: no cover - stream replaces it
-        """Compatibility stub: consumption happens via :meth:`stream`."""
-
     async def stream(self, topic: str, consumer_group: str, consumer: str) -> AsyncIterator[BusEvent]:
         client = await self._get()
         try:
             await client.xgroup_create(topic, consumer_group, id="0", mkstream=True)
-        except Exception:
-            pass
+        except aioredis.ResponseError as exc:
+            # BUSYGROUP = group already exists, which is the idempotent case.
+            if "BUSYGROUP" not in str(exc):
+                raise
         while True:
             msgs = await client.xreadgroup(consumer_group, consumer, {topic: ">"}, count=10, block=5000)
             if not msgs:
                 continue
             for _, entries in msgs:
                 for msg_id, data in entries:
-                    yield decode_event(data["payload"])
+                    try:
+                        yield decode_event(data["payload"])
+                    except Exception as exc:  # noqa: BLE001 - poison message
+                        logger.error("Unparsable event %s on %s: %s", msg_id, topic, exc)
                     await client.xack(topic, consumer_group, msg_id)

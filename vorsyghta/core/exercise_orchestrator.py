@@ -380,81 +380,10 @@ class ExerciseOrchestrator:
     def _run_blue_detection(self, blue: Any, payload: Dict[str, Any]) -> List[Any]:
         """Run blue defense modules against a single red stage payload.
 
-        Returns raw module alerts (SIEMAlert-shaped) for the stage.
+        Input shaping lives in ``BlueTeamBusIntegration.evaluate_stage_payload``
+        so the bus-handler path and this path share one implementation.
         """
-        content = payload.get("content", "")
-        technique_id = payload.get("technique_id", "")
-        stage_id = payload.get("stage_id", "")
-        timestamp = datetime.now(timezone.utc).isoformat()
-        alerts: List[Any] = []
-
-        try:
-            # SIEM: ingest stage as a log entry and run correlation rules.
-            from vorsyghta.defense.blue_team.siem_simulator import SIEMSimulator
-
-            siem: SIEMSimulator = blue.siem
-            siem.ingest_log({
-                "source": "red_team_simulator",
-                "message": content,
-                "mitre_technique": technique_id,
-                "stage_id": stage_id,
-                "timestamp": timestamp,
-            })
-            alerts.extend(siem.check_correlations())
-        except Exception as exc:  # noqa: BLE001 - per-module isolation
-            logger.debug("SIEM detection failed for stage %s: %s", stage_id, exc)
-
-        try:
-            # IDS: inspect a network packet derived from the stage.
-            from vorsyghta.defense.blue_team.ids_detector import IDSDetector, NetworkPacket
-
-            ids: IDSDetector = blue.ids
-            technique_ports = {
-                "T1046": 80, "T1190": 80, "T1110": 22, "T1003": 445,
-                "T1059": 443, "T1071": 443, "T1041": 443, "T1048": 53,
-                "T1505": 80, "T1136": 445,
-            }
-            packet = NetworkPacket(
-                timestamp=timestamp,
-                protocol="tcp",
-                source_ip="10.0.0.5",
-                source_port=12345,
-                dest_ip="10.0.0.10",
-                dest_port=technique_ports.get(technique_id, 80),
-                payload=content[:1000],
-            )
-            alerts.extend(ids.inspect_packet(packet))
-        except Exception as exc:  # noqa: BLE001 - per-module isolation
-            logger.debug("IDS detection failed for stage %s: %s", stage_id, exc)
-
-        try:
-            # EDR: process/file/network/registry telemetry from stage content.
-            from vorsyghta.defense.blue_team.edr_agent import (
-                EDRAgent, FileEvent, ProcessEvent,
-            )
-
-            edr: EDRAgent = blue.edr
-            process_event = ProcessEvent(
-                pid=1,
-                process_name="attack.exe",
-                command_line=content,
-                user="attacker",
-                timestamp=timestamp,
-            )
-            alerts.extend(edr.monitor_process(process_event))
-
-            file_event = FileEvent(
-                path=f"/tmp/{stage_id}.dat",
-                operation="create",
-                process="attack.exe",
-                user="attacker",
-                timestamp=timestamp,
-            )
-            alerts.extend(edr.monitor_file(file_event))
-        except Exception as exc:  # noqa: BLE001 - per-module isolation
-            logger.debug("EDR detection failed for stage %s: %s", stage_id, exc)
-
-        return alerts
+        return blue.evaluate_stage_payload(payload)
 
     async def _run_blue_team(self, scenario: ThreatScenario, result: ExerciseResult) -> None:
         """Blue team phase: yield to let queued alert handlers complete."""

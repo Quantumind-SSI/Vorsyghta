@@ -10,16 +10,16 @@ Owner: David Onoja (@ocheme1107) — Blue Team Lead (Advanced)
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable, List, Optional
+from datetime import datetime, timezone
+from typing import Any, Callable, Dict, List, Optional
 
 from vorsyghta.core.event_bus import EventBus
 from vorsyghta.defense.blue_team.alert_triage import AlertTriage
-from vorsyghta.defense.blue_team.edr_agent import EDRAgent
-from vorsyghta.defense.blue_team.ids_detector import IDSDetector
+from vorsyghta.defense.blue_team.edr_agent import EDRAgent, FileEvent, ProcessEvent
+from vorsyghta.defense.blue_team.ids_detector import IDSDetector, NetworkPacket
 from vorsyghta.defense.blue_team.incident_response import IncidentResponse
-from vorsyghta.defense.blue_team.siem_simulator import SIEMSimulator
+from vorsyghta.defense.blue_team.siem_simulator import SIEMAlert, SIEMSimulator
 from vorsyghta.defense.blue_team.threat_hunter import ThreatHunter
-from vorsyghta.integrations.siem_client import SIEMAlert
 
 logger = logging.getLogger(__name__)
 
@@ -102,3 +102,73 @@ class BlueTeamBusIntegration:
             "incident_response": self.incident_response.get_stats(),
             "alert_triage": self.alert_triage.get_stats(),
         }
+
+    def evaluate_stage_payload(self, payload: Dict[str, Any]) -> List[SIEMAlert]:
+        """Run every blue module against one red team stage payload.
+
+        This is the single home for shaping stage payloads into module
+        telemetry (SIEM log entry, IDS packet, EDR process/file events).
+        Both the in-process bus handlers and the exercise orchestrator call
+        this, so detection input never drifts between paths.
+
+        Args:
+            payload: Red team stage payload with ``content``,
+                ``technique_id``, ``stage_id``.
+
+        Returns:
+            Raw module alerts (SIEMAlert) for the stage; empty when the
+            stage evades all modules.
+        """
+        content = payload.get("content", "")
+        technique_id = payload.get("technique_id", "")
+        stage_id = payload.get("stage_id", "")
+        timestamp = datetime.now(timezone.utc).isoformat()
+        alerts: List[SIEMAlert] = []
+
+        # SIEM: ingest the stage as a log entry and run correlation rules.
+        self.siem.ingest_log({
+            "source": "red_team_simulator",
+            "message": content,
+            "mitre_technique": technique_id,
+            "stage_id": stage_id,
+            "timestamp": timestamp,
+        })
+        alerts.extend(self.siem.check_correlations())
+
+        # IDS: inspect a network packet derived from the stage.
+        technique_ports = {
+            "T1046": 80, "T1190": 80, "T1110": 22, "T1003": 445,
+            "T1059": 443, "T1071": 443, "T1041": 443, "T1048": 53,
+            "T1505": 80, "T1136": 445,
+        }
+        packet = NetworkPacket(
+            timestamp=timestamp,
+            protocol="tcp",
+            source_ip="10.0.0.5",
+            source_port=12345,
+            dest_ip="10.0.0.10",
+            dest_port=technique_ports.get(technique_id, 80),
+            payload=content[:1000],
+        )
+        alerts.extend(self.ids.inspect_packet(packet))
+
+        # EDR: process and file telemetry from the stage content.
+        process_event = ProcessEvent(
+            pid=1,
+            process_name="attack.exe",
+            command_line=content,
+            user="attacker",
+            timestamp=timestamp,
+        )
+        alerts.extend(self.edr.monitor_process(process_event))
+
+        file_event = FileEvent(
+            path=f"/tmp/{stage_id}.dat",
+            operation="create",
+            process="attack.exe",
+            user="attacker",
+            timestamp=timestamp,
+        )
+        alerts.extend(self.edr.monitor_file(file_event))
+
+        return alerts
