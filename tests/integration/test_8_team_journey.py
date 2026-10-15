@@ -8,6 +8,8 @@ from vorsyghta.core.exercise_orchestrator import ExerciseOrchestrator
 from vorsyghta.core.models import SimulationResult, SimulationStage, SimulationStatus, ThreatScenario, ThreatType
 from vorsyghta.core.worker.teams import create_all_workers
 
+TEAMS = ["yellow", "white", "red", "blue", "purple", "black", "green", "orange"]
+
 
 def _sim_result() -> SimulationResult:
     result = SimulationResult(
@@ -30,18 +32,8 @@ def _sim_result() -> SimulationResult:
     return result
 
 
-@pytest.mark.asyncio
-async def test_full_8_team_exercise(monkeypatch):
-    monkeypatch.setattr(
-        "vorsyghta.core.exercise_orchestrator.Simulator",
-        lambda llm_provider=None: type("M", (), {"execute_simulation": _exec})(),
-    )
-
-    async def _exec(self, scenario):
-        return _sim_result()
-
-    orchestrator = ExerciseOrchestrator(tenant_id="bank-abc")
-    scenario = ThreatScenario(
+def _scenario() -> ThreatScenario:
+    return ThreatScenario(
         name="8-Team Journey",
         threat_type=ThreatType.PHISHING,
         description="Journey across all eight color teams.",
@@ -49,26 +41,54 @@ async def test_full_8_team_exercise(monkeypatch):
         attack_vectors=["spear-phishing"],
     )
 
-    workers = create_all_workers(broker=None)  # construct all 8 without a live Redis
-    assert len(workers) == 8
-    assert {w.name for w in workers} == {"red", "blue", "purple", "white", "black", "yellow", "green", "orange"}
 
-    result = await orchestrator.run_exercise(
-        scenario=scenario,
-        teams=["yellow", "white", "red", "blue", "purple", "black", "green", "orange"],
+async def _run_journey(monkeypatch) -> "ExerciseResult":
+    """Run the full 8-team exercise with a deterministic Simulator."""
+    from unittest.mock import AsyncMock
+
+    simulator = AsyncMock()
+    simulator.execute_simulation = AsyncMock(return_value=_sim_result())
+    monkeypatch.setattr(
+        "vorsyghta.core.exercise_orchestrator.Simulator",
+        lambda llm_provider=None: simulator,
+    )
+
+    orchestrator = ExerciseOrchestrator(tenant_id="bank-abc")
+    return await orchestrator.run_exercise(
+        scenario=_scenario(),
+        teams=TEAMS,
         exercise_id="journey-001",
     )
+
+
+@pytest.mark.asyncio
+async def test_worker_factories_cover_all_eight_teams():
+    workers = create_all_workers(broker=None)  # construct all 8 without a live Redis
+    assert {w.name for w in workers} == set(TEAMS)
+
+
+@pytest.mark.asyncio
+async def test_journey_pipeline_outputs(monkeypatch):
+    """Red/blue/purple/black produce stages, alerts, AAR and a score."""
+    result = await _run_journey(monkeypatch)
 
     assert result.status == "completed"
     assert len(result.red_team_stages) == 2
     # Blue evaluated every stage: one alert per stage (detected or miss).
     assert len(result.blue_team_alerts) == len(result.red_team_stages)
-    # Purple AAR and Black score present downstream.
     assert result.aar is not None
     assert result.score is not None and "overall_score" in result.score
-    # Extended houses all reported.
+
+
+@pytest.mark.asyncio
+async def test_journey_extended_house_reports(monkeypatch):
+    """White/yellow/green/orange each report, with the white gate approved."""
+    result = await _run_journey(monkeypatch)
+
     assert result.white_team_report is not None
+    assert result.white_team_report["scope_approval"]["approved"] is True
     assert result.yellow_team_report is not None
+    assert result.yellow_team_report.get("env_id")
     assert result.green_team_report is not None
     assert result.orange_team_report is not None
     assert result.errors == []
