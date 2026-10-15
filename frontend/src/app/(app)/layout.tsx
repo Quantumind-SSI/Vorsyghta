@@ -7,9 +7,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <div className="app-header__inner page-width">
           <div className="wordmark">VORSYGHTA</div>
           <nav>
-            <a href="/app/engagements">Engagements</a>
+            <a href="/app/exercises">Exercises</a>
             <a href="/app/findings">Findings</a>
-            <a href="/app/reports">Reports</a>
+            <a href="/app/intelligence">Intelligence</a>
           </nav>
         </div>
       </header>
