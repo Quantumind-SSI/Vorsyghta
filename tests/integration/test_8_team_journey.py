@@ -1,6 +1,7 @@
-"""Full 8-team journey: red→blue→purple→black→green→orange with yellow
-infrastructure and white governance gates, driven through the real
-ExerciseOrchestrator with a mocked Simulator (deterministic stages)."""
+"""Integration tests: full 8-team color exercise through the real
+ExerciseOrchestrator (yellow→white→red→blue→purple→black→green→orange)
+with a deterministic mocked Simulator."""
+
 
 import pytest
 

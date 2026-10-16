@@ -119,23 +119,26 @@ class BlueTeamBusIntegration:
             Raw module alerts (SIEMAlert) for the stage; empty when the
             stage evades all modules.
         """
-        content = payload.get("content", "")
-        technique_id = payload.get("technique_id", "")
-        stage_id = payload.get("stage_id", "")
         timestamp = datetime.now(timezone.utc).isoformat()
         alerts: List[SIEMAlert] = []
+        alerts.extend(self._evaluate_siem(payload, timestamp))
+        alerts.extend(self._evaluate_ids(payload, timestamp))
+        alerts.extend(self._evaluate_edr(payload, timestamp))
+        return alerts
 
-        # SIEM: ingest the stage as a log entry and run correlation rules.
+    def _evaluate_siem(self, payload: Dict[str, Any], timestamp: str) -> List[SIEMAlert]:
+        """SIEM: ingest the stage as a log entry and run correlation rules."""
         self.siem.ingest_log({
             "source": "red_team_simulator",
-            "message": content,
-            "mitre_technique": technique_id,
-            "stage_id": stage_id,
+            "message": payload.get("content", ""),
+            "mitre_technique": payload.get("technique_id", ""),
+            "stage_id": payload.get("stage_id", ""),
             "timestamp": timestamp,
         })
-        alerts.extend(self.siem.check_correlations())
+        return self.siem.check_correlations()
 
-        # IDS: inspect a network packet derived from the stage.
+    def _evaluate_ids(self, payload: Dict[str, Any], timestamp: str) -> List[SIEMAlert]:
+        """IDS: inspect a network packet derived from the stage."""
         technique_ports = {
             "T1046": 80, "T1190": 80, "T1110": 22, "T1003": 445,
             "T1059": 443, "T1071": 443, "T1041": 443, "T1048": 53,
@@ -147,28 +150,25 @@ class BlueTeamBusIntegration:
             source_ip="10.0.0.5",
             source_port=12345,
             dest_ip="10.0.0.10",
-            dest_port=technique_ports.get(technique_id, 80),
-            payload=content[:1000],
+            dest_port=technique_ports.get(payload.get("technique_id", ""), 80),
+            payload=payload.get("content", "")[:1000],
         )
-        alerts.extend(self.ids.inspect_packet(packet))
+        return self.ids.inspect_packet(packet)
 
-        # EDR: process and file telemetry from the stage content.
-        process_event = ProcessEvent(
+    def _evaluate_edr(self, payload: Dict[str, Any], timestamp: str) -> List[SIEMAlert]:
+        """EDR: process and file telemetry from the stage content."""
+        alerts = self.edr.monitor_process(ProcessEvent(
             pid=1,
             process_name="attack.exe",
-            command_line=content,
+            command_line=payload.get("content", ""),
             user="attacker",
             timestamp=timestamp,
-        )
-        alerts.extend(self.edr.monitor_process(process_event))
-
-        file_event = FileEvent(
-            path=f"/tmp/{stage_id}.dat",
+        ))
+        file_alerts = self.edr.monitor_file(FileEvent(
+            path=f"/tmp/{payload.get('stage_id', '')}.dat",
             operation="create",
             process="attack.exe",
             user="attacker",
             timestamp=timestamp,
-        )
-        alerts.extend(self.edr.monitor_file(file_event))
-
-        return alerts
+        ))
+        return alerts + file_alerts

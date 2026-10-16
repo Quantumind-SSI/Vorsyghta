@@ -28,7 +28,9 @@ def decode_event(raw: str) -> BusEvent:
     if "tenant_id" in data:
         try:
             return BusEvent.from_dict(data)
-        except Exception:
+        except (ValueError, TypeError, KeyError):
+            # Tolerate event_type values outside the EventType enum
+            # (legacy producers): fall through to the raw constructor.
             pass
     return BusEvent(**data)  # type: ignore[arg-type]
 

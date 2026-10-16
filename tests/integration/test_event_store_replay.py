@@ -1,5 +1,6 @@
-"""Adapter contract: BusEvent → event-sourcing Event with per-aggregate
-versioning, as consumed by the event store."""
+"""Integration tests: adapter contract (BusEvent → event-sourcing Event with
+per-aggregate versioning, as consumed by the event store)."""
+
 
 from vorsyghta.core.contracts import BusEventToEventAdapter
 from vorsyghta.core.event_types import BusEvent, EventType
