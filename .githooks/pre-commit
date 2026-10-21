@@ -14,7 +14,11 @@ for p in "${PATTERNS[@]:1}"; do
 done
 
 # Get staged files that are added or modified, excluding deleted files.
-mapfile -t FILES < <(git diff --cached --name-only --diff-filter=AM)
+# bash 3.2 (macOS default) has no mapfile — collect into an array via a loop.
+FILES=()
+while IFS= read -r f; do
+    FILES+=("$f")
+done < <(git diff --cached --name-only --diff-filter=AM)
 
 if [ ${#FILES[@]} -eq 0 ]; then
     exit 0
