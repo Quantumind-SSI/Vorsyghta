@@ -16,6 +16,11 @@ User and developer guides for getting started and working with Vorsyghta:
 REST API documentation and integration guides:
 - **[API Documentation](./api/API_DOCUMENTATION.md)** - Complete REST API reference
 
+### [Architecture](./architecture/)
+System architecture and living state documents:
+- **[Backend State](./architecture/BACKEND_STATE.md)** - Living snapshot of backend engineering state: production-ready status per subsystem, lazy/happy-path register, pattern standard. Updated on every merge touching startup, event bus, persistence, or singleton accessors
+- **[Team Architecture](./architecture/TEAM_ARCHITECTURE.md)** - Eight color-team orchestration design
+
 ### [Reference](./reference/)
 Technical reference documentation:
 - **[Configuration Reference](./reference/CONFIGURATION_REFERENCE.md)** - Complete configuration schemas and options

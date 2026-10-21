@@ -41,6 +41,69 @@ def event_loop():
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
     loop.close()
+@pytest.fixture(scope="session", autouse=True)
+def _set_testcontainers_env():
+    import os
+
+    os.environ.setdefault("TESTCONTAINERS_RYUK_CONTAINER_LABEL", "org.testcontainers=true")
+    os.environ.setdefault("TESTCONTAINERS_RYUK_DISABLED", "false")
+    # Ryuk runs inside the Colima VM and bind-mounts this path; it must be the
+    # daemon-side socket (/var/run/docker.sock), not the macOS host forward
+    # (~/.colima/default/docker.sock), which is a virtiofs-shared file that
+    # fails to bind-mount: "mkdir ...: operation not supported".
+    os.environ.setdefault("TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE", "/var/run/docker.sock")
+    yield
+
+
+
+
+@pytest.fixture(scope="session")
+async def async_client():
+    """Provide httpx AsyncClient against FastAPI test app with real Postgres/Redis."""
+    import os
+    from httpx import AsyncClient, ASGITransport
+    from testcontainers.postgres import PostgresContainer
+    from testcontainers.community.redis import RedisContainer
+
+    with PostgresContainer("postgres:16-alpine") as pg, RedisContainer("redis:7-alpine") as rd:
+        sync_url = pg.get_connection_url(driver=None)  # postgresql://host:mapped_port/test
+
+        # Alembic is the sole schema authority (see docker-compose.integration.yml);
+        # apply all migrations before the app touches the DB. env.py re-reads
+        # DATABASE_URL and force-rewrites sqlalchemy.url with it, so migrations
+        # must run while DATABASE_URL still carries the sync psycopg2 scheme
+        # (asyncpg URLs cannot run under Alembic's sync engine). Only after
+        # migrations succeed do we export the asyncpg URL the app expects.
+        import os
+
+        old_db_url = os.environ.get("DATABASE_URL")
+        os.environ["DATABASE_URL"] = sync_url  # bare scheme → env.py uses psycopg2
+        try:
+            from alembic import command
+            from alembic.config import Config
+
+            command.upgrade(Config("alembic.ini"), "head")
+        finally:
+            if old_db_url is None:
+                os.environ.pop("DATABASE_URL", None)
+            else:
+                os.environ["DATABASE_URL"] = old_db_url
+
+        os.environ["DATABASE_URL"] = sync_url.replace(
+            "postgresql://", "postgresql+asyncpg://", 1
+        )
+        # RedisContainer dropped get_connection_url in testcontainers>=4.x;
+        # build the URL from the mapped host/port (app expects redis:// scheme).
+        os.environ["REDIS_URL"] = "redis://{}:{}/0".format(
+            rd.get_container_host_ip(), rd.get_exposed_port(rd.port)
+        )
+        os.environ["SKIP_ENV_VALIDATION"] = "true"
+
+        from vorsyghta.api.main import app
+
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            yield client
 
 
 # ==========================================

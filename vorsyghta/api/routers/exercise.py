@@ -48,6 +48,16 @@ _orchestrators: Dict[str, ExerciseOrchestrator] = {}
 _completed_exercises: Dict[str, ExerciseResult] = {}
 
 
+def get_event_bus() -> EventBus:
+    """Return the shared exercise event bus for this API process.
+
+    The API lifespan attaches the durable event store here at startup, so
+    orchestrators created later inherit persistence via this bus instead of
+    performing their own lazy attach on first exercise run.
+    """
+    return _event_bus
+
+
 def _get_orchestrator(tenant_id: str, llm: Optional[LLMManager] = None) -> ExerciseOrchestrator:
     """Get or create an orchestrator for a tenant."""
     key = f"{tenant_id}:{id(llm)}"

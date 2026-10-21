@@ -245,9 +245,10 @@ async def build_event_store(
     """Select and construct an event store from configuration.
 
     Selection rules (in order):
-        1. ``postgresql://`` / ``postgres://`` URL  -> PostgresEventStore.
+        1. ``postgresql://`` / ``postgres://`` / SQLAlchemy-style
+           ``postgresql+<driver>://`` URL                -> PostgresEventStore.
         2. ``sqlite:///path`` URL or a filesystem path -> SqliteEventStore.
-        3. Otherwise (no URL / ``:memory:``)        -> InMemoryEventStore.
+        3. Otherwise (no URL / ``:memory:``)           -> InMemoryEventStore.
 
     Args:
         database_url: Explicit URL; falls back to the ``DATABASE_URL`` env var.
@@ -257,12 +258,15 @@ async def build_event_store(
     """
     url = database_url if database_url is not None else os.getenv("DATABASE_URL")
 
-    if url and (url.startswith("postgresql://") or url.startswith("postgres://")):
+    if url and url.startswith(("postgresql://", "postgres://", "postgresql+")):
         from vorsyghta.core.postgres_event_store import PostgresEventStore
 
-        store = await PostgresEventStore.create(url)
-        await store.initialize()
-        return store
+        # Normalize SQLAlchemy-style DSNs (e.g. postgresql+asyncpg://) to the
+        # plain scheme asyncpg expects. create() initializes the schema itself.
+        scheme, _, rest = url.partition("://")
+        if "+" in scheme:
+            url = scheme.split("+", 1)[0] + "://" + rest
+        return await PostgresEventStore.create(url)
 
     if url and url.startswith("sqlite:///"):
         return await SqliteEventStore.create(url[len("sqlite:///"):])

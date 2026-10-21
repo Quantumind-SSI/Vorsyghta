@@ -4,7 +4,7 @@
 llm:
   # Default provider selection (pydantic_ai, azure, openai, anthropic, openrouter, ollama, huggingface, llamacpp)
   # pydantic_ai = strict/typed client over the SAME Azure gpt-4o deployment.
-  default_provider: "pydantic_ai"
+  default_provider: "nvidia"
 
   # Primary provider - Azure OpenAI (PRODUCTION: ciicerone-openai, eastus2,
   # sub 59346494-..., rg ciicerone-rg). This matches the live ciicerone-api
@@ -14,7 +14,7 @@ llm:
     # Secrets are resolved from Azure Key Vault when key_vault_url is set (the
     # production path — matches the ciicerone-api Container App, which mounts
     # azure-openai-* from ciicerone-kv). Falls back to AZURE_OPENAI_* env vars.
-    key_vault_url: "https://ciicerone-kv.vault.azure.net/"
+    key_vault_url: ""
     api_key: ""  # Resolved from Key Vault secret 'azure-openai-api-key' or env
     endpoint: "https://ciicerone-openai.openai.azure.com/"
     deployment: "gpt-4o"      # Production model (verified: correct T1595 answer, HTTP 200)
@@ -278,3 +278,12 @@ database:
   url: "sqlite:///vorsyghta.db"  # Can be PostgreSQL, MySQL, etc.
   pool_size: 5
   max_overflow: 10
+# NVIDIA NIM / NeMo provider
+  nvidia:
+    enabled: true
+    api_key: ""  # Set via NVIDIA_API_KEY env var
+    base_url: "https://integrate.api.nvidia.com/v1"
+    model: "meta/muse-glimmer-30b"
+    timeout_seconds: 120
+    max_tokens: 2000
+    temperature: 0.7

@@ -45,7 +45,6 @@ def get_redis_client() -> Optional[RedisClient]:
             decode_responses=True,
             socket_timeout=5,
             socket_connect_timeout=5,
-            ssl_check_hostname=False,
         )
         _client.ping()
         logger.info("Redis client connected (cluster mode)")
@@ -59,7 +58,7 @@ def get_redis_client() -> Optional[RedisClient]:
             redis_url,
             decode_responses=True,
             socket_timeout=5,
-            ssl_check_hostname=False,
+            socket_connect_timeout=5,
         )
         _client.ping()
         logger.info("Redis client connected (standalone mode)")

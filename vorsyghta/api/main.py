@@ -97,6 +97,22 @@ async def lifespan(app: FastAPI):
         # Don't raise — allow API to start even if DB is unavailable
         # (endpoints that need DB will fail gracefully)
 
+    # Attach a durable event store to the shared exercise event bus so events
+    # persist for all API activity from startup, not only from the first
+    # exercise run. Best-effort: on failure the bus continues unpersisted and
+    # ExerciseOrchestrator._ensure_event_store remains the fallback.
+    try:
+        from vorsyghta.api.routers.exercise import get_event_bus
+        from vorsyghta.core.contracts import build_event_store
+
+        bus = get_event_bus()
+        if not bus.has_event_store:
+            store = await build_event_store()
+            bus.attach_event_store(store)
+            logger.info("Event store attached to API event bus: %s", type(store).__name__)
+    except Exception as e:
+        logger.warning(f"Event store attach skipped, continuing without persistence: {e}")
+
     yield
 
     # Shutdown

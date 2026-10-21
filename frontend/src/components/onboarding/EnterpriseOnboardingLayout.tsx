@@ -9,10 +9,9 @@ type Props = {
   description?: string;
   children: React.ReactNode;
   backHref?: string;
-  nextLabel?: string;
 };
 
-export function EnterpriseOnboardingLayout({ step, total, title, description, children, backHref, nextLabel }: Props) {
+export function EnterpriseOnboardingLayout({ step, total, title, description, children, backHref }: Props) {
   return (
     <main>
       <MoodNav />

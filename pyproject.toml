@@ -225,3 +225,8 @@ skips = [
     "B607",  # start_process_with_partial_path - docker commands
     "B615",  # huggingface unsafe download - handled separately
 ]
+
+[dependency-groups]
+dev = [
+    "testcontainers (>=4.15.0,<5.0.0)"
+]
