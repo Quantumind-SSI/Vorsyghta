@@ -11,7 +11,7 @@ export function buildContentSecurityPolicy(nonce: string, environment: string | 
     "img-src 'self' data:",
     "object-src 'none'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${development ? " 'unsafe-eval'" : ""}`,
-    `style-src 'self'${development ? " 'unsafe-inline'" : ` 'nonce-${nonce}'`}`,
+    `style-src 'self' 'unsafe-inline'${development ? "" : ` 'nonce-${nonce}'`}`,
   ];
   if (!development) directives.push("upgrade-insecure-requests");
   return directives.join("; ");

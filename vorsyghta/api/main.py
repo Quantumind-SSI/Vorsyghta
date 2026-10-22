@@ -21,8 +21,9 @@ from redis.exceptions import RedisError
 
 from vorsyghta.core.models import ThreatScenario, SimulationResult, ThreatType
 from vorsyghta.core.simulator import Simulator
+from vorsyghta.core.event_types import EventType
 from vorsyghta.llm.manager import LLMManager
-from vorsyghta.core.audit_logger import get_audit_logger, AuditCategory, AuditSeverity
+from vorsyghta.core.audit_logger import get_audit_logger, AuditCategory, AuditSeverity, MemoryAuditSink
 from vorsyghta.core.redis_client import get_redis_client
 from vorsyghta.db.health import check_database_health
 from vorsyghta.integrations.stripe_billing import (
@@ -97,6 +98,17 @@ async def lifespan(app: FastAPI):
         # Don't raise — allow API to start even if DB is unavailable
         # (endpoints that need DB will fail gracefully)
 
+    # Eagerly construct the DB engine/session factory so bad configuration
+    # fails at boot, not on the first request. Non-fatal — /ready reports
+    # database health and endpoints degrade gracefully.
+    try:
+        from vorsyghta.db.base import initialize_engine
+
+        initialize_engine()
+        logger.info("Database engine initialized at startup")
+    except Exception as e:
+        logger.warning(f"Database engine init deferred (first access will retry): {e}")
+
     # Attach a durable event store to the shared exercise event bus so events
     # persist for all API activity from startup, not only from the first
     # exercise run. Best-effort: on failure the bus continues unpersisted and
@@ -113,7 +125,74 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"Event store attach skipped, continuing without persistence: {e}")
 
+    # Redis Streams fan-out: publish every bus event to its stream topic and
+    # run supervised team workers that consume from the stream. Best-effort:
+    # when Redis is unavailable the API keeps serving without fan-out.
+    _stream_tasks: list = []
+    _unsubscribe_streams = None
+    try:
+        from vorsyghta.core.broker.redis_broker import RedisStreamsBroker
+        from vorsyghta.api.routers.exercise import get_event_bus
+        from vorsyghta.core.worker.base import run_all
+        from vorsyghta.core.worker.teams import create_all_workers
+        from vorsyghta.core.worker.observability import DLQ
+
+        redis_url = os.getenv("REDIS_URL")
+        if redis_url:
+            broker = RedisStreamsBroker(redis_url)
+            dlq = DLQ(broker)
+            workers = create_all_workers(broker)
+            _stream_tasks = await run_all(broker, workers, dlq=dlq)
+            if app is not None:
+                app.state.streams_broker = broker
+
+            async def _publish_to_stream(event) -> None:
+                # Workers subscribe to topics named EventType.<X>.value; the
+                # broker serializes BusEvent natively. Fan-out is
+                # fire-and-forget: durability is the event store's job.
+                try:
+                    await broker.publish(event.event_type.value, event)
+                except Exception as exc:  # noqa: BLE001 - fan-out is best-effort
+                    logger.warning(
+                        "Stream fan-out failed for %s: %s", event.event_type.value, exc
+                    )
+
+            bus = get_event_bus()
+            bus.subscribe_many(list(EventType), _publish_to_stream)
+
+            def _unsubscribe_streams_fn() -> None:
+                for et in EventType:
+                    bus.unsubscribe(et, _publish_to_stream)
+
+            _unsubscribe_streams = _unsubscribe_streams_fn
+            logger.info(
+                "Redis Streams fan-out attached to event bus (%d workers)",
+                len(_stream_tasks),
+            )
+        else:
+            logger.info("REDIS_URL not set; stream fan-out disabled for this process")
+    except Exception as e:
+        logger.warning(f"Stream fan-out setup skipped: {e}")
+
     yield
+
+    # Shutdown: stop stream workers and close the broker before the rest.
+    if _unsubscribe_streams is not None:
+        try:
+            _unsubscribe_streams()
+        except Exception as e:
+            logger.warning(f"Stream fan-out unsubscribe failed: {e}")
+    if _stream_tasks:
+        from vorsyghta.core.worker.base import stop_all
+
+        await stop_all(_stream_tasks)
+    _broker_to_close = getattr(app.state, "streams_broker", None) if app is not None else None
+    if _broker_to_close is not None:
+        try:
+            await _broker_to_close.aclose()
+        except Exception as e:
+            logger.warning(f"Streams broker close failed: {e}")
+
 
     # Shutdown
     logger.info("Shutting down Vorsyghta API...")
@@ -164,7 +243,14 @@ app.include_router(billing_router, prefix="/api")
 
 try:
     _SAAS_MODE = billing_required_from_env()
-except StripeBillingConfigurationError:
+except StripeBillingConfigurationError as exc:
+    # A typo in ENVIRONMENT (or related billing env) must not silently hide the
+    # ten self-hosted routers — surface the misconfiguration loudly.
+    logger.error(
+        "Billing/deployment configuration invalid (%s); running in SaaS mode "
+        "with self-hosted routers disabled. Fix ENVIRONMENT / VORSYGHTA_BILLING_REQUIRED.",
+        exc,
+    )
     _SAAS_MODE = True
 
 if not _SAAS_MODE:
@@ -388,7 +474,6 @@ async def get_audit_events(
     Returns events from the in-memory audit sink. In production, events
     are also written to stdout/file with SHA-256 hash-chain integrity.
     """
-    from vorsyghta.core.audit_logger import MemoryAuditSink, get_audit_logger
 
     audit = get_audit_logger()
     events = []

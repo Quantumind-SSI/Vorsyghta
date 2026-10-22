@@ -99,11 +99,15 @@ async def async_client():
         )
         os.environ["SKIP_ENV_VALIDATION"] = "true"
 
-        from vorsyghta.api.main import app
+        from vorsyghta.api.main import app, lifespan
 
-        transport = ASGITransport(app=app)
-        async with AsyncClient(transport=transport, base_url="http://test") as client:
-            yield client
+        # Drive the real lifespan (startup/shutdown): store attach, eager
+        # engine, Redis Streams fan-out + supervised workers — the same
+        # composition root production runs.
+        async with lifespan(app):
+            transport = ASGITransport(app=app)
+            async with AsyncClient(transport=transport, base_url="http://test") as client:
+                yield client
 
 
 # ==========================================

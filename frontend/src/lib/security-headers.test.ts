@@ -8,9 +8,9 @@ describe('Content Security Policy', () => {
     expect(csp).not.toContain("style-src 'self' 'nonce-");
   });
 
-  it('production environment uses nonce for styles and no unsafe-inline', () => {
+  it('production environment allows inline styles (styled-jsx) and adds a style nonce', () => {
     const csp = buildContentSecurityPolicy('xyz', 'production');
-    expect(csp).toContain("style-src 'self' 'nonce-xyz'");
-    expect(csp).not.toContain("unsafe-inline");
+    expect(csp).toContain("style-src 'self' 'unsafe-inline' 'nonce-xyz'");
+    expect(csp).not.toMatch(/style-src[^;]*'unsafe-eval'/);
   });
 });

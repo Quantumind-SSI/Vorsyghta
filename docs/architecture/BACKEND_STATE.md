@@ -8,7 +8,11 @@
 
 ---
 
-## 1. Verdict (as of 2026-10-21)
+## 1. Verdict (as of 2026-10-21, snapshot 2)
+
+Core request path **verified production-ready end-to-end**: event store attached at startup (persisted-replay smoke), DB engine eagerly initialized in lifespan and disposed on shutdown, Redis Streams fan-out + supervised team workers wired into the API process with DLQ routing, and all hand-rolled lazy singletons cut over to the `@lru_cache(maxsize=1)` idiom. Remaining: deferred-import migration (in flight this snapshot), `LocalLLMProvider.__del__` cosmetic guard, broker consumer-group semantics pending validation against real Redis, coverage growth.
+
+## Previous verdict (snapshot 1)
 
 The backend is **structurally production-ready in its core request path** — FastAPI app, SQLAlchemy persistence with migrations, hash-chained audit, RBAC on sensitive routes, Stripe entitlement gating, fail-closed safety gate — and **verified end-to-end for the event pipeline** as of this snapshot (event store factory was dead-on-arrival before 2026-10-21; fixed and smoke-tested).
 
@@ -85,18 +89,19 @@ Each row: current lazy path → required production replacement. Ordered by blas
 
 | # | Site | Current lazy behavior | Required replacement |
 |---|---|---|---|
-| 1 | `api/routers/exercise.py:46` | Module-level `EventBus()` at import; store attaches at startup (fixed 2026-10-21) but bus construction remains at import; import-time warning "persistence disabled" fires before lifespan | Construct bus + store in `lifespan`; expose via `app.state`; drop import-time warning or move to publish-time when store genuinely absent |
-| 2 | `api/routers/disclosure.py:23`, `engagement.py:24` | `_manager` built on first request, no lock | Eager in `lifespan` on `app.state` + `Depends` (stateless ctors — low risk today, wrong pattern) |
-| 3 | `api/routers/quantum.py:68` | Heavy `QuantumThreatAgent` on first request | Eager in `lifespan`; fail at boot if deps missing |
-| 4 | `api/routers/secrets.py:31`, `sso.py:92-93` | Env-dependent providers parsed on first request; misconfiguration surfaces as request-time 404/500 | Eager in `lifespan`; `/ready` should reflect SSO/secret-provider configuration status |
-| 5 | `core/tool_server_client.py:279`, `intelligence/threat_hunting.py:422` | Plain lazy singletons | `@lru_cache(maxsize=1)` idiom (semantics identical, one line, no hand-rolled guard) |
-| 6 | `core/audit_logger.py:421`, `safety/content_filter.py:677` | `threading.Lock` DCL in async app | Currently safe (no `await` in critical sections) — fragile. Prefer eager construction in `lifespan`; else `asyncio.Lock` DCL (copy `rag/vectorstore.py:1150`) |
-| 7 | `db/base.py:208-230` | Engine + session factory created on first DB touch | Create in `lifespan` startup; `dispose_engine()` already on shutdown path. First-request DB failures then happen at boot |
-| 8 | `core/broker/redis_broker.py:43` | aioredis client created on first publish; **no `close()`** | Inject client from `lifespan`; add `aclose()`; cancel worker tasks on shutdown |
-| 9 | `core/exercise_orchestrator.py:100` (`_store_attach_attempted`) | Once-flag lazy attach | Now the **fallback** only (startup attaches first). Acceptable as defense-in-depth; delete once API is the only bus owner |
-| 10 | `llm/providers/local_base.py:136` family (`_is_loaded`) | Model load on first generate | Appropriate for model lifecycle — keep, but fix `__del__` guard (`local_base.py:316`) to survive partial init |
-| 11 | `core/redis_client.py:19` | Per-call retry until reachable | Acceptable (readiness endpoint reflects it); keep |
+| 1 | `api/routers/exercise.py:46` | Module-level `EventBus()` at import; store attaches at startup (fixed 2026-10-21); import-time warning fires before lifespan | **DONE 2026-10-21 (store at startup)**; bus construction stays module-level by design (lightweight pub/sub registry; test harness uses ASGITransport without lifespan). Import-time warning → OPEN item #6 |
+| 2 | `api/routers/disclosure.py:23`, `engagement.py:24` | `_manager` built on first request, no lock | **FIXED 2026-10-21** — `@lru_cache(maxsize=1)` accessors (thread-safe memoization, test-compatible without lifespan) |
+| 3 | `api/routers/quantum.py:68` | Heavy `QuantumThreatAgent` on first request | **FIXED 2026-10-21** — `@lru_cache(maxsize=1)` accessor |
+| 4 | `api/routers/secrets.py:31`, `sso.py:92-93` | Env-dependent providers parsed on first request; misconfiguration surfaces as request-time 404/500 | **FIXED 2026-10-21** — `@lru_cache(maxsize=1)` accessors; `SecretManager.from_env()` cannot raise (env provider is always the final fallback) |
+| 5 | `core/tool_server_client.py:279`, `intelligence/threat_hunting.py:422` | Plain lazy singletons | **FIXED 2026-10-21** — `@lru_cache(maxsize=1)` accessors |
+| 6 | `core/audit_logger.py:421`, `safety/content_filter.py:677` | `threading.Lock` DCL in async app | **FIXED 2026-10-21** — both converted to cached accessors; `reset_audit_logger()` uses `cache_clear` (test-fixture compatible); `set_global_filter` kept as explicit override seam |
+| 7 | `db/base.py:208-230` | Engine + session factory created on first DB touch | **FIXED 2026-10-21** — `initialize_engine()` called from lifespan startup (fail-fast at boot); accessors remain as test/CLI fallback. Plain `sqlite://` URLs now normalize to `sqlite+aiosqlite://` |
+| 8 | `core/broker/redis_broker.py:43` | aioredis client created on first publish; **no `close()`** | **FIXED 2026-10-21** — `aclose()` added; broker constructed + closed in lifespan; supervised workers started/cancelled at shutdown; poison messages dead-lettered to `dlq.<topic>` |
+| 9 | `core/exercise_orchestrator.py:100` (`_store_attach_attempted`) | Once-flag lazy attach | **Fallback only** (startup attaches first). Kept as defense-in-depth for non-API entry points |
+| 10 | `llm/providers/local_base.py:136` family (`_is_loaded`) | Model load on first generate | Appropriate for model lifecycle — keep; `__del__` guard still OPEN (§7 item 5) |
+| 11 | `core/redis_client.py:19` | Per-call retry until reachable | **KEPT BY DESIGN** (readiness endpoint reflects it) |
 | 12 | `aws_secrets_manager.py:19`, `config/loader.py:107`, `llm/providers_new.py:86` | Memoized client/config attributes | Harmless memoization; convert to constructor injection when touched |
+| 13 | `core/worker/base.py` `_consume` | Handler failures silently swallowed (`except: pass`) | **FIXED 2026-10-21** — failures route to DLQ (`dlq.<topic>`), supervisor restarts crashed workers with backoff; regression-tested (`tests/unit/test_worker_dlq.py`) |
 
 ## 6. Deferred-Import Debt
 
@@ -108,15 +113,15 @@ Each row: current lazy path → required production replacement. Ordered by blas
 |---|---|---|
 | 1 | Event-store factory Postgres branch dead (`store.initialize()` nonexistent) + `postgresql+asyncpg://` misrouting | **FIXED 2026-10-21** (`core/contracts/event_store_port.py:261-269`), smoke-verified |
 | 2 | API events unpersisted until first exercise run | **FIXED 2026-10-21** (`api/main.py` lifespan attach, `api/routers/exercise.py:get_event_bus`) |
-| 3 | Worker DLQ placeholder — handler exceptions silently dropped (`core/worker/base.py:31-34`) | OPEN — needs dead-letter stream + logging before broker wiring |
-| 4 | `RedisStreamsBroker` no `close()` (`core/broker/redis_broker.py:38-41`) | OPEN — add `aclose()` before API-process wiring |
-| 5 | `LocalLLMProvider.__del__` AttributeError on partially-initialized provider (`llm/providers/local_base.py:316`) | OPEN — cosmetic; guard with `getattr` |
-| 6 | Import-time "persistence disabled" bus warning (`core/event_bus.py:47-49`) now fires on every API boot before lifespan attach | OPEN — move warning to publish-time |
-| 7 | Historical audit findings (in-memory campaign metrics, email provider gaps, simulation results never stored — `docs/plans/end-to-end-audit.md` §1) | PARTIALLY SUPERSEDED: persistence layer now exists (migration 003, `db/models/`); each item needs individual re-verification against current code before deletion from that doc |
+| 3 | Worker DLQ placeholder — handler exceptions silently dropped (`core/worker/base.py`) | **FIXED 2026-10-21** — handler failures publish to `dlq.<topic>` (DLQ observer wired), supervisor restarts crashed workers; `tests/unit/test_worker_dlq.py` regression tests |
+| 4 | `RedisStreamsBroker` no `close()` (`core/broker/redis_broker.py`) | **FIXED 2026-10-21** — `aclose()` added; lifespan closes broker after cancelling workers; poison (undecodable) messages dead-lettered to `dlq.<topic>` |
+| 5 | `LocalLLMProvider.__del__` AttributeError on partially-initialized provider (`llm/providers/local_base.py`) | **FIXED 2026-10-21** — guarded with `getattr(self, "_is_loaded", False)` |
+| 6 | Import-time "persistence disabled" bus warning (`core/event_bus.py`) fired on every API boot before lifespan attach | **FIXED 2026-10-21** — constructor warning removed; `publish()` logs at debug when no store attached |
+| 7 | Historical audit findings (in-memory campaign metrics, email provider gaps, simulation results never stored — `docs/plans/end-to-end-audit.md` §1) | PARTIALLY SUPERSEDED: persistence layer now exists (migration 003, `db/models/`); each item needs individual re-verification against current code |
 
 ## 8. Open Decisions (owner: product/human)
 
-- **Broker wiring:** connect `RedisStreamsBroker` + `create_all_workers` into the API `lifespan` (startup task group, graceful cancel, DLQ first). Blocked on approval — requires Redis in serving path and consumer-lifecycle design.
+- ~~Broker wiring into the API `lifespan`~~ — **DONE 2026-10-21**: fan-out subscribed to all `EventType` topics; `run_all` fails fast when Redis is unreachable so the API serves degraded without fan-out; workers supervised and cancelled at shutdown. Follow-up: integration validation against real Redis (testcontainers) for consumer-group semantics.
 - **Quantum layer re-assessment** against `docs/plans/gap-analysis.md`.
 - **Auth-flow tests** need Docker on CI/dev machines (testcontainers) or an embedded-Postgres alternative.
 
@@ -133,4 +138,5 @@ Update this file **on every merge that touches**: `api/main.py` startup/lifespan
 
 | Date | Commit | Change |
 |---|---|---|
+| 2026-10-21 | snapshot 2 (broker + singleton cutover) | Broker + workers + DLQ wired into lifespan; `aclose` + poison dead-lettering; sqlite async-URL normalization; engine eager-init; lazy singletons converted to cached accessors; supervisor + regression tests; 813 unit tests green |
 | 2026-10-21 | `f0c092e` + working tree (event-store wiring) | Initial snapshot: event-store startup wiring verified; factory bugs fixed; full lazy/happy-path census; pattern standard established |

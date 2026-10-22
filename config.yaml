@@ -68,29 +68,9 @@ llm:
       - "meta-llama/llama-3.1-8b-instruct"  # Open source, fast
       - "mistralai/mixtral-8x7b-instruct"    # Efficient performance
       - "google/gemini-pro"                  # Google's flagship model
-  
-  # Local LLM provider - Ollama (offline, no API key required)
-  ollama:
-    enabled: true
-    base_url: "http://localhost:11434"  # Default Ollama server URL
-    model: "llama2"  # Default model (can be changed)
-    timeout_seconds: 120  # Longer timeout for local generation
-    max_tokens: 1000
-    temperature: 0.7
-    
-    # Popular models you can use with Ollama
-    # To install: ollama pull <model-name>
-    recommended_models:
-      - "llama2"           # Meta's Llama 2 (7B) - Good all-rounder
-      - "llama2:13b"       # Llama 2 13B - Better quality
-      - "mistral"          # Mistral 7B - Fast and capable
-      - "codellama"        # Code-specialized Llama
-      - "neural-chat"      # Intel's neural chat model
-      - "starling-lm"      # Starling - Good for chat
-      - "vicuna"           # Vicuna - ChatGPT alternative
-      - "orca-mini"        # Orca Mini - Compact and fast
+
   # Local Model Providers (for privacy, cost control, and offline usage)
-  
+
   # Ollama - Server-based local models (recommended for most users)
   ollama:
     enabled: true  # Set to true to enable
@@ -99,7 +79,7 @@ llm:
     timeout_seconds: 120
     max_tokens: 1000
     temperature: 0.7
-    
+
     # Popular models for cybersecurity training
     recommended_models:
       - "llama3.2:3b"      # Fast, good for basic scenarios
@@ -108,6 +88,16 @@ llm:
       - "codellama:7b"     # Code-aware for technical scenarios
       - "phi3:3.8b"        # Efficient instruction following
       - "qwen2:7b"         # Good reasoning capabilities
+
+  # NVIDIA NIM / NeMo provider
+  nvidia:
+    enabled: true
+    api_key: ""  # Set via NVIDIA_API_KEY env var
+    base_url: "https://integrate.api.nvidia.com/v1"
+    model: "meta/muse-glimmer-30b"
+    timeout_seconds: 120
+    max_tokens: 2000
+    temperature: 0.7
   
   # Hugging Face Transformers - Direct model loading with GPU support
   huggingface:
@@ -278,12 +268,3 @@ database:
   url: "sqlite:///vorsyghta.db"  # Can be PostgreSQL, MySQL, etc.
   pool_size: 5
   max_overflow: 10
-# NVIDIA NIM / NeMo provider
-  nvidia:
-    enabled: true
-    api_key: ""  # Set via NVIDIA_API_KEY env var
-    base_url: "https://integrate.api.nvidia.com/v1"
-    model: "meta/muse-glimmer-30b"
-    timeout_seconds: 120
-    max_tokens: 2000
-    temperature: 0.7

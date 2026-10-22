@@ -15,6 +15,7 @@ const nextConfig: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
   reactStrictMode: true,
+  allowedDevOrigins: ['127.0.0.1'],
   turbopack: {
     root: fileURLToPath(new URL(".", import.meta.url)),
   },
