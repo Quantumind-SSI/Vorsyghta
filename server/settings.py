@@ -65,6 +65,9 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 
+ADMIN_URL = os.environ.get("ADMIN_URL", "admin")
+ADMIN_SITE_HEADER = "Vorsyghta Admin"
+ADMIN_SITE_TITLE = "Vorsyghta Administration"
 ROOT_URLCONF = "server.urls"
 
 TEMPLATES = [

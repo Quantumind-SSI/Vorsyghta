@@ -10,7 +10,7 @@ import re
 from rest_framework import serializers, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 from .models import User
 
 
@@ -31,6 +31,7 @@ class RegisterView(APIView):
 
     permission_classes: list = []
     authentication_classes: list = []
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
 
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
