@@ -8,9 +8,9 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "dev": "node scripts/verify-styled-jsx.mjs && next dev",
-    "build": "node scripts/verify-styled-jsx.mjs && next build",
-    "start": "next start",
+    "dev": "node init && node scripts/verify-styled-jsx.mjs && next dev",
+    "build": "node init && node scripts/verify-styled-jsx.mjs && next build",
+    "start": "node init && next start",
     "lint": "oxlint --deny-warnings src next.config.ts vitest.config.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
