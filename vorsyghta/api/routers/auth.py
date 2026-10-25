@@ -299,17 +299,20 @@ async def resend_verification(request: ResendVerificationRequest, session: Async
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
         )
-    
+
     if user.is_verified:
         return {"message": "Email already verified"}
-    
+
     # Generate new verification token
     verification_token = generate_verification_token()
     user.verification_token = verification_token
+    tenant_name = user.tenant_id or ""
     await session.commit()
-    
-    # Send verification email
-    send_verification_email(email, verification_token, user.tenant.name if user.tenant else "")
+
+    # Send verification email (never lazy-load user.tenant here: sync IO
+    # in an async context raises MissingGreenlet after the commit expires
+    # loaded attributes)
+    send_verification_email(email, verification_token, tenant_name)
     
     return {"message": "Verification email sent"}
 
@@ -384,10 +387,12 @@ async def request_reset(request: ResetPasswordRequest, session: AsyncSession = D
     # Generate reset token
     reset_token = generate_reset_token()
     user.reset_token = reset_token
+    tenant_name = user.tenant_id or ""
     await session.commit()
-    
-    # Send reset email
-    send_reset_email(email, reset_token, user.tenant.name if user.tenant else "")
+
+    # Send reset email (tenant_id string, not user.tenant: post-commit
+    # lazy-load would trigger sync IO in async context)
+    send_reset_email(email, reset_token, tenant_name)
     
     return {"message": "Password reset link sent to your email"}
 
@@ -397,22 +402,11 @@ async def reset_password(request: ResetPasswordConfirmRequest, session: AsyncSes
     """Reset password using a verification token."""
     from vorsyghta.utils.auth_enhancements import is_valid_reset_token
     
-    # Extract email from token (in a full implementation, token would contain email)
-    # For now, look up by email that would have been used to generate the token
-    # We'll use the token directly and check against the user's reset token
-    
-    # Find the user first - we need email to look up the user
-    # Since we don't have email from the token in this simplified version,
-    # we'll require the user to provide their email along with the token
-    # or use a different authentication flow
-    
-    # For now, check if the reset token is valid for any user
-    # This is a simplified approach - in production, tokens should contain email
-    user = None
-    for u in []:  # Placeholder - will be populated in real implementation
-        if is_valid_reset_token(request.token, None, u):
-            user = u
-            break
+    # Find user by reset token
+    result = await session.execute(
+        select(UserRecord).where(UserRecord.reset_token == request.token)
+    )
+    user = result.scalar_one_or_none()
     
     if not user:
         # Don't reveal if email exists (security best practice)
@@ -428,14 +422,14 @@ async def reset_password(request: ResetPasswordConfirmRequest, session: AsyncSes
     # Set new password
     user.hashed_password = get_password_hash(request.new_password)
     user.reset_token = None
-    # Password reset doesn't change is_verified status
-    import asyncio
-    asyncio.get_event_loop().create_task(session.commit())
+    await session.commit()
     
-    import logging
-    logger = logging.getLogger(__name__)
-    logger.info(
-        f"Password reset completed for user: {user.email}",
+    get_audit_logger().log(
+        "auth.password_reset.success",
+        category=AuditCategory.AUTHENTICATION,
+        severity=AuditSeverity.INFO,
+        actor={"email": user.email, "user_id": user.user_id},
+        description="Password reset completed",
     )
     
     return ResetPasswordResponse(message="Password has been reset successfully")
@@ -541,7 +535,7 @@ async def login(
         user_id=user.user_id,
         role=user.role,
         tenant_id=user.tenant_id,
-        requires_email_verification=requires_email_verification,
+        requires_email_verification=False,
     )
 
 
