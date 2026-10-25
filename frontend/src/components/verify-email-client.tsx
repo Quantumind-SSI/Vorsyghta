@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { verifyEmail } from "@/lib/api/client";
 
 export function VerifyEmailClient() {
   const searchParams = useSearchParams();
@@ -20,11 +19,16 @@ export function VerifyEmailClient() {
     let mounted = true;
     (async () => {
       try {
-        const res = await verifyEmail(token);
+        const res = await fetch("/api/auth/verify-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token }),
+        });
         if (!mounted) return;
         if (res.ok) {
+          const data = await res.json();
           setStatus("success");
-          setMessage(res.data?.message || "Email verified.");
+          setMessage(data.message || "Email verified.");
           setTimeout(() => router.push("/sign-in"), 2000);
         } else {
           setStatus("error");
