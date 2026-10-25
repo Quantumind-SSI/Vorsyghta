@@ -240,3 +240,10 @@ export function updateUserRole(token: string, role: string) {
     json: { role },
   });
 }
+
+export function verifyEmail(token: string) {
+  return apiRequest("/api/auth/verify-email", z.object({ message: z.string() }), {
+    method: "POST",
+    json: { token },
+  });
+}

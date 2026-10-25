@@ -319,17 +319,9 @@ async def verify_email(request: VerifyEmailRequest, session: AsyncSession = Depe
     """Verify a user's email address using a verification token."""
     from vorsyghta.utils.auth_enhancements import is_valid_verification_token
     
-    # Extract email from token (we'll use the user lookup by email instead)
-    # The token itself contains the email information we need
-    
-    # Find the user by email from the token context
-    # For now, look up by the email that would have been used to generate the token
-    # In a full implementation, the token would contain the email
-    email = request.token  # Simplified: assume token contains email context
-    
-    # Find the user
+    # Find the user by verification token
     result = await session.execute(
-        select(UserRecord).where(func.lower(UserRecord.email) == email.lower())
+        select(UserRecord).where(UserRecord.verification_token == request.token)
     )
     user = result.scalar_one_or_none()
     
@@ -358,7 +350,7 @@ async def verify_email(request: VerifyEmailRequest, session: AsyncSession = Depe
         "auth.email_verified",
         category=AuditCategory.AUTHENTICATION,
         severity=AuditSeverity.INFO,
-        actor={"email": email},
+        actor={"email": user.email},
         description="Email address verified",
     )
     
