@@ -21,6 +21,9 @@ export function ForgotPasswordClient() {
       if (res.ok) {
         setStatus("success");
         setMessage(data.message || "If an account exists, a reset link has been sent.");
+      } else if (data.requires_verification) {
+        setStatus("success");
+        setMessage(data.message || "Please verify your email first.");
       } else {
         setStatus("error");
         setMessage(data.detail || data.message || "Request failed.");
