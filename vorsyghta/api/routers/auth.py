@@ -502,9 +502,9 @@ async def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    requires_email_verification = not user.is_verified
-    if requires_email_verification:
-        # Trigger verification email on sign-in for active but unverified users
+    # Enforce email verification
+    if not user.is_verified:
+        # Send verification email on failed login attempt
         try:
             from vorsyghta.utils.auth_enhancements import generate_verification_token, send_verification_email
             verification_token = generate_verification_token()
@@ -516,8 +516,19 @@ async def login(
                 tenant.name if tenant else ""
             )
         except Exception:
-            # Do not block login if email sending fails; user will still be prompted
             pass
+        get_audit_logger().log(
+            "auth.login.failed",
+            category=AuditCategory.AUTHENTICATION,
+            severity=AuditSeverity.WARNING,
+            actor={"email": email},
+            description="Failed login attempt - email not verified",
+        )
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Email not verified. Please verify your email to sign in.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
     token = create_access_token(
         user_id=user.user_id,
