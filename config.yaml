@@ -6,17 +6,16 @@ llm:
   # pydantic_ai = strict/typed client over the SAME Azure gpt-4o deployment.
   default_provider: "nvidia"
 
-  # Primary provider - Azure OpenAI (PRODUCTION: ciicerone-openai, eastus2,
-  # sub 59346494-..., rg ciicerone-rg). This matches the live ciicerone-api
-  # Container App exactly. Powers ALL application operations. Secrets live in
+  # Primary provider - Azure OpenAI (PRODUCTION: vorsyghta-openai, eastus2,
+  # sub 59346494-..., rg vorsyghta-rg). This matches the live vorsyghta-api
   # .env (never committed): AZURE_OPENAI_API_KEY, ENDPOINT, DEPLOYMENT.
   azure:
     # Secrets are resolved from Azure Key Vault when key_vault_url is set (the
-    # production path — matches the ciicerone-api Container App, which mounts
-    # azure-openai-* from ciicerone-kv). Falls back to AZURE_OPENAI_* env vars.
-    key_vault_url: ""
+    # production path — matches the vorsyghta-api Container App, which mounts
+    # azure-openai-* from vorsyghta-kv). Falls back to AZURE_OPENAI_* env vars.
+    key_vault_url: "https://vorsyghta-kv.vault.azure.net/"
     api_key: ""  # Resolved from Key Vault secret 'azure-openai-api-key' or env
-    endpoint: "https://ciicerone-openai.openai.azure.com/"
+    endpoint: "https://vorsyghta-openai.openai.azure.com/"
     deployment: "gpt-4o"      # Production model (verified: correct T1595 answer, HTTP 200)
     model: "gpt-4o"
     api_version: "2024-10-21"

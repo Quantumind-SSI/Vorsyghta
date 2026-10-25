@@ -121,14 +121,11 @@ services:
     <<: *vorsyghta-api-image
     container_name: vorsyghta-api
     restart: unless-stopped
-    command: gunicorn server.wsgi:application --bind 0.0.0.0:8000 --workers 4 --threads 2 --timeout 120 --access-logfile - --error-logfile -
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-      ollama:
-        condition: service_started
       migrate:
         condition: service_completed_successfully
     environment:
@@ -144,8 +141,8 @@ services:
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-      - OLLAMA_BASE_URL=http://ollama:11434
-      - DEFAULT_LLM_PROVIDER=${DEFAULT_LLM_PROVIDER:-openrouter}
+      - NVIDIA_API_KEY=${NVIDIA_API_KEY}
+      - DEFAULT_LLM_PROVIDER=${DEFAULT_LLM_PROVIDER:-nvidia}
       # Application
       - VORSYGHTA_SECRET_KEY=${VORSYGHTA_SECRET_KEY:?Set VORSYGHTA_SECRET_KEY in .env}
       - ENVIRONMENT=${ENVIRONMENT:-development}
