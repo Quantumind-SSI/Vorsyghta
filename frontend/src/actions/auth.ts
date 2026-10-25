@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { z } from "zod";
 
 import { authenticate, fetchCurrentUser, registerAccount } from "@/lib/api/client";
@@ -60,6 +61,12 @@ export async function signInAction(
   }
 
   await setSessionToken(token.data.access_token);
+
+  // Present onboarding for viewer role on every sign-in
+  if (token.data.role === "viewer") {
+    redirect("/onboarding");
+  }
+
   redirect(safeReturnPath(formData.get("next")));
 }
 
