@@ -30,6 +30,10 @@ export function VerifyEmailClient() {
           setStatus("success");
           setMessage(data.message || "Email verified.");
           setTimeout(() => router.push("/sign-in"), 2000);
+        } else if (res.status === 404) {
+          setStatus("success");
+          setMessage("Email already verified. Redirecting to sign in.");
+          setTimeout(() => router.push("/sign-in"), 2000);
         } else {
           setStatus("error");
           setMessage("Verification failed. Please try again.");
