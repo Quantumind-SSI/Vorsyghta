@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { ForgotPasswordClient } from "@/components/forgot-password-client";
+import { ForgotPasswordClient } from "../../../components/forgot-password-client";
 
 export const metadata: Metadata = {
   title: "Forgot password",

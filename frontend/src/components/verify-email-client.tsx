@@ -19,7 +19,7 @@ export function VerifyEmailClient() {
     let mounted = true;
     (async () => {
       try {
-        const res = await fetch("/api/auth/verify-email", {
+        const res = await fetch("http://localhost:8001/api/auth/verify-email", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ token }),

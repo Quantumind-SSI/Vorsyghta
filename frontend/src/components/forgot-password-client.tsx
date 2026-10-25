@@ -12,7 +12,7 @@ export function ForgotPasswordClient() {
     e.preventDefault();
     setStatus("loading");
     try {
-      const res = await fetch("/api/auth/request-reset", {
+      const res = await fetch("http://localhost:8001/api/auth/request-reset", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
