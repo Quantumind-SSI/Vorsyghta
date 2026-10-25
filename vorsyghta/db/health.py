@@ -20,7 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 logger = logging.getLogger(__name__)
 
-EXPECTED_SCHEMA_REVISION = "004_stripe_billing"
+EXPECTED_SCHEMA_REVISION = "3fdfac953d72"
 
 
 @dataclass

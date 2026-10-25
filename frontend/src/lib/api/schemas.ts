@@ -24,6 +24,7 @@ export const tokenResponseSchema = z.object({
   user_id: boundedText,
   role: z.enum(["admin", "analyst", "viewer", "pilot_sponsor"]),
   tenant_id: boundedText,
+  requires_email_verification: z.boolean().optional(),
 });
 
 export const currentUserSchema = z.object({

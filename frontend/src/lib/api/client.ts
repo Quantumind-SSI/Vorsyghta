@@ -121,7 +121,7 @@ async function apiRequest<T>(
 
 export function authenticate(username: string, password: string) {
   const body = new URLSearchParams({ username, password });
-  return apiRequest("/api/auth/token", tokenResponseSchema, { method: "POST", body });
+  return apiRequest("/api/auth/login", tokenResponseSchema, { method: "POST", body });
 }
 
 export function registerAccount(input: RegistrationInput) {
@@ -231,4 +231,12 @@ export function fetchExercises(token: string) {
 
 export function fetchDisclosures(token: string) {
   return apiRequest("/api/disclosures", disclosureListSchema, { token });
+}
+
+export function updateUserRole(token: string, role: string) {
+  return apiRequest("/api/auth/update-role", z.object({ message: z.string() }), {
+    method: "POST",
+    token,
+    json: { role },
+  });
 }

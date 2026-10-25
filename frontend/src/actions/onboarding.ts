@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 
 import {
   onboardingEnvironmentsSchema,
@@ -217,6 +218,8 @@ export async function activateOnboardingAction(
     tags: ["onboarding", "activated"],
   });
   if (state.status === "error") return state;
+  // Mark onboarding complete in session to avoid re-prompting
+  (await cookies()).set("onboarding_complete", "1", { httpOnly: true, path: "/", sameSite: "lax" });
   // Persist role to UserRecord and redirect to app
   redirect("/app");
 }

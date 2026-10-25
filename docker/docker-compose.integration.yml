@@ -7,9 +7,8 @@
 #
 #   * preserves the base one-shot Alembic `migrate` service and its API startup
 #     dependency while using the integration image build
-#   * sets DEFAULT_LLM_PROVIDER=ollama so the API uses the Ollama container
-#     on the Docker network for REAL LLM output (no cloud API keys needed,
-#     everything stays in your network)
+#   * sets DEFAULT_LLM_PROVIDER=nvidia so the API uses NVIDIA for LLM output
+#     while Ollama remains available for local fallback.
 #   * passes OLLAMA_BASE_URL + OLLAMA_MODEL through to the API container
 #     (the manager reads these env vars to point at http://ollama:11434)
 #   * sets VORSYGHTA_SECRET_KEY explicitly (the JWT signer reads
@@ -59,7 +58,7 @@ services:
       # ---- Ollama as the real LLM provider (in-network, no cloud keys) ----
       - OLLAMA_BASE_URL=http://ollama:11434
       - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3.1:8b}
-      - DEFAULT_LLM_PROVIDER=ollama
+      - DEFAULT_LLM_PROVIDER=nvidia
       # ---- Stable JWT secret (rbac.py reads VORSYGHTA_SECRET_KEY) ----
       - VORSYGHTA_SECRET_KEY=${VORSYGHTA_SECRET_KEY:?Set VORSYGHTA_SECRET_KEY in .env}
       # ---- Seed control for the integration analyst ----

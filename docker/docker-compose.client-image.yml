@@ -80,11 +80,11 @@ services:
       - VORSYGHTA_SECRET_KEY=${VORSYGHTA_SECRET_KEY:?Set VORSYGHTA_SECRET_KEY in .env}
       # ---- CORS locked to the API host only (no wildcard) ----
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:8001}
-      # ---- Ollama provider (inherited from integration override, repeated
-      #      here so this layer is self-documenting if inspected alone) ----
+      # ---- LLM provider (NVIDIA default, Ollama available for fallback) ----
+      #      Repeated here so this layer is self-documenting if inspected alone ----
       - OLLAMA_BASE_URL=http://ollama:11434
       - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3.1:8b}
-      - DEFAULT_LLM_PROVIDER=ollama
+      - DEFAULT_LLM_PROVIDER=nvidia
       # ---- Seed control for the integration analyst ----
       - SEED_ANALYST_EMAIL=${SEED_ANALYST_EMAIL:-analyst@vorsyghta.local}
       - SEED_ANALYST_PASSWORD=${SEED_ANALYST_PASSWORD:-Analyst123!}

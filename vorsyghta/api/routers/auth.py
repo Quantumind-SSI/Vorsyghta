@@ -102,6 +102,7 @@ class TokenResponse(BaseModel):
     user_id: str
     role: str
     tenant_id: str
+    requires_email_verification: bool = False
 
 
 class VerifyEmailRequest(BaseModel):
@@ -466,27 +467,57 @@ async def login(
 
     user, tenant = identity if identity else (None, None)
     
-    # Check if account is active and verified
+    # Check if account exists and is active
     if (
         user is None
         or tenant is None
         or not user.is_active
         or not tenant.is_active
-        or not user.is_verified  # Require email verification
-        or not verify_password(form_data.password, user.hashed_password)
     ):
         get_audit_logger().log(
             "auth.login.failed",
             category=AuditCategory.AUTHENTICATION,
             severity=AuditSeverity.WARNING,
             actor={"email": email},
-            description="Failed login attempt - account not verified or incorrect password",
+            description="Failed login attempt - account inactive or not found",
         )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password. Account may require email verification.",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    # Verify password
+    if not verify_password(form_data.password, user.hashed_password):
+        get_audit_logger().log(
+            "auth.login.failed",
+            category=AuditCategory.AUTHENTICATION,
+            severity=AuditSeverity.WARNING,
+            actor={"email": email},
+            description="Failed login attempt - incorrect password",
+        )
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password. Account may require email verification.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    requires_email_verification = not user.is_verified
+    if requires_email_verification:
+        # Trigger verification email on sign-in for active but unverified users
+        try:
+            from vorsyghta.utils.auth_enhancements import generate_verification_token, send_verification_email
+            verification_token = generate_verification_token()
+            user.verification_token = verification_token
+            await session.commit()
+            send_verification_email(
+                user.email,
+                verification_token,
+                tenant.name if tenant else ""
+            )
+        except Exception:
+            # Do not block login if email sending fails; user will still be prompted
+            pass
 
     token = create_access_token(
         user_id=user.user_id,
@@ -507,6 +538,7 @@ async def login(
         user_id=user.user_id,
         role=user.role,
         tenant_id=user.tenant_id,
+        requires_email_verification=requires_email_verification,
     )
 
 

@@ -38,6 +38,11 @@ export async function signInAction(
     return { status: "error", message };
   }
 
+  if (token.data.requires_email_verification) {
+    await setSessionToken(token.data.access_token);
+    redirect("/app");
+  }
+
   const tokenUser = {
     user_id: token.data.user_id,
     tenant_id: token.data.tenant_id,
