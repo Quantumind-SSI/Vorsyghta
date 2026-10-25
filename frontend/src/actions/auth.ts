@@ -62,12 +62,8 @@ export async function signInAction(
 
   await setSessionToken(token.data.access_token);
 
-  // Present onboarding for viewer role on every sign-in
-  if (token.data.role === "viewer") {
-    redirect("/onboarding");
-  }
-
-  redirect(safeReturnPath(formData.get("next")));
+  // Present onboarding for all signed-in users on every sign-in
+  redirect("/onboarding");
 }
 
 export async function registerAction(
