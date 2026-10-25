@@ -104,5 +104,7 @@ export async function registerAction(
 
 export async function signOutAction(): Promise<void> {
   await clearSession();
+  const cookiesStore = await import("next/headers").then(m => m.cookies());
+  cookiesStore.delete("onboarding_complete");
   redirect("/sign-in");
 }

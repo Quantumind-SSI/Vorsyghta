@@ -2,8 +2,19 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { signOutAction } from "@/actions/auth";
+import { getSessionState } from "@/lib/session";
+import { redirect } from "next/navigation";
 
-export default function ApplicationLayout({ children }: Readonly<{ children: ReactNode }>) {
+export default async function ApplicationLayout({ children }: Readonly<{ children: ReactNode }>) {
+  const session = await getSessionState();
+  if (session.state === "authenticated") {
+    const store = await import("next/headers").then(m => m.cookies());
+    const onboardingCookie = store.get("onboarding_complete");
+    // Enforce onboarding for all signed-in users on every visit
+    if (!onboardingCookie) {
+      redirect("/onboarding");
+    }
+  }
   return (
     <div className="application-shell">
       <header className="app-header">
