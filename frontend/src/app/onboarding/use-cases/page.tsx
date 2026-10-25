@@ -44,6 +44,17 @@ export default async function OnboardingUseCasesPage() {
   if (!billing.ok && (billing.kind === "unauthorized" || billing.kind === "forbidden")) redirect("/sign-in?next=%2Fonboarding%2Fuse-cases");
   if (!billing.ok || !hasProductAccess(billing.data)) redirect("/start-trial?reason=not-entitled");
 
+  // Load tenant options for the signed-in user
+  let tenantOptions: Array<{ value: string; label: string }> = [{ value: "default", label: "Select your organization" }];
+  try {
+    const { fetchCurrentUser } = await import("@/lib/api/client");
+    const user = await fetchCurrentUser(session.token);
+    if (user.ok && user.data.tenant_id) {
+      const tenantName = user.data.tenant?.name || user.data.tenant_id;
+      tenantOptions = [{ value: user.data.tenant_id, label: tenantName }];
+    }
+  } catch {}
+
   return (
     <main className="app-main onboarding-main" id="main-content">
       <OnboardingStepNav current={2} />
@@ -67,15 +78,12 @@ export default async function OnboardingUseCasesPage() {
           </fieldset>
           <fieldset className="onboarding-field">
             <legend>Organization / Tenant</legend>
-            {TENANTS.map((tenant, index) => (
-              <label className="onboarding-choice" key={tenant.value}>
-                <input type="radio" name="tenant" value={tenant.value} required defaultChecked={index === 0} />
-                <span>{tenant.label}</span>
-              </label>
-            ))}
-            <p className="onboarding-note">
-              <Link href="/onboarding-enterprise/welcome">Add another organization</Link> if you belong to multiple companies.
-            </p>
+            <div className="onboarding-field">
+              <Link className="button button--primary" href="/onboarding-enterprise/welcome">Select your organization</Link>
+              <p className="onboarding-note">
+                Choose or add the organization you want to onboard. This sets tenant context for the workspace.
+              </p>
+            </div>
           </fieldset>
           <fieldset className="onboarding-field">
             <legend>Capabilities you need (select at least one)</legend>
