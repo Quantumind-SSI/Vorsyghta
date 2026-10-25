@@ -308,6 +308,22 @@ services:
       com.vorsyghta.service: "tools"
       com.vorsyghta.description: "PgAdmin database management interface"
 
+  # ================================
+  # Mailpit - Email Testing
+  # ================================
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: vorsyghta-mailpit
+    restart: unless-stopped
+    ports:
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"
+      - "${MAILPIT_WEB_PORT:-8025}:8025"
+    networks:
+      - vorsyghta-network
+    labels:
+      com.vorsyghta.service: "mail"
+      com.vorsyghta.description: "Mailpit SMTP testing and web UI"
+
 # ================================
 # Networks
 # ================================
