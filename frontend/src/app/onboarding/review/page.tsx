@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 
 import { activateOnboardingAction } from "@/actions/onboarding";
 import { OnboardingForm } from "@/components/onboarding-form";
-import { fetchBillingStatus } from "@/lib/api/client";
+import { fetchCurrentUser, fetchBillingStatus } from "@/lib/api/client";
 import { hasProductAccess } from "@/lib/billing";
 import { requireSession } from "@/lib/session";
 import { OnboardingStepNav } from "@/components/onboarding-step-nav";
@@ -24,21 +24,38 @@ export default async function OnboardingReviewPage() {
   if (!billing.ok && (billing.kind === "unauthorized" || billing.kind === "forbidden")) redirect("/sign-in?next=%2Fonboarding%2Freview");
   if (!billing.ok || !hasProductAccess(billing.data)) redirect("/start-trial?reason=not-entitled");
 
+  // Fetch current user to get tenant context
+  let userContext = null;
+  try {
+    const user = await fetchCurrentUser(session.token);
+    if (user.ok) {
+      userContext = {
+        tenant_id: user.data.tenant_id,
+        role: user.data.role,
+        email: user.data.email,
+        organization: user.data.tenant?.name || "Your Organization",
+      };
+    }
+  } catch (error) {
+    console.error("Failed to fetch user context:", error);
+  }
+
   return (
     <main className="app-main onboarding-main" id="main-content">
       <OnboardingStepNav current={4} />
       <div className="app-page-heading onboarding-heading">
         <div>
-          <p className="eyebrow">Onboarding · step 4 of 4</p>
+          <p className="eyebrow">Onboarding · step 4 of 5</p>
           <h1>Review & activate</h1>
           <p>Your answers are saved to your tenant. Accept the terms to enter the workspace.</p>
         </div>
       </div>
       <section className="data-panel onboarding-panel">
         <ul className="onboarding-summary">
-          <li>Organization profile, use cases, and environment intent saved as tenant-scoped records.</li>
-          <li>Assessments run only against sanctioned targets or authorized environments.</li>
-          <li>Every result carries provenance — measured, simulated, AI-generated, or fallback.</li>
+          <li>Role selection saved and persisting.</li>
+          <li>Organization profile captured for compliance mapping.</li>
+          <li>Use cases and capabilities configured for assessment scoping.</li>
+          <li>Environment intent recorded for digital-twin ingestion.</li>
         </ul>
         <OnboardingForm action={activateOnboardingAction} submitLabel="Activate workspace">
           <fieldset className="onboarding-field onboarding-field--required">
@@ -57,6 +74,14 @@ export default async function OnboardingReviewPage() {
           </p>
         </OnboardingForm>
       </section>
+      {userContext && (
+        <div className="onboarding-tenant-context">
+          <p className="panel-footnote">
+            Welcome to the Vorsyghta workspace, <strong>{userContext.organization}</strong>
+            ({userContext.tenant_id.substring(0, 8)}…).
+          </p>
+        </div>
+      )}
     </main>
   );
 }

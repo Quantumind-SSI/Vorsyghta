@@ -11,7 +11,7 @@ import { OnboardingStepNav } from "@/components/onboarding-step-nav";
 
 export const metadata: Metadata = {
   title: "Onboarding — use cases",
-  description: "Which capabilities you need and how you will measure success.",
+  description: "Select capabilities, persona, and organizations for assessment defaults and report templates.",
   robots: { index: false, follow: false },
 };
 
@@ -27,10 +27,14 @@ const CAPABILITIES: ReadonlyArray<{ value: string; label: string; hint: string }
   { value: "rl_rlhf", label: "Agent training (RL/RLHF)", hint: "Learned reward models" },
 ];
 const PERSONAS: ReadonlyArray<{ value: string; label: string }> = [
-  { value: "ciso", label: "CISO / security leader" },
-  { value: "red_team_lead", label: "Red-team lead" },
-  { value: "analyst", label: "Security analyst" },
-  { value: "pilot_sponsor", label: "Pilot sponsor / approver" },
+  { value: "viewer", label: "Viewer / Stakeholder" },
+  { value: "analyst", label: "Security Analyst" },
+  { value: "pilot_sponsor", label: "Pilot Sponsor / Approver" },
+  { value: "admin", label: "System Administrator" },
+];
+const TENANTS: ReadonlyArray<{ value: string; label: string }> = [
+  { value: "default", label: "Select your organization" },
+  // Tenants will be populated after onboarding or fetched from session
 ];
 
 export default async function OnboardingUseCasesPage() {
@@ -45,13 +49,34 @@ export default async function OnboardingUseCasesPage() {
       <OnboardingStepNav current={2} />
       <div className="app-page-heading onboarding-heading">
         <div>
-          <p className="eyebrow">Onboarding · step 2 of 4</p>
-          <h1>Use cases</h1>
+          <p className="eyebrow">Onboarding · step 2 of 5</p>
+          <h1>Use cases & persona</h1>
           <p>Select what you need — this sets assessment defaults and report templates.</p>
         </div>
       </div>
       <section className="data-panel onboarding-panel">
         <OnboardingForm action={saveOnboardingUseCasesAction} submitLabel="Save and continue">
+          <fieldset className="onboarding-field">
+            <legend>Primary persona</legend>
+            {PERSONAS.map((persona, index) => (
+              <label className="onboarding-choice" key={persona.value}>
+                <input type="radio" name="persona" value={persona.value} required defaultChecked={index === 0} />
+                <span>{persona.label}</span>
+              </label>
+            ))}
+          </fieldset>
+          <fieldset className="onboarding-field">
+            <legend>Organization / Tenant</legend>
+            {TENANTS.map((tenant, index) => (
+              <label className="onboarding-choice" key={tenant.value}>
+                <input type="radio" name="tenant" value={tenant.value} required defaultChecked={index === 0} />
+                <span>{tenant.label}</span>
+              </label>
+            ))}
+            <p className="onboarding-note">
+              <Link href="/onboarding-enterprise/welcome">Add another organization</Link> if you belong to multiple companies.
+            </p>
+          </fieldset>
           <fieldset className="onboarding-field">
             <legend>Capabilities you need (select at least one)</legend>
             <div className="onboarding-choices-grid">
@@ -62,15 +87,6 @@ export default async function OnboardingUseCasesPage() {
                 </label>
               ))}
             </div>
-          </fieldset>
-          <fieldset className="onboarding-field">
-            <legend>Primary persona</legend>
-            {PERSONAS.map((persona, index) => (
-              <label className="onboarding-choice" key={persona.value}>
-                <input type="radio" name="persona" value={persona.value} required defaultChecked={index === 0} />
-                <span>{persona.label}</span>
-              </label>
-            ))}
           </fieldset>
           <div className="onboarding-field">
             <label htmlFor="success_criteria">How will you measure success? (optional)</label>

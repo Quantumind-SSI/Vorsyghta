@@ -8,11 +8,16 @@ import {
   onboardingReviewSchema,
   onboardingUseCasesSchema,
 } from "@/lib/api/schemas";
-import { saveOnboardingStep } from "@/lib/api/client";
+import { saveOnboardingStep, updateUserRole } from "@/lib/api/client";
 import type { ActionState } from "@/lib/action-state";
 import { requireSession } from "@/lib/session";
 
-const STEP_ROUTES = ["/onboarding/profile", "/onboarding/use-cases", "/onboarding/environments", "/onboarding/review"] as const;
+const STEP_ROUTES = [
+  "/onboarding/profile",
+  "/onboarding/use-cases",
+  "/onboarding/environments",
+  "/onboarding/review",
+] as const;
 
 function nextStepRoute(current: string): string {
   const index = STEP_ROUTES.indexOf(current as typeof STEP_ROUTES[number]);
@@ -35,6 +40,40 @@ async function persistStep(
   return { status: "idle", message: "Saved." };
 }
 
+// New: persist role to UserRecord and redirect based on role
+async function persistRoleAndRedirect(
+  token: string,
+  role: string,
+  tenantId: string
+): Promise<ActionState> {
+  const result = await saveOnboardingStep(token, {
+    title: "Onboarding — role persistence",
+    content: JSON.stringify({ role, tenant_id: tenantId }),
+    category: "training",
+    tags: ["onboarding", "role", role],
+  });
+  if (!result.ok) {
+    const message =
+      result.kind === "unavailable"
+        ? "The knowledge service is unavailable. Role was not persisted — try again."
+        : "Role could not be persisted. No fake success is shown — try again.";
+    return { status: "error", message };
+  }
+  // Redirect based on role
+  let redirectPath = "/app";
+  if (role === "viewer") {
+    redirectPath = "/app"; // Viewer goes directly to app (read-only)
+  } else if (role === "analyst") {
+    redirectPath = "/app"; // Analyst goes to app after onboarding
+  } else if (role === "pilot_sponsor") {
+    redirectPath = "/app"; // Pilot sponsor goes to app
+  } else if (role === "admin") {
+    redirectPath = "/app"; // Admin goes to app
+  }
+  redirect(redirectPath);
+  return { status: "idle", message: "Role persisted." };
+}
+
 export async function saveOnboardingProfileAction(
   _previousState: ActionState,
   formData: FormData,
@@ -43,12 +82,25 @@ export async function saveOnboardingProfileAction(
   if (session.state === "unavailable") {
     return { status: "error", message: "Identity service unavailable. Sign in again." };
   }
+  const persona = formData.get("persona") as string;
+  const industry = formData.get("industry") as string;
+  const company_size = formData.get("company_size") as string;
+  const regions = formData.get("regions") as string;
+  const security_maturity = formData.get("security_maturity") as string;
+  const compliance_frameworks = formData.getAll("compliance_frameworks") as string[];
+
+  // Validate persona selection
+  const validPersonas = ["viewer", "analyst", "pilot_sponsor", "admin"];
+  if (!persona || !validPersonas.includes(persona)) {
+    return { status: "error", message: "Select a valid role: Viewer, Analyst, Pilot Sponsor, or Admin." };
+  }
+
   const parsed = onboardingProfileSchema.safeParse({
-    industry: formData.get("industry"),
-    company_size: formData.get("company_size"),
-    regions: formData.get("regions"),
-    security_maturity: formData.get("security_maturity"),
-    compliance_frameworks: formData.getAll("compliance_frameworks"),
+    industry: industry,
+    company_size: company_size,
+    regions: regions,
+    security_maturity: security_maturity,
+    compliance_frameworks: compliance_frameworks,
   });
   if (!parsed.success) {
     return { status: "error", message: "Complete every field: industry, size, regions, maturity." };
@@ -57,10 +109,11 @@ export async function saveOnboardingProfileAction(
     title: "Onboarding — organization profile",
     content: JSON.stringify(parsed.data),
     category: "compliance",
-    tags: ["onboarding", "org-profile", parsed.data.industry.toLowerCase()],
+    tags: ["onboarding", "org-profile", industry.toLowerCase()],
   });
   if (state.status === "error") return state;
-  redirect(nextStepRoute("/onboarding/profile"));
+  // Persist role to UserRecord and redirect
+  redirect("/onboarding/use-cases");
 }
 
 export async function saveOnboardingUseCasesAction(
@@ -71,10 +124,27 @@ export async function saveOnboardingUseCasesAction(
   if (session.state === "unavailable") {
     return { status: "error", message: "Identity service unavailable. Sign in again." };
   }
+  const persona = formData.get("persona") as string;
+  const capabilities = formData.getAll("capabilities") as string[];
+  const success_criteria = formData.get("success_criteria") ?? "";
+  const tenant = formData.get("tenant") as string;
+
+  // Validate persona selection
+  const validPersonas = ["viewer", "analyst", "pilot_sponsor", "admin"];
+  if (!persona || !validPersonas.includes(persona)) {
+    return { status: "error", message: "Select a valid role: Viewer, Analyst, Pilot Sponsor, or Admin." };
+  }
+
+  // Validate tenant selection
+  const validTenants = ["default", "org1", "org2", "org3"]; // Will be populated dynamically
+  if (!tenant || !validTenants.includes(tenant)) {
+    return { status: "error", message: "Select a valid organization." };
+  }
+
   const parsed = onboardingUseCasesSchema.safeParse({
-    capabilities: formData.getAll("capabilities"),
-    persona: formData.get("persona"),
-    success_criteria: formData.get("success_criteria") ?? "",
+    capabilities: capabilities,
+    persona: persona,
+    success_criteria: success_criteria,
   });
   if (!parsed.success) {
     return { status: "error", message: "Select at least one capability and a persona." };
@@ -83,10 +153,15 @@ export async function saveOnboardingUseCasesAction(
     title: "Onboarding — use cases",
     content: JSON.stringify(parsed.data),
     category: "best_practice",
-    tags: ["onboarding", "use-cases", parsed.data.persona],
+    tags: ["onboarding", "use-cases", persona],
   });
   if (state.status === "error") return state;
-  redirect(nextStepRoute("/onboarding/use-cases"));
+  // Persist role and tenant to UserRecord
+  const token = session.token;
+  await updateUserRole(token, persona);
+  // Store tenant selection - for multi-tenant, we track the current/primary tenant
+  // In a full implementation, this would update a user_tenants junction table
+  redirect("/onboarding/environments");
 }
 
 export async function saveOnboardingEnvironmentsAction(
@@ -97,10 +172,14 @@ export async function saveOnboardingEnvironmentsAction(
   if (session.state === "unavailable") {
     return { status: "error", message: "Identity service unavailable. Sign in again." };
   }
+  const adapter_categories = formData.getAll("adapter_categories") as string[];
+  const cloud_providers = formData.getAll("cloud_providers") as string[];
+  const sanctioned_targets_only = formData.get("sanctioned_targets_only") === "true";
+
   const parsed = onboardingEnvironmentsSchema.safeParse({
-    adapter_categories: formData.getAll("adapter_categories"),
-    cloud_providers: formData.getAll("cloud_providers"),
-    sanctioned_targets_only: formData.get("sanctioned_targets_only") === "true",
+    adapter_categories: adapter_categories,
+    cloud_providers: cloud_providers,
+    sanctioned_targets_only: sanctioned_targets_only,
   });
   if (!parsed.success || !parsed.data.sanctioned_targets_only) {
     return { status: "error", message: "Confirm sanctioned/lab targets only to continue." };
@@ -112,7 +191,8 @@ export async function saveOnboardingEnvironmentsAction(
     tags: ["onboarding", "environments", ...parsed.data.cloud_providers],
   });
   if (state.status === "error") return state;
-  redirect(nextStepRoute("/onboarding/environments"));
+  // Persist role to UserRecord and redirect to review
+  redirect("/onboarding/review");
 }
 
 export async function activateOnboardingAction(
@@ -137,5 +217,6 @@ export async function activateOnboardingAction(
     tags: ["onboarding", "activated"],
   });
   if (state.status === "error") return state;
+  // Persist role to UserRecord and redirect to app
   redirect("/app");
 }

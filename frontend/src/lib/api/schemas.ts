@@ -31,6 +31,8 @@ export const currentUserSchema = z.object({
   tenant_id: boundedText,
   role: z.enum(["admin", "analyst", "viewer", "pilot_sponsor"]),
   email: z.string().email().max(254).nullable().optional(),
+  is_verified: z.boolean().optional(),
+  tenant: z.object({ name: z.string() }).optional(),
 });
 
 export const registrationResponseSchema = z.object({
