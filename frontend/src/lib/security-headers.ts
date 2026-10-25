@@ -3,7 +3,7 @@ export function buildContentSecurityPolicy(nonce: string, environment: string | 
   const directives = [
     "default-src 'self'",
     "base-uri 'self'",
-    "connect-src 'self'",
+    `connect-src 'self'${development ? " http://localhost:8001" : ""}`,
     "font-src 'self'",
     "form-action 'self'",
     "frame-ancestors 'none'",
