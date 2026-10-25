@@ -8,13 +8,14 @@ public disclosure timing.
 import logging
 from typing import List, Optional
 
-from fastapi import APIRouter, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from pydantic import BaseModel, Field
 
 from vorsyghta.research.disclosure import (
     DisclosureManager, DisclosureRecord, VendorContact, VendorResponse,
     DisclosureStatus,
 )
+from vorsyghta.security.rbac import CurrentUser, get_current_user
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/disclosures", tags=["Disclosure Workflow"])
@@ -215,6 +216,7 @@ async def list_disclosures(
     status_filter: Optional[str] = Query(None, alias="status"),
     vendor: Optional[str] = None,
     engagement_id: Optional[str] = None,
+    current_user: CurrentUser = Depends(get_current_user),
 ):
     """List all disclosures, optionally filtered."""
     manager = _get_manager()
@@ -233,6 +235,7 @@ async def list_disclosures(
         status=status_enum,
         vendor=vendor,
         engagement_id=engagement_id,
+        tenant_id=current_user.tenant_id,
     )
     return [_to_response(d) for d in disclosures]
 

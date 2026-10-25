@@ -102,9 +102,9 @@ async def lifespan(app: FastAPI):
     # fails at boot, not on the first request. Non-fatal — /ready reports
     # database health and endpoints degrade gracefully.
     try:
-        from vorsyghta.db.base import initialize_engine
+        from vorsyghta.db.base import get_engine
 
-        initialize_engine()
+        get_engine()
         logger.info("Database engine initialized at startup")
     except Exception as e:
         logger.warning(f"Database engine init deferred (first access will retry): {e}")

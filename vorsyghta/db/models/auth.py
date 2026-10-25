@@ -28,6 +28,7 @@ class TenantRecord(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.now())
 
+    # All users in this tenant
     users: Mapped[List[UserRecord]] = relationship(
         "UserRecord",
         back_populates="tenant",
@@ -35,6 +36,15 @@ class TenantRecord(Base):
         lazy="select",
         foreign_keys="UserRecord.tenant_id",
         primaryjoin="TenantRecord.tenant_id == UserRecord.tenant_id",
+    )
+
+    # Users who currently have this as their active tenant
+    current_users: Mapped[List[UserRecord]] = relationship(
+        "UserRecord",
+        back_populates="current_tenant",
+        lazy="select",
+        foreign_keys="UserRecord.current_tenant_id",
+        primaryjoin="TenantRecord.tenant_id == UserRecord.current_tenant_id",
     )
 
     def __repr__(self) -> str:
@@ -49,10 +59,13 @@ class UserRecord(Base):
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid4()))
     user_id: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
-    tenant_id: Mapped[str] = mapped_column(
+    is_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    reset_token: Mapped[str | None] = mapped_column(String, nullable=True)
+    verification_token: Mapped[str | None] = mapped_column(String, nullable=True)
+    tenant_id: Mapped[str | None] = mapped_column(
         String,
         ForeignKey("tenants.tenant_id"),
-        nullable=False,
+        nullable=True,  # Made nullable for multi-tenancy
         index=True,
     )
     email: Mapped[str] = mapped_column(String, unique=True, nullable=False)
@@ -62,16 +75,35 @@ class UserRecord(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.now())
     updated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, onupdate=func.now())
 
-    tenant: Mapped[TenantRecord] = relationship(
+    # Multi-tenant support
+    # All tenants the user belongs to (via onboarding/registration)
+    tenant: Mapped["TenantRecord"] = relationship(
         "TenantRecord",
         back_populates="users",
         lazy="select",
         foreign_keys=[tenant_id],
         primaryjoin="UserRecord.tenant_id == TenantRecord.tenant_id",
-    )
+    )  # Primary tenant (from registration)
+    
+    # Currently active/selected tenant for this session
+    current_tenant_id: Mapped[str | None] = mapped_column(
+        String,
+        ForeignKey("tenants.tenant_id"),
+        nullable=True,
+        index=True,
+    )  # Active/selected tenant for this session
+    
+    current_tenant: Mapped["TenantRecord | None"] = relationship(
+        "TenantRecord",
+        back_populates="current_users",
+        lazy="select",
+        foreign_keys=[current_tenant_id],
+        primaryjoin="UserRecord.current_tenant_id == TenantRecord.tenant_id",
+    )  # Active tenant for this session
+
+    # Relationship to all tenants the user belongs to (many-to-many via user_tenants)
+    # This is optional - we use tenant_id as the primary linking field
+    # but current_tenant allows switching
 
     def __repr__(self) -> str:
         return f"<UserRecord user_id={self.user_id!r} email={self.email!r} role={self.role!r}>"
-
-
-Index("uq_users_email_lower", func.lower(UserRecord.email), unique=True)
