@@ -78,12 +78,15 @@ export default async function OnboardingUseCasesPage() {
           </fieldset>
           <fieldset className="onboarding-field">
             <legend>Organization / Tenant</legend>
-            <div className="onboarding-field">
-              <Link className="button button--primary" href="/onboarding-enterprise/welcome">Select your organization</Link>
-              <p className="onboarding-note">
-                Choose or add the organization you want to onboard. This sets tenant context for the workspace.
-              </p>
-            </div>
+            {tenantOptions.map((tenant, index) => (
+              <label className="onboarding-choice" key={tenant.value}>
+                <input type="radio" name="tenant" value={tenant.value} required defaultChecked={index === 0} />
+                <span>{tenant.label}</span>
+              </label>
+            ))}
+            <p className="onboarding-note">
+              <Link href="/onboarding-enterprise/welcome">Add another organization</Link> if you belong to multiple companies.
+            </p>
           </fieldset>
           <fieldset className="onboarding-field">
             <legend>Capabilities you need (select at least one)</legend>

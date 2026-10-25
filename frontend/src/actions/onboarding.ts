@@ -128,11 +128,16 @@ export async function saveOnboardingUseCasesAction(
   const persona = formData.get("persona") as string;
   const capabilities = formData.getAll("capabilities") as string[];
   const success_criteria = formData.get("success_criteria") ?? "";
+  const tenant = formData.get("tenant") as string;
 
   // Validate persona selection
   const validPersonas = ["viewer", "analyst", "pilot_sponsor", "admin"];
   if (!persona || !validPersonas.includes(persona)) {
     return { status: "error", message: "Select a valid role: Viewer, Analyst, Pilot Sponsor, or Admin." };
+  }
+
+  if (!tenant) {
+    return { status: "error", message: "Select an organization." };
   }
 
   const parsed = onboardingUseCasesSchema.safeParse({
