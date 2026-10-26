@@ -24,6 +24,9 @@ PUBLIC_IP_NAME="vorsyghta-pip"
 NIC_NAME="vorsyghta-nic"
 VM_NAME="vorsyghta-sandbox"
 ADMIN_USER="vorsyghta"
+KEY_VAULT_NAME="vorsyghta-kv"
+OPENAI_RESOURCE_NAME="vorsyghta-openai"
+CONTAINER_APP_NAME="vorsyghta-api"
 
 ok()   { echo -e "\033[32m[OK]\033[0m   $1"; }
 info() { echo -e "\033[36m[INFO]\033[0m $1"; }
@@ -51,7 +54,25 @@ info "Creating resource group '$RESOURCE_GROUP' in '$LOCATION'..."
 RG_LOCATION=$(az group show --name "$RESOURCE_GROUP" --query location -o tsv 2>/dev/null || echo "")
 if [ -z "$RG_LOCATION" ]; then
     az group create --name "$RESOURCE_GROUP" --location "$LOCATION" -o table
-    ok "Resource group created"
+    ok "Resource group already exists in $RG_LOCATION"
+fi
+
+# ---------------------------------------------------------------------------
+# 2b. Create Key Vault
+# ---------------------------------------------------------------------------
+info "Creating Key Vault '$KEY_VAULT_NAME'..."
+KV_EXISTS=$(az keyvault show --name "$KEY_VAULT_NAME" --query name -o tsv 2>/dev/null || echo "")
+if [ -z "$KV_EXISTS" ]; then
+    az keyvault create --name "$KEY_VAULT_NAME" --resource-group "$RESOURCE_GROUP" --location "$LOCATION" -o table
+    ok "Key Vault created"
+else
+    ok "Key Vault already exists"
+fi
+
+export AZURE_KEY_VAULT_URL="https://$KEY_VAULT_NAME.vault.azure.net/"
+
+# ---------------------------------------------------------------------------
+# 3. Network: VNet, Subnet, NSG
 else
     ok "Resource group already exists in $RG_LOCATION"
 fi
@@ -266,6 +287,9 @@ runcmd:
     AZURE_OPENAI_API_KEY=9WZrpwTXNYg8pP5Ly30SbfqRpRDYyLzrzlO6pjNlV092LeGgD9ARJQQJ99CFACHYHv6XJ3w3AAABACOGddkc
     AZURE_OPENAI_ENDPOINT=https://vorsyghta-openai.openai.azure.com/
     AZURE_OPENAI_DEPLOYMENT=gpt-4o
+    AZURE_KEY_VAULT_URL=${AZURE_KEY_VAULT_URL}
+    AZURE_RESOURCE_GROUP=vorsyghta-rg
+    AZURE_CONTAINER_APP_NAME=vorsyghta-api
     ENVEOF
     cat > /opt/attack/docker-compose.yml << 'DCEOF'
     services:

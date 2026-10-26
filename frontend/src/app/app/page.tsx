@@ -175,7 +175,7 @@ export default async function AppOverviewPage() {
 
   return (
     <main className="app-main" id="main-content">
-      <div className="app-page-heading">
+      <div className="app-page-heading reveal-up">
         <div>
           <p className="eyebrow">Read-only foundation</p>
           <h1>Evidence workspace</h1>
@@ -188,7 +188,7 @@ export default async function AppOverviewPage() {
           <div><dt>Billing</dt><dd className="capitalize">{billingStatusLabel(billing.data.status)}</dd></div>
         </dl>
       </div>
-      <div className="dashboard-grid">
+      <div className="dashboard-grid reveal-stagger">
         <HealthPanel result={health} />
         <StatsPanel result={stats} />
         {activity === null ? <ActivityScopePanel /> : <ActivityPanel result={activity} />}

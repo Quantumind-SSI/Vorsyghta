@@ -63,7 +63,7 @@ def _azure_cfg(**overrides: Any) -> Dict[str, Any]:
     """A complete, valid Azure provider config with optional overrides."""
     cfg: Dict[str, Any] = {
         "api_key": "test-key",
-        "endpoint": "https://ciicerone-openai.openai.azure.com/",
+        "endpoint": "https://vorsyghta-openai.openai.azure.com/",
         "deployment": "gpt-4o",
         "api_version": "2024-10-21",
         "model": "gpt-4o",

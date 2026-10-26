@@ -36,6 +36,102 @@
         "activated"
       ],
       "created_at": "2026-09-28T15:18:54.731017"
+    },
+    "d14c5182-1509-4c6c-80ab-1deb4dc132e3": {
+      "title": "Onboarding \u2014 organization profile",
+      "category": "compliance",
+      "teams": [
+        "all_teams"
+      ],
+      "tags": [
+        "onboarding",
+        "org-profile",
+        "fintech"
+      ],
+      "created_at": "2026-10-25T19:33:02.318898"
+    },
+    "8c16c809-a6f0-49c2-a8d8-8335c02f9ec1": {
+      "title": "Onboarding \u2014 organization profile",
+      "category": "compliance",
+      "teams": [
+        "all_teams"
+      ],
+      "tags": [
+        "onboarding",
+        "org-profile",
+        "fintech"
+      ],
+      "created_at": "2026-10-25T19:34:23.652677"
+    },
+    "bcad73bd-4a1c-4999-810f-e7cba5af68b4": {
+      "title": "Onboarding \u2014 organization profile",
+      "category": "compliance",
+      "teams": [
+        "all_teams"
+      ],
+      "tags": [
+        "onboarding",
+        "org-profile",
+        "fintech"
+      ],
+      "created_at": "2026-10-25T21:04:03.294653"
+    },
+    "850fd525-ade9-4500-aa6f-0462ee6f00b8": {
+      "title": "Onboarding \u2014 use cases",
+      "category": "best_practice",
+      "teams": [
+        "all_teams"
+      ],
+      "tags": [
+        "onboarding",
+        "use-cases",
+        "viewer"
+      ],
+      "created_at": "2026-10-25T21:04:20.404365"
+    },
+    "33757766-71d7-455a-bd00-794cb81bd4dd": {
+      "title": "Onboarding \u2014 environment intent",
+      "category": "tool_config",
+      "teams": [
+        "all_teams"
+      ],
+      "tags": [
+        "onboarding",
+        "environments",
+        "aws",
+        "azure",
+        "gcp",
+        "huawei"
+      ],
+      "created_at": "2026-10-25T21:04:40.112748"
+    },
+    "4bab8bb4-ad19-47e0-8118-21e1cf55ad8d": {
+      "title": "Onboarding \u2014 activated",
+      "category": "training",
+      "teams": [
+        "all_teams"
+      ],
+      "tags": [
+        "onboarding",
+        "activated"
+      ],
+      "created_at": "2026-10-25T21:04:56.011715"
+    },
+    "90f65199-8b39-43eb-9dbc-fbdb215be112": {
+      "title": "Onboarding \u2014 environment intent",
+      "category": "tool_config",
+      "teams": [
+        "all_teams"
+      ],
+      "tags": [
+        "onboarding",
+        "environments",
+        "aws",
+        "azure",
+        "gcp",
+        "huawei"
+      ],
+      "created_at": "2026-10-26T08:23:45.881840"
     }
   },
   "categories": {
@@ -43,10 +139,21 @@
       "e2c58200-d809-4ce1-9da1-4af683e96fd6"
     ],
     "tool_config": [
-      "737906bd-8ed1-40eb-91bd-fe87708e3a1e"
+      "737906bd-8ed1-40eb-91bd-fe87708e3a1e",
+      "33757766-71d7-455a-bd00-794cb81bd4dd",
+      "90f65199-8b39-43eb-9dbc-fbdb215be112"
     ],
     "training": [
-      "12a07582-504e-4021-aa09-b4a333beaca5"
+      "12a07582-504e-4021-aa09-b4a333beaca5",
+      "4bab8bb4-ad19-47e0-8118-21e1cf55ad8d"
+    ],
+    "compliance": [
+      "d14c5182-1509-4c6c-80ab-1deb4dc132e3",
+      "8c16c809-a6f0-49c2-a8d8-8335c02f9ec1",
+      "bcad73bd-4a1c-4999-810f-e7cba5af68b4"
+    ],
+    "best_practice": [
+      "850fd525-ade9-4500-aa6f-0462ee6f00b8"
     ]
   },
   "teams": {
@@ -55,7 +162,14 @@
     ],
     "all_teams": [
       "737906bd-8ed1-40eb-91bd-fe87708e3a1e",
-      "12a07582-504e-4021-aa09-b4a333beaca5"
+      "12a07582-504e-4021-aa09-b4a333beaca5",
+      "d14c5182-1509-4c6c-80ab-1deb4dc132e3",
+      "8c16c809-a6f0-49c2-a8d8-8335c02f9ec1",
+      "bcad73bd-4a1c-4999-810f-e7cba5af68b4",
+      "850fd525-ade9-4500-aa6f-0462ee6f00b8",
+      "33757766-71d7-455a-bd00-794cb81bd4dd",
+      "4bab8bb4-ad19-47e0-8118-21e1cf55ad8d",
+      "90f65199-8b39-43eb-9dbc-fbdb215be112"
     ]
   },
   "tags": {
@@ -67,17 +181,57 @@
     ],
     "onboarding": [
       "737906bd-8ed1-40eb-91bd-fe87708e3a1e",
-      "12a07582-504e-4021-aa09-b4a333beaca5"
+      "12a07582-504e-4021-aa09-b4a333beaca5",
+      "d14c5182-1509-4c6c-80ab-1deb4dc132e3",
+      "8c16c809-a6f0-49c2-a8d8-8335c02f9ec1",
+      "bcad73bd-4a1c-4999-810f-e7cba5af68b4",
+      "850fd525-ade9-4500-aa6f-0462ee6f00b8",
+      "33757766-71d7-455a-bd00-794cb81bd4dd",
+      "4bab8bb4-ad19-47e0-8118-21e1cf55ad8d",
+      "90f65199-8b39-43eb-9dbc-fbdb215be112"
     ],
     "environments": [
-      "737906bd-8ed1-40eb-91bd-fe87708e3a1e"
+      "737906bd-8ed1-40eb-91bd-fe87708e3a1e",
+      "33757766-71d7-455a-bd00-794cb81bd4dd",
+      "90f65199-8b39-43eb-9dbc-fbdb215be112"
     ],
     "azure": [
-      "737906bd-8ed1-40eb-91bd-fe87708e3a1e"
+      "737906bd-8ed1-40eb-91bd-fe87708e3a1e",
+      "33757766-71d7-455a-bd00-794cb81bd4dd",
+      "90f65199-8b39-43eb-9dbc-fbdb215be112"
     ],
     "activated": [
-      "12a07582-504e-4021-aa09-b4a333beaca5"
+      "12a07582-504e-4021-aa09-b4a333beaca5",
+      "4bab8bb4-ad19-47e0-8118-21e1cf55ad8d"
+    ],
+    "org-profile": [
+      "d14c5182-1509-4c6c-80ab-1deb4dc132e3",
+      "8c16c809-a6f0-49c2-a8d8-8335c02f9ec1",
+      "bcad73bd-4a1c-4999-810f-e7cba5af68b4"
+    ],
+    "fintech": [
+      "d14c5182-1509-4c6c-80ab-1deb4dc132e3",
+      "8c16c809-a6f0-49c2-a8d8-8335c02f9ec1",
+      "bcad73bd-4a1c-4999-810f-e7cba5af68b4"
+    ],
+    "use-cases": [
+      "850fd525-ade9-4500-aa6f-0462ee6f00b8"
+    ],
+    "viewer": [
+      "850fd525-ade9-4500-aa6f-0462ee6f00b8"
+    ],
+    "aws": [
+      "33757766-71d7-455a-bd00-794cb81bd4dd",
+      "90f65199-8b39-43eb-9dbc-fbdb215be112"
+    ],
+    "gcp": [
+      "33757766-71d7-455a-bd00-794cb81bd4dd",
+      "90f65199-8b39-43eb-9dbc-fbdb215be112"
+    ],
+    "huawei": [
+      "33757766-71d7-455a-bd00-794cb81bd4dd",
+      "90f65199-8b39-43eb-9dbc-fbdb215be112"
     ]
   },
-  "last_updated": "2026-09-28T15:18:54.731537"
+  "last_updated": "2026-10-26T08:23:45.885074"
 }

@@ -312,8 +312,14 @@ class LocalLLMProvider(BaseLLMProvider):
         }
 
     def __del__(self):
-        """Cleanup when provider is destroyed."""
-        if self._is_loaded:
+        """Cleanup when provider is destroyed.
+
+        Tolerates partially-constructed objects: __init__ may raise before
+        the attributes below exist (e.g. HuggingFaceProvider raises ImportError
+        when torch/transformers are missing), and an exception in __del__ is
+        reported as an unraisable error that fails pytest runs.
+        """
+        if getattr(self, "_is_loaded", False):
             try:
                 # Synchronous cleanup; call cleanup() explicitly for async operations
                 logger.info("Cleaning up local model on provider destruction")

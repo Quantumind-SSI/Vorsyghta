@@ -3,7 +3,7 @@
 This provider implements the application's ``BaseLLMProvider`` contract on top
 of ``pydantic_ai`` so that agentic paths (notably the red team) reason through a
 strict, typed model client rather than ad-hoc HTTP. It targets the PRODUCTION
-Azure OpenAI deployment (``ciicerone-openai`` / ``gpt-4o``) and is drop-in
+Azure OpenAI deployment (``vorsyghta-openai`` / ``gpt-4o``) and is drop-in
 compatible with ``LLMManager`` and the red-team agent's ``self.llm`` seam.
 
 Why pydantic-ai:

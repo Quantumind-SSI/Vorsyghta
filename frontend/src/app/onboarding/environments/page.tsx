@@ -11,7 +11,7 @@ import { OnboardingStepNav } from "@/components/onboarding-step-nav";
 
 export const metadata: Metadata = {
   title: "Onboarding — environments",
-  description: "What you plan to connect: containers, cloud, files, APIs, infrastructure, media.",
+  description: "Configure the environments you plan to connect for assessment scoping.",
   robots: { index: false, follow: false },
 };
 
@@ -45,7 +45,7 @@ export default async function OnboardingEnvironmentsPage() {
       <OnboardingStepNav current={3} />
       <div className="app-page-heading onboarding-heading">
         <div>
-          <p className="eyebrow">Onboarding · step 3 of 4</p>
+          <p className="eyebrow">Onboarding · step 3 of 5</p>
           <h1>Environments</h1>
           <p>
             Tell us what you plan to connect. This sets the Environments hub defaults and the

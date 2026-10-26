@@ -1,0 +1,24 @@
+{
+  "entry_id": "f3199d87-4a94-48a3-b7b9-b71a9ee9181d",
+  "title": "Onboarding \u2014 organization profile",
+  "content": "{\"industry\":\"Fintech\",\"company_size\":\"11-50\",\"regions\":\"UK\",\"security_maturity\":\"managed\",\"compliance_frameworks\":[\"pci_dss\",\"ndpr\",\"gdpr\",\"soc_2\",\"iso_27001\",\"cbn\"]}",
+  "category": "compliance",
+  "source": "manual_entry",
+  "teams": [
+    "all_teams"
+  ],
+  "tags": [
+    "onboarding",
+    "org-profile",
+    "fintech"
+  ],
+  "mitre_techniques": [],
+  "severity": null,
+  "confidence": 0.8,
+  "metadata": {},
+  "expires_at": null,
+  "created_at": "2026-10-26T08:06:13.949637",
+  "updated_at": "2026-10-26T08:06:13.949637",
+  "usage_count": 0,
+  "relevance_score": 0.0
+}

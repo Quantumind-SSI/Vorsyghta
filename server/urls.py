@@ -18,6 +18,8 @@ urlpatterns = [
     path("auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("auth/token/verify/", TokenVerifyView.as_view(), name="token_verify"),
     path("auth/register/", RegisterView.as_view(), name="auth_register"),
+    # Color teams API
+    path("teams/", include("vorsyghta.django_apps.teams.urls")),
     # Audit trail parity (read-only, authed)
     path("audit/", include("vorsyghta.django_apps.audit.urls")),
 ]

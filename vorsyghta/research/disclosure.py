@@ -138,8 +138,13 @@ class DisclosureRecord:
     product: str = ""
     vendor_contact: VendorContact = field(default_factory=VendorContact)
     vendor_response: VendorResponse = VendorResponse.NO_RESPONSE
+
+    # Disclosure tracking
     vendor_tracking_id: str = ""       # Vendor's internal tracking number
     vendor_notes: str = ""
+
+    # Tenant isolation
+    tenant_id: str = ""                # isolate per organization / company
 
     # Disclosure timeline
     status: DisclosureStatus = DisclosureStatus.DRAFT
@@ -836,6 +841,7 @@ class DisclosureManager:
         status: DisclosureStatus = None,
         vendor: str = None,
         engagement_id: str = None,
+        tenant_id: str = None,
     ) -> List[DisclosureRecord]:
         """List disclosures, optionally filtered."""
         results = list(self._disclosures.values())
@@ -848,6 +854,9 @@ class DisclosureManager:
 
         if engagement_id:
             results = [d for d in results if d.engagement_id == engagement_id]
+
+        if tenant_id:
+            results = [d for d in results if d.tenant_id == tenant_id]
 
         return sorted(results, key=lambda d: d.created_at, reverse=True)
 

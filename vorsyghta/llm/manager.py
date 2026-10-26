@@ -130,7 +130,7 @@ class LLMManager:
         """Populate the Azure config from Key Vault when a vault URL is set.
 
         Mutates ``azure_cfg`` in place, filling api_key/endpoint/deployment/
-        api_version from the ciicerone-kv secrets so the LLM uses the exact same
+        api_version from the vorsyghta-kv secrets so the LLM uses the exact same
         credentials as the production Container App. Also exports the matching
         AZURE_OPENAI_* env vars so downstream env-driven paths agree.
 
@@ -256,30 +256,35 @@ class LLMManager:
 
             # Set default provider if not specified
             if not self.provider and self._providers:
-                # Check environment variable for preferred provider
-                default_provider = os.getenv('DEFAULT_LLM_PROVIDER', '').lower()
-
-                # First, try to use the explicitly configured default provider from env var
-                if default_provider and default_provider in self._providers:
-                    self.provider = self._providers[default_provider]
-                    logger.info(f"Using default provider from environment: {default_provider}")
-                # Second, prefer OpenRouter if available (recommended provider with most model options)
-                elif 'openrouter' in self._providers:
-                    self.provider = self._providers['openrouter']
-                    logger.info("Using default provider: openrouter (recommended)")
-                # Third, prefer local providers for better privacy/control
+                # First, try the explicitly configured default provider from
+                # config (e.g. config["default_provider"] = "azure").
+                config_default = str(self.config.get('default_provider', '')).lower()
+                if config_default and config_default in self._providers:
+                    self.provider = self._providers[config_default]
+                    logger.info(f"Using default provider from config: {config_default}")
                 else:
-                    local_providers = ['ollama', 'huggingface', 'llamacpp']
-                    for provider_name in local_providers:
-                        if provider_name in self._providers:
-                            self.provider = self._providers[provider_name]
-                            logger.info(f"Using default local provider: {provider_name}")
-                            break
+                    # Second, try environment variable for preferred provider
+                    default_provider = os.getenv('DEFAULT_LLM_PROVIDER', '').lower()
+                    if default_provider and default_provider in self._providers:
+                        self.provider = self._providers[default_provider]
+                        logger.info(f"Using default provider from environment: {default_provider}")
+                    # Third, prefer OpenRouter if available (recommended provider with most model options)
+                    elif 'openrouter' in self._providers:
+                        self.provider = self._providers['openrouter']
+                        logger.info("Using default provider: openrouter (recommended)")
+                    # Fourth, prefer local providers for better privacy/control
                     else:
-                        # Fall back to any available cloud provider
-                        provider_name = list(self._providers.keys())[0]
-                        self.provider = self._providers[provider_name]
-                        logger.info(f"Using default provider: {provider_name}")
+                        local_providers = ['ollama', 'huggingface', 'llamacpp']
+                        for provider_name in local_providers:
+                            if provider_name in self._providers:
+                                self.provider = self._providers[provider_name]
+                                logger.info(f"Using default local provider: {provider_name}")
+                                break
+                        else:
+                            # Fall back to any available cloud provider
+                            provider_name = list(self._providers.keys())[0]
+                            self.provider = self._providers[provider_name]
+                            logger.info(f"Using default provider: {provider_name}")
 
         except Exception as e:
             logger.warning(f"Failed to initialize some LLM providers: {e}")

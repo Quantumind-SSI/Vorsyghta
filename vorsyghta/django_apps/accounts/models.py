@@ -70,6 +70,8 @@ class User(AbstractUser):
         Tenant, on_delete=models.PROTECT, related_name="users", null=True, blank=True
     )
     role = models.CharField(max_length=20, choices=ROLES, default="viewer")
+    is_verified = models.BooleanField(default=False)
+    reset_token = models.CharField(max_length=128, null=True, blank=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

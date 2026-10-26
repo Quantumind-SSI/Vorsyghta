@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "corsheaders",
     # Vorsyghta rewrite apps (strangler-fig migration target)
+    "vorsyghta.django_apps.teams",
     "vorsyghta.django_apps.accounts",
     "vorsyghta.django_apps.audit",
     "vorsyghta.django_apps.api_health",

@@ -97,9 +97,9 @@ export default function HomePage() {
               Vorsyghta keeps those concerns visible as one reviewable workflow.
             </p>
           </div>
-          <ol className="page-width workflow-grid">
+          <ol className="page-width workflow-grid reveal-stagger">
             {workflow.map(([number, title, description]) => (
-              <li key={number}>
+              <li key={number} className="reveal-up">
                 <span className="workflow-grid__number">{number}</span>
                 <h3>{title}</h3>
                 <p>{description}</p>
@@ -118,9 +118,9 @@ export default function HomePage() {
                 model-generated material, analyst review, and missing dependencies.
               </p>
             </div>
-            <div className="provenance-list">
+            <div className="provenance-list reveal-stagger">
               {provenance.map(([title, description], index) => (
-                <article key={title}>
+                <article key={title} className="reveal-fade">
                   <span className={`provenance-list__marker marker-${index + 1}`} aria-hidden="true" />
                   <div><h3>{title}</h3><p>{description}</p></div>
                 </article>
@@ -133,18 +133,18 @@ export default function HomePage() {
           <div className="page-width">
             <p className="eyebrow eyebrow--ink">Current platform surface</p>
             <h2>Built around controls already present in the repository.</h2>
-            <div className="capability-grid">
-              <article>
+            <div className="capability-grid reveal-stagger">
+              <article className="reveal-rise">
                 <span>01 / Boundaries</span>
                 <h3>Engagement and command safety</h3>
                 <p>Authorization, lab-network checks, role controls, and command validation remain separate gates.</p>
               </article>
-              <article>
+              <article className="reveal-rise">
                 <span>02 / Evidence</span>
                 <h3>Tracking and structured reporting</h3>
                 <p>Recorded tool usage, findings, vulnerability reports, and audit primitives preserve review context.</p>
               </article>
-              <article>
+              <article className="reveal-rise">
                 <span>03 / Choice</span>
                 <h3>Provider and deployment control</h3>
                 <p>Self-hosting and configurable model providers let operators choose their infrastructure boundary.</p>
@@ -155,11 +155,11 @@ export default function HomePage() {
 
         <section className="section-light safety-section" id="safety">
           <div className="page-width safety-card">
-            <div>
+            <div className="reveal-slide-right">
               <p className="eyebrow eyebrow--ink">Responsible operation</p>
               <h2>Authorization is a product boundary.</h2>
             </div>
-            <div>
+            <div className="reveal-slide-left">
               <p>
                 Vorsyghta is for sanctioned targets and configured lab networks. The frontend
                 foundation is deliberately read-only and exposes no attack execution controls.
@@ -175,11 +175,11 @@ export default function HomePage() {
 
         <section className="final-cta section-dark">
           <div className="page-width final-cta__inner">
-            <div>
+            <div className="reveal-up">
               <p className="eyebrow">Start with the evidence</p>
               <h2>Make every security result answerable.</h2>
             </div>
-            <div className="button-row">
+            <div className="button-row reveal-fade">
               <Link className="button button--light" href="/start-trial">Start trial</Link>
               <Link className="button button--outline-dark" href="/pricing">View pricing</Link>
             </div>

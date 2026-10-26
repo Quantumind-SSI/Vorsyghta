@@ -1,0 +1,24 @@
+{
+  "entry_id": "9f2b5563-60a1-4252-945c-d0f6d966a33f",
+  "title": "Onboarding \u2014 use cases",
+  "content": "{\"capabilities\":[\"colour_teams\",\"intelligence_stack\",\"zero_day_research\",\"quantum_pqc\",\"saas_product\",\"simulation_paradigms\",\"rl_rlhf\"],\"persona\":\"analyst\",\"success_criteria\":\"\"}",
+  "category": "best_practice",
+  "source": "manual_entry",
+  "teams": [
+    "all_teams"
+  ],
+  "tags": [
+    "onboarding",
+    "use-cases",
+    "analyst"
+  ],
+  "mitre_techniques": [],
+  "severity": null,
+  "confidence": 0.8,
+  "metadata": {},
+  "expires_at": null,
+  "created_at": "2026-10-26T08:06:22.389366",
+  "updated_at": "2026-10-26T08:06:22.389366",
+  "usage_count": 0,
+  "relevance_score": 0.0
+}

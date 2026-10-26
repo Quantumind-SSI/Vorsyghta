@@ -61,7 +61,7 @@ async def test_login_returns_jwt(async_client: AsyncClient):
         "organization_name": "LoginCo"
     })
     resp = await async_client.post(
-        "/api/auth/token",
+        "/api/auth/login",
         data={"username": email, "password": password}
     )
     assert resp.status_code == 200
@@ -79,7 +79,7 @@ async def test_login_wrong_password_fails(async_client: AsyncClient):
         "organization_name": "WrongCo"
     })
     resp = await async_client.post(
-        "/api/auth/token",
+        "/api/auth/login",
         data={"username": email, "password": "BadPass"}
     )
     assert resp.status_code in (401, 400)
@@ -98,7 +98,7 @@ async def test_me_requires_valid_token(async_client: AsyncClient):
         "organization_name": "MeCo"
     })
     login = await async_client.post(
-        "/api/auth/token",
+        "/api/auth/login",
         data={"username": email, "password": password}
     )
     token = login.json()["access_token"]
@@ -155,7 +155,7 @@ async def test_auth_flow_end_to_end(async_client: AsyncClient):
     user_id = reg.json()["user_id"]
 
     login = await async_client.post(
-        "/api/auth/token",
+        "/api/auth/login",
         data={"username": email, "password": password}
     )
     assert login.status_code == 200
@@ -180,7 +180,7 @@ async def test_register_email_normalization(async_client: AsyncClient):
     assert resp.status_code == 201
     # login with normalized email
     login = await async_client.post(
-        "/api/auth/token",
+        "/api/auth/login",
         data={"username": "mixedcase@example.com", "password": "NormPass123!"}
     )
     assert login.status_code == 200
@@ -188,7 +188,7 @@ async def test_register_email_normalization(async_client: AsyncClient):
 
 async def test_login_nonexistent_user_fails(async_client: AsyncClient):
     resp = await async_client.post(
-        "/api/auth/token",
+        "/api/auth/login",
         data={"username": "nosuch@example.com", "password": "Whatever123!"}
     )
     assert resp.status_code in (401, 400)

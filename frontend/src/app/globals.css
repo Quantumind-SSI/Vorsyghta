@@ -34,6 +34,18 @@
   --font-sans: "Inter", "Segoe UI", system-ui, Helvetica, Arial, sans-serif;
   --font-display: "Inter", "Segoe UI", system-ui, Helvetica, Arial, sans-serif;
   --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+
+  /* Motion system: durations, easings, distance — single source of truth */
+  --motion-fast: 140ms;
+  --motion-base: 260ms;
+  --motion-slow: 600ms;
+  --motion-slower: 900ms;
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-snap: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-in-strict: cubic-bezier(0.55, 0, 1, 0.45);
+  --motion-distance-sm: 0.5rem;
+  --motion-distance-md: 1.25rem;
+  --motion-distance-lg: 2.5rem;
 }
 
 * {
@@ -276,7 +288,7 @@ a:hover {
   text-align: center;
   text-decoration: none;
   text-transform: uppercase;
-  transition: transform 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
+  transition: transform var(--motion-fast) var(--ease-out-soft), box-shadow var(--motion-fast) var(--ease-out-soft), background-color var(--motion-fast) var(--ease-out-soft);
 }
 
 .button:hover:not(:disabled) {
@@ -1040,6 +1052,7 @@ a:hover {
   border-radius: var(--radius-sm);
   background: var(--white);
   color: var(--midnight);
+  transition: border-color var(--motion-fast) var(--ease-out-soft), box-shadow var(--motion-fast) var(--ease-out-soft);
 }
 
 .field input:hover {
@@ -1048,6 +1061,7 @@ a:hover {
 
 .field input:focus-visible {
   border-color: var(--midnight);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pink) 35%, transparent);
 }
 
 .field-help {
@@ -1869,11 +1883,185 @@ td {
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
   }
+
+  /* Motion system kill-switch: reveals land instantly, ambient animation stops */
+  [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+    view-transition-name: none !important;
+  }
+
+  .wordmark__mark,
+  .live-dot::before,
+  .hero::before,
+  .hero::after {
+    animation: none !important;
+  }
+
+  @keyframes reveal-up {
+    from { opacity: 0; transform: translateY(var(--motion-distance-md)); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes reveal-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes reveal-rise {
+    from { opacity: 0; transform: translateY(var(--motion-distance-lg)); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes reveal-slide-right {
+    from { opacity: 0; transform: translateX(calc(-1 * var(--motion-distance-md))); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes reveal-slide-left {
+    from { opacity: 0; transform: translateX(var(--motion-distance-md)); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes pulse-soft {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.55;  transform: scale(0.82); }
+  }
 }
 
 /* ================================
-   Onboarding wizard
+   Motion system
    ================================ */
+@keyframes reveal-up {
+  from { opacity: 0; transform: translateY(var(--motion-distance-md)); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes reveal-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes reveal-rise {
+  from { opacity: 0; transform: translateY(var(--motion-distance-lg)); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes reveal-slide-right {
+  from { opacity: 0; transform: translateX(calc(-1 * var(--motion-distance-md))); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes reveal-slide-left {
+  from { opacity: 0; transform: translateX(var(--motion-distance-md)); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes reveal-grow {
+  from { transform: scaleY(0.55); opacity: 0.4; }
+  to { transform: none; opacity: 1; }
+}
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; transform: scale(1);  }
+  50% { opacity: 0.55; transform: scale(0.82); }
+}
+@keyframes pop-check {
+  0% { transform: scale(0.4); opacity: 0; }
+  60% { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes mark-sweep {
+  from { transform: rotate(-1deg) scale(0.6); opacity: 0; }
+  60% { transform: rotate(-1deg) scale(1.06); opacity: 1; }
+  to { transform: rotate(-1deg) scale(1); opacity: 1; }
+}
+@keyframes drift-slow {
+  0% { transform: rotate(24deg) translate(0, 0); }
+  50% { transform: rotate(28deg) translate(0, -18px); }
+  100% { transform: rotate(24deg) translate(0, 0); }
+}
+@keyframes grid-pan {
+  from { background-position: 0 0; }
+  to { background-position: 52px 52px; }
+}
+
+@media (scripting: none) {
+  .reveal-up, .reveal-fade, .reveal-rise, .reveal-slide-right, .reveal-slide-left, .reveal-grow {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+}
+
+/* Scroll-driven reveals: CSS-only, no JS. view() timeline + range clamping */
+@supports (animation-timeline: view()) {
+  .reveal-up,
+  .reveal-fade,
+  .reveal-rise,
+  .reveal-slide-right,
+  .reveal-slide-left,
+  .reveal-grow {
+    animation-timeline: view();
+    animation-range: entry 0% cover 32%;
+    animation-fill-mode: both;
+  }
+  .reveal-up { animation-name: reveal-up; }
+  .reveal-fade { animation-name: reveal-fade; }
+  .reveal-rise { animation-name: reveal-rise; }
+  .reveal-slide-right { animation-name: reveal-slide-right; }
+  .reveal-slide-left { animation-name: reveal-slide-left; }
+  .reveal-grow { animation-name: reveal-grow; }
+
+  /* Stagger via range shifts — animation-delay is ignored on scroll timelines */
+  .reveal-stagger > :nth-child(1) { animation-range: entry 0% cover 32%; }
+  .reveal-stagger > :nth-child(2) { animation-range: entry 6% cover 38%; }
+  .reveal-stagger > :nth-child(3) { animation-range: entry 12% cover 44%; }
+  .reveal-stagger > :nth-child(4) { animation-range: entry 18% cover 50%; }
+  .reveal-stagger > :nth-child(5) { animation-range: entry 24% cover 56%; }
+  .reveal-stagger > :nth-child(6) { animation-range: entry 30% cover 62%; }
+  .reveal-stagger > :nth-child(7) { animation-range: entry 36% cover 68%; }
+  .reveal-stagger > :nth-child(8) { animation-range: entry 42% cover 74%; }
+
+  /* Hero copy: play on load, not scroll */
+  .hero__copy > * {
+    animation: reveal-rise var(--motion-slower) var(--ease-out-soft) both;
+  }
+  .hero__copy > :nth-child(1) { animation-delay: 0ms; }
+  .hero__copy > :nth-child(2) { animation-delay: 90ms; }
+  .hero__copy > :nth-child(3) { animation-delay: 180ms; }
+  .hero__copy > :nth-child(4) { animation-delay: 270ms; }
+  .hero__copy > :nth-child(5) { animation-delay: 360ms; }
+
+  /* Ambient: hero geometry drifts subtly */
+  .hero::before {
+    animation: drift-slow 14s var(--ease-out-soft) infinite;
+  }
+  .hero__grid {
+    animation: grid-pan 90s linear infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero::before, .hero__grid { animation: none; }
+  }
+}
+
+/* Fallback for browsers without view() timelines: instant render */
+@supports not (animation-timeline: view()) {
+  .reveal-up, .reveal-fade, .reveal-rise, .reveal-slide-right, .reveal-slide-left, .reveal-grow {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Micro-interactions: consistent easing/curve tokens */
+.wordmark__mark:hover {
+  animation: pop-check var(--motion-fast) var(--ease-snap);
+}
+
+.live-dot::before {
+  animation: pulse-soft 2.4s ease-in-out infinite;
+}
+
+.hero mark {
+  animation: mark-sweep 700ms var(--ease-snap) 400ms both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero mark { animation: none; }
+}
+
+
 .onboarding-main {
   max-width: 980px;
 }

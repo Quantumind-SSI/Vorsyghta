@@ -9,8 +9,10 @@ FROM python:3.11-slim as builder
 # Set working directory
 WORKDIR /build
 
-# Install build dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Install build dependencies (HTTPS mirror: plain-HTTP archive fetches are
+# unreliable inside some local Docker VMs, e.g. colima/VZ)
+RUN sed -i 's|http://deb.debian.org|https://deb.debian.org|g' /etc/apt/sources.list.d/debian.sources && \
+    apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     g++ \
     make \
@@ -46,8 +48,9 @@ ENV PYTHONUNBUFFERED=1 \
 # Create app user
 RUN groupadd -r vorsyghta && useradd -r -g vorsyghta vorsyghta
 
-# Install runtime dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Install runtime dependencies (HTTPS mirror, see builder stage)
+RUN sed -i 's|http://deb.debian.org|https://deb.debian.org|g' /etc/apt/sources.list.d/debian.sources && \
+    apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
     curl \
     && rm -rf /var/lib/apt/lists/*
