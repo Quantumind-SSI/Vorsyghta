@@ -62,8 +62,9 @@ export async function signInAction(
 
   await setSessionToken(token.data.access_token);
 
-  // Present onboarding for all signed-in users on every sign-in
-  redirect("/onboarding");
+  // Redirect based on onboarding completion from DB
+  const onboardingComplete = user.ok && user.data.onboarding_complete;
+  redirect(onboardingComplete ? "/app" : "/onboarding");
 }
 
 export async function registerAction(
