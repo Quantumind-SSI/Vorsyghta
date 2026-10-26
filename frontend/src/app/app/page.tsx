@@ -191,7 +191,15 @@ export default async function AppOverviewPage() {
       <div className="dashboard-grid reveal-stagger">
         <HealthPanel result={health} />
         <StatsPanel result={stats} />
-        {activity === null ? <ActivityScopePanel /> : <ActivityPanel result={activity} />}
+        {session.user.role !== "viewer" && (
+          activity === null ? <ActivityScopePanel /> : <ActivityPanel result={activity} />
+        )}
+        {session.user.role === "admin" && (
+          <div className="admin-panel">
+            <h3>Administration</h3>
+            <p>Admin controls and user management are visible for admin role.</p>
+          </div>
+        )}
       </div>
     </main>
   );
