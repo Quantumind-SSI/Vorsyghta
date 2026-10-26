@@ -1,0 +1,66 @@
+erDiagram
+    TENANTS ||--o{ USERS : has
+    TENANTS ||--o{ KNOWLEDGE_ENTRIES : owns
+    TENANTS ||--o{ ONBOARDING_SESSIONS : owns
+    USERS ||--o{ KNOWLEDGE_ENTRIES : creates
+    USERS ||--o{ ONBOARDING_SESSIONS : owns
+    USERS ||--o{ AUDIT_LOGS : generates
+    ONBOARDING_SESSIONS ||--o{ ONBOARDING_STEPS : contains
+    KNOWLEDGE_ENTRIES ||--o{ KNOWLEDGE_TAGS : has
+
+    TENANTS {
+        string tenant_id PK
+        string id
+        string name
+        boolean is_active
+        timestamptz created_at
+    }
+    USERS {
+        string user_id PK
+        string id
+        string email
+        string hashed_password
+        string role
+        boolean is_active
+        boolean is_verified
+        boolean onboarding_complete
+        string tenant_id FK
+        string current_tenant_id FK
+    }
+    KNOWLEDGE_ENTRIES {
+        uuid entry_id PK
+        string title
+        jsonb content
+        string category
+        string source
+        string user_id FK
+        string tenant_id FK
+        timestamptz created_at
+    }
+    KNOWLEDGE_TAGS {
+        uuid id PK
+        uuid entry_id FK
+        string tag
+    }
+    ONBOARDING_SESSIONS {
+        uuid session_id PK
+        string user_id FK
+        string tenant_id FK
+        timestamptz started_at
+        timestamptz completed_at
+    }
+    ONBOARDING_STEPS {
+        uuid step_id PK
+        uuid session_id FK
+        string step_type
+        jsonb payload
+        timestamptz created_at
+    }
+    AUDIT_LOGS {
+        uuid id PK
+        string actor
+        string category
+        string severity
+        jsonb context
+        timestamptz created_at
+    }
