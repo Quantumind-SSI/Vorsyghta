@@ -198,6 +198,11 @@ export default async function AppOverviewPage() {
           <section className="data-panel">
             <h3>Analyst Workspace</h3>
             <p>Analysts can view reports, review findings, and run scoped investigations.</p>
+            <div className="button-row">
+              <button className="button button--light">Start Red Team Activity</button>
+              <button className="button button--light">Start Blue Team Activity</button>
+              <button className="button button--light">Start Purple Team Activity</button>
+            </div>
           </section>
         )}
         {session.user.role === "pilot_sponsor" && (
