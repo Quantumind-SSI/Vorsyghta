@@ -194,11 +194,29 @@ export default async function AppOverviewPage() {
         {session.user.role !== "viewer" && (
           activity === null ? <ActivityScopePanel /> : <ActivityPanel result={activity} />
         )}
+        {session.user.role === "analyst" && (
+          <section className="data-panel">
+            <h3>Analyst Workspace</h3>
+            <p>Analysts can view reports, review findings, and run scoped investigations.</p>
+          </section>
+        )}
+        {session.user.role === "pilot_sponsor" && (
+          <section className="data-panel">
+            <h3>Pilot Sponsor View</h3>
+            <p>Sponsor view focuses on executive summaries, risk posture, and compliance status.</p>
+          </section>
+        )}
         {session.user.role === "admin" && (
-          <div className="admin-panel">
+          <section className="data-panel admin-panel">
             <h3>Administration</h3>
-            <p>Admin controls and user management are visible for admin role.</p>
-          </div>
+            <p>Admin controls, user management, tenant settings, and billing are visible for admin role.</p>
+          </section>
+        )}
+        {session.user.role === "viewer" && (
+          <section className="data-panel">
+            <h3>Viewer Mode</h3>
+            <p>Read-only access to reports and dashboards. No execution controls are shown.</p>
+          </section>
         )}
       </div>
     </main>
