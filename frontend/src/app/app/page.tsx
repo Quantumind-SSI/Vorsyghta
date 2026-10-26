@@ -183,7 +183,7 @@ export default async function AppOverviewPage() {
         </div>
         <dl className="identity-card">
           <div><dt>Identity</dt><dd>{session.user.email ?? session.user.user_id}</dd></div>
-          <div><dt>Tenant</dt><dd>{session.user.tenant_id}</dd></div>
+          <div><dt>Tenant</dt><dd>{session.user.tenant?.name ?? session.user.tenant_id}</dd></div>
           <div><dt>Role</dt><dd className="capitalize">{session.user.role.replaceAll("_", " ")}</dd></div>
           <div><dt>Billing</dt><dd className="capitalize">{billingStatusLabel(billing.data.status)}</dd></div>
         </dl>
