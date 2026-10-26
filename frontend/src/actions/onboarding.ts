@@ -113,7 +113,8 @@ export async function saveOnboardingProfileAction(
     tags: ["onboarding", "org-profile", industry.toLowerCase()],
   });
   if (state.status === "error") return state;
-  // Persist role to UserRecord and redirect
+  // Persist role to UserRecord
+  await updateUserRole(session.token, persona);
   redirect("/onboarding/use-cases");
 }
 
@@ -125,16 +126,9 @@ export async function saveOnboardingUseCasesAction(
   if (session.state === "unavailable") {
     return { status: "error", message: "Identity service unavailable. Sign in again." };
   }
-  const persona = formData.get("persona") as string;
   const capabilities = formData.getAll("capabilities") as string[];
   const success_criteria = formData.get("success_criteria") ?? "";
   const tenant = formData.get("tenant") as string;
-
-  // Validate persona selection
-  const validPersonas = ["viewer", "analyst", "pilot_sponsor", "admin"];
-  if (!persona || !validPersonas.includes(persona)) {
-    return { status: "error", message: "Select a valid role: Viewer, Analyst, Pilot Sponsor, or Admin." };
-  }
 
   if (!tenant) {
     return { status: "error", message: "Select an organization." };
@@ -142,7 +136,6 @@ export async function saveOnboardingUseCasesAction(
 
   const parsed = onboardingUseCasesSchema.safeParse({
     capabilities: capabilities,
-    persona: persona,
     success_criteria: success_criteria,
   });
   if (!parsed.success) {
@@ -152,12 +145,9 @@ export async function saveOnboardingUseCasesAction(
     title: "Onboarding — use cases",
     content: JSON.stringify(parsed.data),
     category: "best_practice",
-    tags: ["onboarding", "use-cases", persona],
+    tags: ["onboarding", "use-cases"],
   });
   if (state.status === "error") return state;
-  // Persist role and tenant to UserRecord
-  const token = session.token;
-  await updateUserRole(token, persona);
   // Store tenant selection - for multi-tenant, we track the current/primary tenant
   // In a full implementation, this would update a user_tenants junction table
   redirect("/onboarding/environments");

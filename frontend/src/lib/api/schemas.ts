@@ -337,7 +337,6 @@ export const onboardingProfileSchema = z.object({
 
 export const onboardingUseCasesSchema = z.object({
   capabilities: z.array(z.enum(CAPABILITIES)).min(1).max(CAPABILITIES.length),
-  persona: z.enum(PERSONAS),
   success_criteria: z.string().trim().max(600),
 });
 

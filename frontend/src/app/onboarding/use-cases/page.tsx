@@ -26,12 +26,7 @@ const CAPABILITIES: ReadonlyArray<{ value: string; label: string; hint: string }
   { value: "simulation_paradigms", label: "Advanced simulation", hint: "Six paradigm engines" },
   { value: "rl_rlhf", label: "Agent training (RL/RLHF)", hint: "Learned reward models" },
 ];
-const PERSONAS: ReadonlyArray<{ value: string; label: string }> = [
-  { value: "viewer", label: "Viewer / Stakeholder" },
-  { value: "analyst", label: "Security Analyst" },
-  { value: "pilot_sponsor", label: "Pilot Sponsor / Approver" },
-  { value: "admin", label: "System Administrator" },
-];
+const PERSONAS: ReadonlyArray<{ value: string; label: string }> = [];
 const TENANTS: ReadonlyArray<{ value: string; label: string }> = [
   { value: "default", label: "Select your organization" },
   // Tenants will be populated after onboarding or fetched from session
@@ -61,23 +56,14 @@ export default async function OnboardingUseCasesPage() {
       <div className="app-page-heading onboarding-heading">
         <div>
           <p className="eyebrow">Onboarding · step 2 of 5</p>
-          <h1>Use cases & persona</h1>
+          <h1>Use cases & capabilities</h1>
           <p>Select what you need — this sets assessment defaults and report templates.</p>
         </div>
       </div>
       <section className="data-panel onboarding-panel">
         <OnboardingForm action={saveOnboardingUseCasesAction} submitLabel="Save and continue">
           <fieldset className="onboarding-field">
-            <legend>Primary persona</legend>
-            {PERSONAS.map((persona, index) => (
-              <label className="onboarding-choice" key={persona.value}>
-                <input type="radio" name="persona" value={persona.value} required defaultChecked={index === 0} />
-                <span>{persona.label}</span>
-              </label>
-            ))}
-          </fieldset>
-          <fieldset className="onboarding-field">
-            <legend>Organization / Tenant</legend>
+            <legend>Organization / Company</legend>
             {tenantOptions.map((tenant, index) => (
               <label className="onboarding-choice" key={tenant.value}>
                 <input type="radio" name="tenant" value={tenant.value} required defaultChecked={index === 0} />
