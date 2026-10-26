@@ -125,6 +125,13 @@ async def run_exercise(
     structured AAR with remediation recommendations, and scores
     the overall exercise.
     """
+    # DB-grounded prerequisite check
+    if not current_user.onboarding_complete:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Onboarding not completed")
+    if not current_user.tenant_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No tenant connected")
+    # Target connectivity is grounded in DB: tenant must exist and onboarding complete
+
     exercise_id = str(uuid4())
 
     # Build the scenario
