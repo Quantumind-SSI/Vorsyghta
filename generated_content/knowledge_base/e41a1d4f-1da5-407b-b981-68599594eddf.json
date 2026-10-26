@@ -1,0 +1,27 @@
+{
+  "entry_id": "e41a1d4f-1da5-407b-b981-68599594eddf",
+  "title": "Onboarding \u2014 environment intent",
+  "content": "{\"adapter_categories\":[\"containers\",\"cloud\",\"files\",\"web_apps_apis\",\"external_infrastructure\",\"directories_crm\",\"media\"],\"cloud_providers\":[\"aws\",\"azure\",\"gcp\",\"huawei\"],\"sanctioned_targets_only\":true}",
+  "category": "tool_config",
+  "source": "manual_entry",
+  "teams": [
+    "all_teams"
+  ],
+  "tags": [
+    "onboarding",
+    "environments",
+    "aws",
+    "azure",
+    "gcp",
+    "huawei"
+  ],
+  "mitre_techniques": [],
+  "severity": null,
+  "confidence": 0.8,
+  "metadata": {},
+  "expires_at": null,
+  "created_at": "2026-10-26T13:58:39.112151",
+  "updated_at": "2026-10-26T13:58:39.112151",
+  "usage_count": 0,
+  "relevance_score": 0.0
+}

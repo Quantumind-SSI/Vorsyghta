@@ -551,6 +551,28 @@ class UpdateRoleRequest(BaseModel):
     role: str = Field(..., description="User role: viewer, analyst, pilot_sponsor, or admin")
 
 
+@router.post("/complete-onboarding", response_model=dict)
+async def complete_onboarding(
+    session: AsyncSession = Depends(get_session_dep),
+    current_user: CurrentUser = Depends(get_current_user),
+) -> dict:
+    """Mark onboarding as complete for the user."""
+    await session.execute(
+        update(UserRecord)
+        .where(UserRecord.user_id == current_user.user_id)
+        .values(onboarding_complete=True)
+    )
+    await session.commit()
+    get_audit_logger().log(
+        "auth.onboarding_completed",
+        category=AuditCategory.AUTHENTICATION,
+        severity=AuditSeverity.INFO,
+        actor={"email": current_user.email, "user_id": current_user.user_id},
+        context={"tenant_id": current_user.tenant_id},
+        description="User onboarding completed",
+    )
+    return {"message": "Onboarding completed"}
+
 @router.post("/update-role", response_model=dict)
 async def update_role(
     request: UpdateRoleRequest,

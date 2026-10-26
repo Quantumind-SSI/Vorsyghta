@@ -685,7 +685,7 @@ class TestCheckDatabaseHealth:
 
     @pytest.mark.asyncio
     async def test_healthy_when_connectivity_and_table_exist(self, caplog):
-        engine, _ = _mock_conn(table_exists_result=True)
+        engine, _ = _mock_conn(revision_result="3354c2cf620c", table_exists_result=True)
         with caplog.at_level(logging.INFO, logger="vorsyghta.db.health"):
             result = await check_database_health(engine)
         assert result.healthy is True
@@ -698,7 +698,7 @@ class TestCheckDatabaseHealth:
             result = await check_database_health(engine)
         assert result.healthy is False
         assert "schema revision is outdated" in result.message
-        assert "004_stripe_billing" in (result.detail or "")
+        assert "003_persistence_layer" in (result.detail or "")
 
     @pytest.mark.asyncio
     async def test_uses_singleton_engine_when_none_given(

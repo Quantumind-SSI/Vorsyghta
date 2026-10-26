@@ -8,10 +8,8 @@ import { redirect } from "next/navigation";
 export default async function ApplicationLayout({ children }: Readonly<{ children: ReactNode }>) {
   const session = await getSessionState();
   if (session.state === "authenticated") {
-    const store = await import("next/headers").then(m => m.cookies());
-    const onboardingCookie = store.get("onboarding_complete");
-    // Enforce onboarding for all signed-in users on every visit
-    if (!onboardingCookie) {
+    // Enforce onboarding based on DB flag, not cookie
+    if (!session.user.onboarding_complete) {
       redirect("/onboarding");
     }
   }

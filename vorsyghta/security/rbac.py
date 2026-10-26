@@ -62,6 +62,9 @@ class CurrentUser(BaseModel):
     tenant_id: str
     role: Role
     email: Optional[str] = None
+    is_verified: Optional[bool] = None
+    onboarding_complete: bool = False
+    tenant: Optional[dict] = None
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -194,6 +197,9 @@ async def get_current_user(
         tenant_id=user.tenant_id,
         role=role,
         email=user.email,
+        is_verified=user.is_verified,
+        onboarding_complete=user.onboarding_complete,
+        tenant={"name": tenant.name} if tenant else None,
     )
 
 

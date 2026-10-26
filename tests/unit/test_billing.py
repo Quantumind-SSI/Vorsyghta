@@ -623,6 +623,7 @@ async def test_legacy_mixed_case_email_login_and_registration_conflict(
             hashed_password=get_password_hash("correct-horse-battery"),
             role=Role.VIEWER.value,
             is_active=True,
+            is_verified=True,
         )
     )
     await billing_db.commit()

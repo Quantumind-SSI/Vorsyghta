@@ -10,7 +10,29 @@ Covers full user journey:
 """
 import pytest
 from httpx import AsyncClient
+
+from vorsyghta.db.base import get_engine
+from vorsyghta.db.models.auth import UserRecord
+from sqlalchemy.ext.asyncio import async_sessionmaker
+from sqlalchemy import select
+
 pytestmark = pytest.mark.asyncio
+
+
+async def _mark_verified(email: str) -> None:
+    """Mark the freshly registered account verified.
+
+    Login enforces email verification (a4014c9); unit tests exercise the
+    login/token path directly, so complete verification for the account.
+    """
+    maker = async_sessionmaker(get_engine(), expire_on_commit=False)
+    async with maker() as s:
+        result = await s.execute(select(UserRecord).where(UserRecord.email == email))
+        user = result.scalar_one_or_none()
+        if user is not None:
+            user.is_verified = True
+            user.verification_token = None
+            await s.commit()
 
 
 
@@ -60,6 +82,7 @@ async def test_login_returns_jwt(async_client: AsyncClient):
         "password": password,
         "organization_name": "LoginCo"
     })
+    await _mark_verified(email)
     resp = await async_client.post(
         "/api/auth/login",
         data={"username": email, "password": password}
@@ -78,6 +101,7 @@ async def test_login_wrong_password_fails(async_client: AsyncClient):
         "password": "CorrectPass123!",
         "organization_name": "WrongCo"
     })
+    await _mark_verified(email)
     resp = await async_client.post(
         "/api/auth/login",
         data={"username": email, "password": "BadPass"}
@@ -97,6 +121,7 @@ async def test_me_requires_valid_token(async_client: AsyncClient):
         "password": password,
         "organization_name": "MeCo"
     })
+    await _mark_verified(email)
     login = await async_client.post(
         "/api/auth/login",
         data={"username": email, "password": password}
@@ -154,6 +179,7 @@ async def test_auth_flow_end_to_end(async_client: AsyncClient):
     tenant_id = reg.json()["tenant_id"]
     user_id = reg.json()["user_id"]
 
+    await _mark_verified(email)
     login = await async_client.post(
         "/api/auth/login",
         data={"username": email, "password": password}
@@ -178,6 +204,7 @@ async def test_register_email_normalization(async_client: AsyncClient):
     }
     resp = await async_client.post("/api/auth/register", json=payload)
     assert resp.status_code == 201
+    await _mark_verified("mixedcase@example.com")
     # login with normalized email
     login = await async_client.post(
         "/api/auth/login",

@@ -365,7 +365,7 @@ def test_oauth_metadata_uses_mounted_token_route():
     """Generated OpenAPI clients receive the mounted token endpoint."""
     from vorsyghta.security.rbac import oauth2_scheme
 
-    assert oauth2_scheme.model.flows.password.tokenUrl == "/api/auth/token"
+    assert oauth2_scheme.model.flows.password.tokenUrl == "/api/auth/login"
 
 
 # ============================================================================

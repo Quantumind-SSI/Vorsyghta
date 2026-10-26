@@ -1,0 +1,23 @@
+{
+  "entry_id": "71f461b7-9c70-4ea0-a1e1-49eddee67e4f",
+  "title": "Onboarding \u2014 activated",
+  "content": "{\"terms_accepted\":true,\"acceptable_use_accepted\":true,\"activated_at\":\"2026-10-26T13:58:42.040Z\"}",
+  "category": "training",
+  "source": "manual_entry",
+  "teams": [
+    "all_teams"
+  ],
+  "tags": [
+    "onboarding",
+    "activated"
+  ],
+  "mitre_techniques": [],
+  "severity": null,
+  "confidence": 0.8,
+  "metadata": {},
+  "expires_at": null,
+  "created_at": "2026-10-26T13:58:42.073481",
+  "updated_at": "2026-10-26T13:58:42.073481",
+  "usage_count": 0,
+  "relevance_score": 0.0
+}

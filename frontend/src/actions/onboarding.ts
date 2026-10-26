@@ -206,8 +206,9 @@ export async function activateOnboardingAction(
     tags: ["onboarding", "activated"],
   });
   if (state.status === "error") return state;
-  // Mark onboarding complete in session to avoid re-prompting
-  (await cookies()).set("onboarding_complete", "1", { httpOnly: true, path: "/", sameSite: "lax" });
+  // Mark onboarding complete in DB
+  const { completeOnboarding } = await import("@/lib/api/client");
+  await completeOnboarding(session.token);
   // Persist role to UserRecord and redirect to app
   redirect("/app");
 }

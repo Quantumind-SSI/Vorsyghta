@@ -241,6 +241,13 @@ export function updateUserRole(token: string, role: string) {
   });
 }
 
+export function completeOnboarding(token: string) {
+  return apiRequest("/api/auth/complete-onboarding", z.object({ message: z.string() }), {
+    method: "POST",
+    token,
+  });
+}
+
 export function verifyEmail(token: string) {
   return apiRequest("/api/auth/verify-email", z.object({ message: z.string() }), {
     method: "POST",

@@ -34,6 +34,7 @@ export const currentUserSchema = z.object({
   email: z.string().email().max(254).nullable().optional(),
   is_verified: z.boolean().optional(),
   tenant: z.object({ name: z.string() }).optional(),
+  onboarding_complete: z.boolean().optional().default(false),
 });
 
 export const registrationResponseSchema = z.object({

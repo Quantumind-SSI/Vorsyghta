@@ -132,6 +132,34 @@
         "huawei"
       ],
       "created_at": "2026-10-26T08:23:45.881840"
+    },
+    "e41a1d4f-1da5-407b-b981-68599594eddf": {
+      "title": "Onboarding \u2014 environment intent",
+      "category": "tool_config",
+      "teams": [
+        "all_teams"
+      ],
+      "tags": [
+        "onboarding",
+        "environments",
+        "aws",
+        "azure",
+        "gcp",
+        "huawei"
+      ],
+      "created_at": "2026-10-26T13:58:39.112151"
+    },
+    "71f461b7-9c70-4ea0-a1e1-49eddee67e4f": {
+      "title": "Onboarding \u2014 activated",
+      "category": "training",
+      "teams": [
+        "all_teams"
+      ],
+      "tags": [
+        "onboarding",
+        "activated"
+      ],
+      "created_at": "2026-10-26T13:58:42.073481"
     }
   },
   "categories": {
@@ -141,11 +169,13 @@
     "tool_config": [
       "737906bd-8ed1-40eb-91bd-fe87708e3a1e",
       "33757766-71d7-455a-bd00-794cb81bd4dd",
-      "90f65199-8b39-43eb-9dbc-fbdb215be112"
+      "90f65199-8b39-43eb-9dbc-fbdb215be112",
+      "e41a1d4f-1da5-407b-b981-68599594eddf"
     ],
     "training": [
       "12a07582-504e-4021-aa09-b4a333beaca5",
-      "4bab8bb4-ad19-47e0-8118-21e1cf55ad8d"
+      "4bab8bb4-ad19-47e0-8118-21e1cf55ad8d",
+      "71f461b7-9c70-4ea0-a1e1-49eddee67e4f"
     ],
     "compliance": [
       "d14c5182-1509-4c6c-80ab-1deb4dc132e3",
@@ -169,7 +199,9 @@
       "850fd525-ade9-4500-aa6f-0462ee6f00b8",
       "33757766-71d7-455a-bd00-794cb81bd4dd",
       "4bab8bb4-ad19-47e0-8118-21e1cf55ad8d",
-      "90f65199-8b39-43eb-9dbc-fbdb215be112"
+      "90f65199-8b39-43eb-9dbc-fbdb215be112",
+      "e41a1d4f-1da5-407b-b981-68599594eddf",
+      "71f461b7-9c70-4ea0-a1e1-49eddee67e4f"
     ]
   },
   "tags": {
@@ -188,21 +220,26 @@
       "850fd525-ade9-4500-aa6f-0462ee6f00b8",
       "33757766-71d7-455a-bd00-794cb81bd4dd",
       "4bab8bb4-ad19-47e0-8118-21e1cf55ad8d",
-      "90f65199-8b39-43eb-9dbc-fbdb215be112"
+      "90f65199-8b39-43eb-9dbc-fbdb215be112",
+      "e41a1d4f-1da5-407b-b981-68599594eddf",
+      "71f461b7-9c70-4ea0-a1e1-49eddee67e4f"
     ],
     "environments": [
       "737906bd-8ed1-40eb-91bd-fe87708e3a1e",
       "33757766-71d7-455a-bd00-794cb81bd4dd",
-      "90f65199-8b39-43eb-9dbc-fbdb215be112"
+      "90f65199-8b39-43eb-9dbc-fbdb215be112",
+      "e41a1d4f-1da5-407b-b981-68599594eddf"
     ],
     "azure": [
       "737906bd-8ed1-40eb-91bd-fe87708e3a1e",
       "33757766-71d7-455a-bd00-794cb81bd4dd",
-      "90f65199-8b39-43eb-9dbc-fbdb215be112"
+      "90f65199-8b39-43eb-9dbc-fbdb215be112",
+      "e41a1d4f-1da5-407b-b981-68599594eddf"
     ],
     "activated": [
       "12a07582-504e-4021-aa09-b4a333beaca5",
-      "4bab8bb4-ad19-47e0-8118-21e1cf55ad8d"
+      "4bab8bb4-ad19-47e0-8118-21e1cf55ad8d",
+      "71f461b7-9c70-4ea0-a1e1-49eddee67e4f"
     ],
     "org-profile": [
       "d14c5182-1509-4c6c-80ab-1deb4dc132e3",
@@ -222,16 +259,19 @@
     ],
     "aws": [
       "33757766-71d7-455a-bd00-794cb81bd4dd",
-      "90f65199-8b39-43eb-9dbc-fbdb215be112"
+      "90f65199-8b39-43eb-9dbc-fbdb215be112",
+      "e41a1d4f-1da5-407b-b981-68599594eddf"
     ],
     "gcp": [
       "33757766-71d7-455a-bd00-794cb81bd4dd",
-      "90f65199-8b39-43eb-9dbc-fbdb215be112"
+      "90f65199-8b39-43eb-9dbc-fbdb215be112",
+      "e41a1d4f-1da5-407b-b981-68599594eddf"
     ],
     "huawei": [
       "33757766-71d7-455a-bd00-794cb81bd4dd",
-      "90f65199-8b39-43eb-9dbc-fbdb215be112"
+      "90f65199-8b39-43eb-9dbc-fbdb215be112",
+      "e41a1d4f-1da5-407b-b981-68599594eddf"
     ]
   },
-  "last_updated": "2026-10-26T08:23:45.885074"
+  "last_updated": "2026-10-26T13:58:42.076422"
 }
