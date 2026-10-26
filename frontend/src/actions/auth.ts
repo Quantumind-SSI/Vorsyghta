@@ -104,7 +104,7 @@ export async function registerAction(
 
 export async function signOutAction(): Promise<void> {
   await clearSession();
-  const cookiesStore = await import("next/headers").then(m => m.cookies());
-  cookiesStore.delete("onboarding_complete");
+  // onboarding_complete cookie is intentionally preserved across sign-outs
+  // so users do not repeat onboarding
   redirect("/sign-in");
 }
