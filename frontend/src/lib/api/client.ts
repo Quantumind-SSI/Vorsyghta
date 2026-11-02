@@ -120,20 +120,21 @@ async function apiRequest<T>(
 }
 
 export function authenticate(username: string, password: string) {
-  const body = new URLSearchParams({ username, password });
-  return apiRequest("/api/auth/login", tokenResponseSchema, { method: "POST", body });
+  const body = new URLSearchParams({ email: username, password });
+  return apiRequest("/auth/token/", tokenResponseSchema, { method: "POST", body });
 }
 
 export function registerAccount(input: RegistrationInput) {
-  return apiRequest("/api/auth/register", registrationResponseSchema, {
+  return apiRequest("/auth/register/", registrationResponseSchema, {
     method: "POST",
     json: input,
   });
 }
 
 export function fetchCurrentUser(token: string) {
-  return apiRequest("/api/auth/me", currentUserSchema, { token });
+  return apiRequest("/auth/me/", currentUserSchema, { token });
 }
+
 
 export function fetchBillingOffer() {
   return apiRequest("/api/billing/offer", billingOfferSchema);
@@ -226,7 +227,7 @@ export function saveOnboardingStep(
 }
 
 export function fetchExercises(token: string) {
-  return apiRequest("/api/exercises/", exerciseListSchema, { token });
+  return apiRequest("/api/exercises/runs/", exerciseListSchema, { token });
 }
 
 export function fetchDisclosures(token: string) {
@@ -234,7 +235,7 @@ export function fetchDisclosures(token: string) {
 }
 
 export function updateUserRole(token: string, role: string) {
-  return apiRequest("/api/auth/update-role", z.object({ message: z.string() }), {
+  return apiRequest("/auth/update-role", z.object({ message: z.string() }), {
     method: "POST",
     token,
     json: { role },
@@ -242,15 +243,20 @@ export function updateUserRole(token: string, role: string) {
 }
 
 export function completeOnboarding(token: string) {
-  return apiRequest("/api/auth/complete-onboarding", z.object({ message: z.string() }), {
+  return apiRequest("/auth/complete-onboarding/", z.object({ message: z.string() }), {
     method: "POST",
     token,
   });
 }
 
 export function verifyEmail(token: string) {
-  return apiRequest("/api/auth/verify-email", z.object({ message: z.string() }), {
+  return apiRequest("/auth/verify-email/", z.object({ verified: z.boolean() }), {
     method: "POST",
     json: { token },
   });
 }
+
+
+// Duplicate definitions removed - kept Django /auth/ paths above
+
+

@@ -26,7 +26,8 @@ export function ResetPasswordClient() {
     }
     setStatus("loading");
     try {
-      const res = await fetch("http://localhost:8001/api/auth/reset-password", {
+      const apiUrl = process.env.VORSYGHTA_API_URL || "http://localhost:8001";
+      const res = await fetch(`${apiUrl}/auth/reset-password/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, new_password: password }),

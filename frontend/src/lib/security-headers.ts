@@ -1,9 +1,11 @@
 export function buildContentSecurityPolicy(nonce: string, environment: string | undefined): string {
-  const development = environment === "development";
+  const development = environment === "development" || !environment;
+  const apiUrl = process.env.VORSYGHTA_API_URL || "http://localhost:8001";
+  const apiOrigin = new URL(apiUrl).origin;
   const directives = [
     "default-src 'self'",
     "base-uri 'self'",
-    `connect-src 'self'${development ? " http://localhost:8001" : ""}`,
+    `connect-src 'self' ${apiOrigin}`,
     "font-src 'self'",
     "form-action 'self'",
     "frame-ancestors 'none'",

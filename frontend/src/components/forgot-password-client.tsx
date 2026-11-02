@@ -12,7 +12,8 @@ export function ForgotPasswordClient() {
     e.preventDefault();
     setStatus("loading");
     try {
-      const res = await fetch("http://localhost:8001/api/auth/request-reset", {
+      const apiUrl = process.env.VORSYGHTA_API_URL || "http://localhost:8001";
+      const res = await fetch(`${apiUrl}/auth/request-reset/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
