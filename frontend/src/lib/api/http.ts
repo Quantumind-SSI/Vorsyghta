@@ -1,4 +1,4 @@
-export const DEFAULT_API_URL = "http://localhost:8001";
+export const DEFAULT_API_URL = "http://127.0.0.1:8001";
 export const MAX_API_RESPONSE_BYTES = 1_000_000;
 
 export type ApiTransportSettings = {

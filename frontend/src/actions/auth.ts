@@ -32,13 +32,17 @@ export async function signInAction(
 
   const token = await authenticate(credentials.data.email, credentials.data.password);
   if (!token.ok) {
-    const message =
-      token.kind === "unauthorized"
-        ? "The email address or password is incorrect."
-        : "Sign-in is temporarily unavailable. Please try again shortly.";
-    return { status: "error", message };
+    if (token.kind === "unavailable") {
+      return { status: "error", message: "API is temporarily unavailable. Please try again shortly." };
+    }
+    return {
+      status: "error",
+      message:
+        token.kind === "unauthorized"
+          ? "Invalid email or password."
+          : "Sign-in is temporarily unavailable. Please try again shortly.",
+    };
   }
-
   if (token.data.requires_email_verification) {
     await setSessionToken(token.data.access_token);
     redirect("/app");

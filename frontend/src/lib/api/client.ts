@@ -95,7 +95,7 @@ async function apiRequest<T>(
 ): Promise<ApiResult<T>> {
   const headers = new Headers({ Accept: "application/json" });
   if (options.token) headers.set("Authorization", `Bearer ${options.token}`);
-  if (options.body) headers.set("Content-Type", "application/x-www-form-urlencoded");
+  if (options.body instanceof URLSearchParams) headers.set("Content-Type", "application/x-www-form-urlencoded");
   if (options.json !== undefined) headers.set("Content-Type", "application/json");
 
   try {
@@ -119,11 +119,15 @@ async function apiRequest<T>(
   }
 }
 
-export function authenticate(username: string, password: string) {
+export async function authenticate(username: string, password: string) {
+  // Quick liveness check to surface network issues early
+  const health = await fetchHealth();
+  if (!health.ok) {
+    return { ok: false, kind: "unavailable", status: null };
+  }
   const body = new URLSearchParams({ email: username, password });
   return apiRequest("/auth/token/", tokenResponseSchema, { method: "POST", body });
 }
-
 export function registerAccount(input: RegistrationInput) {
   return apiRequest("/auth/register/", registrationResponseSchema, {
     method: "POST",
