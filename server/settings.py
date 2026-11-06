@@ -44,6 +44,13 @@ INSTALLED_APPS = [
     "vorsyghta.django_apps.accounts",
     "vorsyghta.django_apps.audit",
     "vorsyghta.django_apps.api_health",
+    "vorsyghta.django_apps.knowledge",
+    "vorsyghta.django_apps.threat_intel",
+    "vorsyghta.django_apps.operations",
+    "vorsyghta.django_apps.exercises",
+    "vorsyghta.django_apps.billing",
+    "vorsyghta.django_apps.attack_tracking",
+    "vorsyghta.django_apps.templates_app",
 ]
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -55,10 +62,17 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
-
-CORS_ALLOWED_ORIGINS = [o.strip() for o in os.environ.get("ALLOWED_ORIGINS", "").split(",") if o.strip()]
+CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOWED_ORIGINS = [o.strip() for o in os.environ.get("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",") if o.strip()]
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+CORS_ALLOW_HEADERS = ["*"]
+
+CSRF_TRUSTED_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:8003", "http://127.0.0.1:8003"]
+CSRF_COOKIE_HTTPONLY = True
+
 SECURE_SSL_REDIRECT = os.environ.get("SECURE_SSL_REDIRECT", "true").lower() in {"1","true","yes"}
+
 SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
@@ -128,7 +142,6 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-# --- DRF / JWT ---------------------------------------------------------------
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
@@ -136,9 +149,8 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",
     ),
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
-    "PAGE_SIZE": 50,
 }
+
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": __import__("datetime").timedelta(
@@ -146,9 +158,27 @@ SIMPLE_JWT = {
     ),
     "REFRESH_TOKEN_LIFETIME": __import__("datetime").timedelta(days=7),
     "ROTATE_REFRESH_TOKENS": True,
-    "AUD": "vorsyghta",
+    "BLACKLIST_AFTER_ROTATION": True,
+    "ALGORITHM": "HS256",
+    "SIGNING_KEY": os.environ.get("VORSYGHTA_SECRET_KEY", ""),
     "USER_ID_FIELD": "id",
-    "USER_ID_CLAIM": "user_id",
+    "USER_ID_CLAIM": "sub",
+}
+
+PASSWORD_HASHERS = [
+    "vorsyghta.django_apps.accounts.hashers.BcryptPasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2PasswordHasher",
+]
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": __import__("datetime").timedelta(minutes=int(os.environ.get("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))),
+    "REFRESH_TOKEN_LIFETIME": __import__("datetime").timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "ALGORITHM": "HS256",
+    "SIGNING_KEY": os.environ.get("VORSYGHTA_SECRET_KEY", ""),
+    "USER_ID_FIELD": "id",
+    "USER_ID_CLAIM": "sub",
 }
 
 # --- i18n / static ------------------------------------------------------------
@@ -160,3 +190,13 @@ USE_TZ = True
 STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Email backend for Mailpit
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "localhost")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "1025"))
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = False
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "no-reply@vorsyghta.local")
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")

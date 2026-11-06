@@ -114,104 +114,87 @@ services:
     labels:
       com.vorsyghta.service: "migration"
       com.vorsyghta.description: "One-shot Alembic schema migration"
-
   # ================================
-  # Vorsyghta API Server
+  # Django API Server
   # ================================
-  vorsyghta-api:
+  django:
     <<: *vorsyghta-api-image
-    container_name: vorsyghta-api
+    container_name: vorsyghta-django
     restart: unless-stopped
+    user: "0:0"
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-      migrate:
-        condition: service_completed_successfully
-    environment:
-      # Database
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-vorsyghta}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-vorsyghta}
-      - DB_POOL_SIZE=${DB_POOL_SIZE:-20}
-      - DB_MAX_OVERFLOW=${DB_MAX_OVERFLOW:-30}
-      - DB_POOL_TIMEOUT=${DB_POOL_TIMEOUT:-30}
-      - DB_POOL_RECYCLE=${DB_POOL_RECYCLE:-3600}
-      # Redis
-      - REDIS_URL=redis://redis:6379/0
-      # LLM Providers
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-      - NVIDIA_API_KEY=${NVIDIA_API_KEY}
-      - DEFAULT_LLM_PROVIDER=${DEFAULT_LLM_PROVIDER:-nvidia}
-      # Application
-      - VORSYGHTA_SECRET_KEY=${VORSYGHTA_SECRET_KEY:?Set VORSYGHTA_SECRET_KEY in .env}
-      - ENVIRONMENT=${ENVIRONMENT:-development}
-      - LOG_LEVEL=${LOG_LEVEL:-INFO}
-      - DEBUG=${DEBUG:-false}
-      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
-      # Stripe Billing (explicitly required for SaaS or disabled for self-hosted use)
-      - VORSYGHTA_BILLING_REQUIRED=${VORSYGHTA_BILLING_REQUIRED:?Set VORSYGHTA_BILLING_REQUIRED in .env}
-      - STRIPE_EXPECTED_LIVEMODE=${STRIPE_EXPECTED_LIVEMODE:?Set STRIPE_EXPECTED_LIVEMODE in .env}
-      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}
-      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET:-}
-      - STRIPE_PRICE_ID=${STRIPE_PRICE_ID:-}
-      - STRIPE_CHECKOUT_SUCCESS_URL=${STRIPE_CHECKOUT_SUCCESS_URL:-http://localhost:${WEB_PORT:-3002}/start-trial?checkout=success}
-      - STRIPE_CHECKOUT_CANCEL_URL=${STRIPE_CHECKOUT_CANCEL_URL:-http://localhost:${WEB_PORT:-3002}/start-trial?checkout=canceled}
-      - STRIPE_PORTAL_RETURN_URL=${STRIPE_PORTAL_RETURN_URL:-http://localhost:${WEB_PORT:-3002}/app/settings/billing}
-      - STRIPE_AUTOMATIC_TAX_ENABLED=${STRIPE_AUTOMATIC_TAX_ENABLED:-true}
-      - STRIPE_TAX_ID_COLLECTION_ENABLED=${STRIPE_TAX_ID_COLLECTION_ENABLED:-true}
-      - STRIPE_REQUEST_TIMEOUT_SECONDS=${STRIPE_REQUEST_TIMEOUT_SECONDS:-10}
-      - STRIPE_MAX_NETWORK_RETRIES=${STRIPE_MAX_NETWORK_RETRIES:-2}
-      - STRIPE_WEBHOOK_TOLERANCE_SECONDS=${STRIPE_WEBHOOK_TOLERANCE_SECONDS:-300}
-      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:${WEB_PORT:-3002}}
-      # Python
-      - PYTHONUNBUFFERED=1
-      - PYTHONDONTWRITEBYTECODE=1
     volumes:
-      - ./vorsyghta:/app/vorsyghta:ro
-      - ./templates:/app/templates:ro
-      - ./data:/app/data
-      - ./logs:/app/logs
-      - ./generated_content:/app/generated_content
-      - ./reports:/app/reports
+      - .:/app
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-vorsyghta}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-vorsyghta}
+      - REDIS_URL=redis://redis:6379/0
+      - DJANGO_SETTINGS_MODULE=server.settings
+      - DEBUG=false
+      - VORSYGHTA_SECRET_KEY=${VORSYGHTA_SECRET_KEY}
+      - SECURE_SSL_REDIRECT=false
+      - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,django,host.docker.internal
+      - EMAIL_HOST=mailpit
+      - EMAIL_PORT=1025
+    working_dir: /app
+    command: ["bash", "-c", "python manage.py runserver 0.0.0.0:8000"]
     ports:
-      - "${API_PORT:-8001}:8000"
+      - "${DJANGO_PORT:-8000}:8000"
     networks:
       - vorsyghta-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/ready"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
-    labels:
-      com.vorsyghta.service: "api"
-      com.vorsyghta.description: "Vorsyghta main API server"
+      start_period: 60s
 
+  # ================================
+  # Vorsyghta API Server - DISABLED: Django is now backend
+  # ================================
+  # vorsyghta-api:
+  #   <<: *vorsyghta-api-image
+  #   container_name: vorsyghta-api
+  #   restart: unless-stopped
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #   environment:
+  #     # Database
+  #     - DATABASE_URL=postgresql://${POSTGRES_USER:-vorsyghta}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-vorsyghta}
+  #     ...
+  #   ports:
+  #     - "${API_PORT:-8001}:8000"
+  #   networks:
+  #     - vorsyghta-network
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:8000/ready"]
   # ================================
   # Vorsyghta Web Application
   # ================================
   vorsyghta-web:
-    profiles:
-      - web
     build:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: vorsyghta-web
     restart: unless-stopped
     depends_on:
-      vorsyghta-api:
-        condition: service_healthy
+      django:
+        condition: service_started
     environment:
-      - VORSYGHTA_API_URL=http://vorsyghta-api:8000
+      - VORSYGHTA_API_URL=http://django:8000
       - VORSYGHTA_ALLOW_INSECURE_INTERNAL_API=true
     ports:
       - "${WEB_PORT:-3002}:3000"
     networks:
       - vorsyghta-network
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3000/"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -241,7 +224,7 @@ services:
     networks:
       - vorsyghta-network
     depends_on:
-      - vorsyghta-api
+      - django
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
       interval: 30s
@@ -275,7 +258,7 @@ services:
     depends_on:
       - prometheus
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -290,9 +273,10 @@ services:
     image: dpage/pgadmin4:latest
     container_name: vorsyghta-pgadmin
     restart: unless-stopped
+    depends_on:
+      - postgres
+      - django
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@vorsyghta.local
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:?Set PGADMIN_PASSWORD in .env}
       PGADMIN_CONFIG_SERVER_MODE: 'False'
       PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
     volumes:
@@ -301,8 +285,6 @@ services:
       - "${PGADMIN_PORT:-5050}:80"
     networks:
       - vorsyghta-network
-    depends_on:
-      - postgres
     profiles:
       - tools
     labels:
