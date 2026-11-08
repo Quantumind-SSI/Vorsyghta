@@ -114,8 +114,9 @@ async function apiRequest<T>(
       return { ok: false, kind: failureForStatus(response.status), status: response.status };
     }
     return await parseResponse(response, schema);
-  } catch {
-    return { ok: false, kind: "unavailable", status: null };
+  } catch (err: any) {
+    const isTimeout = err?.name === "TimeoutError" || err?.name === "AbortError";
+    return { ok: false, kind: isTimeout ? "unavailable" : "request-failed", status: null };
   }
 }
 
@@ -123,7 +124,7 @@ export async function authenticate(username: string, password: string) {
   // Quick liveness check to surface network issues early
   const health = await fetchHealth();
   if (!health.ok) {
-    return { ok: false, kind: "unavailable", status: null };
+    return { ok: false, kind: health.kind ?? "unavailable", status: health.status };
   }
   const body = new URLSearchParams({ email: username, password });
   return apiRequest("/auth/token/", tokenResponseSchema, { method: "POST", body });

@@ -35,6 +35,12 @@ export async function signInAction(
     if (token.kind === "unavailable") {
       return { status: "error", message: "API is temporarily unavailable. Please try again shortly." };
     }
+    if (token.kind === "request-failed") {
+      return { status: "error", message: "Network error. Please check your connection and try again." };
+    }
+    if (token.kind === "invalid-response") {
+      return { status: "error", message: "Service configuration error. Please contact support." };
+    }
     return {
       status: "error",
       message:
@@ -43,18 +49,18 @@ export async function signInAction(
           : "Sign-in is temporarily unavailable. Please try again shortly.",
     };
   }
-  if (token.data.requires_email_verification) {
-    await setSessionToken(token.data.access_token);
+  if ((token as any).data.requires_email_verification) {
+    await setSessionToken((token as any).data.access_token);
     redirect("/app");
   }
 
   const tokenUser = {
-    user_id: token.data.user_id,
-    tenant_id: token.data.tenant_id,
-    role: token.data.role,
+    user_id: (token as any).data.user_id,
+    tenant_id: (token as any).data.tenant_id,
+    role: (token as any).data.role,
   };
 
-  const user = await fetchCurrentUser(token.data.access_token);
+  const user = await fetchCurrentUser((token as any).data.access_token);
   const identityMatches =
     user.ok &&
     user.data.tenant_id === tokenUser.tenant_id &&
@@ -64,7 +70,7 @@ export async function signInAction(
     return { status: "error", message: "Your session could not be verified. Please try again." };
   }
 
-  await setSessionToken(token.data.access_token);
+  await setSessionToken((token as any).data.access_token);
 
   // Redirect based on onboarding completion from DB
   const onboardingComplete = user.ok && user.data.onboarding_complete;
