@@ -157,14 +157,16 @@ class VerifyEmailView(APIView):
         return Response({"verified": True}, status=status.HTTP_200_OK)
 
 class CompleteOnboardingView(APIView):
-    permission_classes = []
-    authentication_classes = []
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
 
     def post(self, request):
-        token = request.data.get("token")
-        if not token:
-            return Response({"detail": "token required"}, status=status.HTTP_400_BAD_REQUEST)
-        return Response({"completed": True, "message": "Onboarding completed"}, status=status.HTTP_200_OK)
+        user = request.user
+        if not user or not user.is_authenticated:
+            return Response({"detail": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
+        user.onboarding_complete = True
+        user.save(update_fields=["onboarding_complete"])
+        return Response({"message": "Onboarding completed", "onboarding_complete": True}, status=status.HTTP_200_OK)
 class RequestResetView(APIView):
     permission_classes = []
     authentication_classes = []
