@@ -19,6 +19,7 @@ urlpatterns = [
     path("auth/me/", MeView.as_view(), name="auth_me"),
     path("auth/register/", RegisterView.as_view(), name="auth_register"),
     path("auth/verify-email/", VerifyEmailView.as_view(), name="auth_verify_email"),
+    path("auth/complete-onboarding/", CompleteOnboardingView.as_view(), name="auth_complete_onboarding"),
     path("auth/request-reset/", RequestResetView.as_view(), name="auth_request_reset"),
     path("auth/reset-password/", ResetPasswordView.as_view(), name="auth_reset_password"),
 

@@ -9,7 +9,10 @@ export default async function ApplicationLayout({ children }: Readonly<{ childre
   const session = await getSessionState();
   if (session.state === "authenticated") {
     // Enforce onboarding based on DB flag, not cookie
-    if (!session.user.onboarding_complete) {
+    // Viewers who are verified skip onboarding per product design
+    const user = session.user;
+    const onboardingRequired = !user.onboarding_complete && !(user.role === "viewer" && user.is_verified);
+    if (onboardingRequired) {
       redirect("/onboarding");
     }
   }
