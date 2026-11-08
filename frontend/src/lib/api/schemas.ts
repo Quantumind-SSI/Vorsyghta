@@ -127,7 +127,7 @@ export const hostedUrlSchema = z
 export const healthSchema = z
   .object({
     status: z.enum(["healthy", "degraded"]),
-    timestamp: apiTimestampSchema,
+    timestamp: apiTimestampSchema.optional(),
     version: boundedText,
     components: z.record(z.string().min(1).max(100), z.string().min(1).max(100)),
   })

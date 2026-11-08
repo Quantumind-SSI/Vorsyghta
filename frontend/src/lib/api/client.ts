@@ -165,7 +165,7 @@ export function createPortalSession(token: string) {
 }
 
 export function fetchHealth() {
-  return apiRequest("/health", healthSchema);
+  return apiRequest("/health/", healthSchema);
 }
 
 export function fetchAttackStats(token: string) {

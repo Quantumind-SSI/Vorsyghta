@@ -15,11 +15,6 @@ import { formatDateTime, formatDuration } from "@/lib/format";
 import { canViewRawActivity, classifyActivityProvenance } from "@/lib/provenance";
 import { requireSession } from "@/lib/session";
 
-export const metadata: Metadata = {
-  title: "Workspace overview",
-  description: "Verified tenant health and recently recorded security activity.",
-  robots: { index: false, follow: false },
-};
 
 export const dynamic = "force-dynamic";
 
@@ -47,7 +42,7 @@ function HealthPanel({ result }: { result: ApiResult<Health> }) {
           ))}
         </dl>
       ) : <p className="empty-state">The API returned no component health records.</p>}
-      <p className="panel-footnote">API {result.data.version} / reported {formatDateTime(result.data.timestamp)}</p>
+      <p className="panel-footnote">API {result.data.version} / reported {formatDateTime(result.data.timestamp ?? null)}</p>
     </section>
   );
 }

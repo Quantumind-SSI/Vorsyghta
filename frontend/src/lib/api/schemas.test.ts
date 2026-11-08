@@ -292,4 +292,39 @@ describe("FastAPI response validation", () => {
     expect(findingListSchema.safeParse([{ ...record, sequence_id: "" }]).success).toBe(false);
     expect(findingListSchema.safeParse([{ ...record, status: 7 }]).success).toBe(false);
   });
+
+  it("accepts health response without timestamp and with healthy components", () => {
+    const minimal = {
+      status: "healthy",
+      version: "0.1.0",
+      components: { api: "healthy", db: "healthy" },
+    };
+    const withTimestamp = {
+      status: "healthy",
+      timestamp: "2026-09-14T12:00:00Z",
+      version: "0.1.0",
+      components: { api: "healthy" },
+    };
+    expect(healthSchema.safeParse(minimal).success).toBe(true);
+    expect(healthSchema.safeParse(withTimestamp).success).toBe(true);
+    expect(healthSchema.parse(minimal).status).toBe("healthy");
+  });
+
+  it("rejects health response with unhealthy component while status is healthy", () => {
+    const bad = {
+      status: "healthy",
+      version: "0.1.0",
+      components: { api: "healthy", db: "degraded" },
+    };
+    expect(healthSchema.safeParse(bad).success).toBe(false);
+  });
+
+  it("accepts degraded health with any component values", () => {
+    const degraded = {
+      status: "degraded",
+      version: "0.1.0",
+      components: { api: "operational", db: "unavailable" },
+    };
+    expect(healthSchema.safeParse(degraded).success).toBe(true);
+  });
 });

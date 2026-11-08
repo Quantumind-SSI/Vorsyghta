@@ -19,7 +19,7 @@ class HealthView(APIView):
             {
                 "status": "healthy",
                 "version": "0.1.0",
-                "components": {"api": "operational"},
+                "components": {"api": "healthy"},
             }
         )
 
