@@ -239,7 +239,8 @@ app.include_router(auth_router, prefix="/api")
 app.include_router(templates_router, prefix="/api", dependencies=_ENTITLED)
 app.include_router(threat_intel_router, prefix="/api", dependencies=_ENTITLED)
 app.include_router(attack_tracking_router, prefix="/api", dependencies=_ENTITLED)
-app.include_router(billing_router, prefix="/api")
+# billing_router removed: billing now handled by Django; see vorsyghta/django_apps/billing
+# app.include_router(billing_router, prefix="/api")
 
 try:
     _SAAS_MODE = billing_required_from_env()

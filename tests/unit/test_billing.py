@@ -506,10 +506,10 @@ class _RateLimitRedis:
 
 @pytest.mark.asyncio
 async def test_auth_rate_limit_is_shared_and_bounded(monkeypatch: pytest.MonkeyPatch) -> None:
+    import vorsyghta.core.redis_client as redis_client_module
     import vorsyghta.api.routers.auth as auth_module
-
     store = _RateLimitRedis()
-    monkeypatch.setattr(auth_module, "get_redis_client", lambda: store)
+    monkeypatch.setattr(redis_client_module, "get_redis_client", lambda: store)
     for _ in range(10):
         await auth_module._enforce_auth_rate_limit("login", "user@example.test")
 
@@ -523,10 +523,10 @@ async def test_auth_rate_limit_is_shared_and_bounded(monkeypatch: pytest.MonkeyP
 async def test_rejected_identity_does_not_exhaust_global_registration_limit(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    import vorsyghta.core.redis_client as redis_client_module
     import vorsyghta.api.routers.auth as auth_module
-
     store = _RateLimitRedis()
-    monkeypatch.setattr(auth_module, "get_redis_client", lambda: store)
+    monkeypatch.setattr(redis_client_module, "get_redis_client", lambda: store)
     for _ in range(10):
         try:
             await auth_module._enforce_auth_rate_limit("register", "blocked@example.test")
@@ -543,9 +543,10 @@ async def test_auth_rate_limit_fails_closed_when_deployed(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     import vorsyghta.api.routers.auth as auth_module
+    import vorsyghta.core.redis_client as redis_client_module
 
     monkeypatch.setenv("ENVIRONMENT", "production")
-    monkeypatch.setattr(auth_module, "get_redis_client", lambda: None)
+    monkeypatch.setattr(redis_client_module, "get_redis_client", lambda: None)
     with pytest.raises(HTTPException) as captured:
         await auth_module._enforce_auth_rate_limit("register", "user@example.test")
     assert captured.value.status_code == 503
@@ -554,7 +555,10 @@ async def test_auth_rate_limit_fails_closed_when_deployed(
 @pytest.mark.asyncio
 async def test_registration_creates_isolated_tenants_and_normalizes_email(
     billing_db: AsyncSession,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    import vorsyghta.core.redis_client as redis_client_module
+    monkeypatch.setattr(redis_client_module, "get_redis_client", lambda: None)
     from vorsyghta.api.routers.auth import RegisterRequest, register
 
     first = await register(
@@ -586,7 +590,10 @@ async def test_registration_creates_isolated_tenants_and_normalizes_email(
 @pytest.mark.asyncio
 async def test_duplicate_registration_conflicts_transactionally(
     billing_db: AsyncSession,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    import vorsyghta.core.redis_client as redis_client_module
+    monkeypatch.setattr(redis_client_module, "get_redis_client", lambda: None)
     from vorsyghta.api.routers.auth import RegisterRequest, register
 
     first = RegisterRequest(
@@ -610,7 +617,10 @@ async def test_duplicate_registration_conflicts_transactionally(
 @pytest.mark.asyncio
 async def test_legacy_mixed_case_email_login_and_registration_conflict(
     billing_db: AsyncSession,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    import vorsyghta.core.redis_client as redis_client_module
+    monkeypatch.setattr(redis_client_module, "get_redis_client", lambda: None)
     from vorsyghta.api.routers.auth import RegisterRequest, login, register
     from vorsyghta.security.rbac import get_password_hash
 

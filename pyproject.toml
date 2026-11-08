@@ -228,5 +228,6 @@ skips = [
 
 [dependency-groups]
 dev = [
-    "testcontainers (>=4.15.0,<5.0.0)"
+    "testcontainers (>=4.15.0,<5.0.0)",
+    "pytest-django (>=4.14.0,<5.0.0)"
 ]

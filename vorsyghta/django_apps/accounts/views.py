@@ -26,10 +26,12 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         data = super().validate(attrs)
         user = self.user
         # Ensure user has required fields
+        tenant = getattr(user, "tenant", None)
+        tenant_id = str(tenant.id) if tenant and getattr(tenant, "id", None) else ""
         data.update({
             "user_id": getattr(user, "user_id", str(user.pk)),
             "role": getattr(user, "role", "viewer"),
-            "tenant_id": getattr(getattr(user, "tenant", None), "tenant_id", ""),
+            "tenant_id": tenant_id,
             "requires_email_verification": not getattr(user, "is_verified", True),
         })
         # Frontend expects access_token / token_type instead of access / refresh
@@ -55,7 +57,7 @@ class MeView(APIView):
         tenant = getattr(user, "tenant", None)
         data = {
             "user_id": getattr(user, "user_id", str(user.pk)),
-            "tenant_id": getattr(tenant, "tenant_id", "") if tenant else "",
+            "tenant_id": str(tenant.id) if tenant and getattr(tenant, "id", None) else "",
             "role": getattr(user, "role", "viewer"),
             "email": user.email,
             "is_verified": getattr(user, "is_verified", False),
@@ -102,20 +104,25 @@ class RegisterView(APIView):
         if User.objects.filter(email__iexact=email).exists():
             return Response({"detail": "Email already registered."}, status=status.HTTP_409_CONFLICT)
 
-        tenant, _ = Tenant.objects.get_or_create(name=org_name, defaults={"tenant_id": str(uuid.uuid4())})
-        if not tenant.tenant_id:
-            tenant.tenant_id = str(uuid.uuid4())
-            tenant.save()
+        tenant, _ = Tenant.objects.get_or_create(
+            name=org_name,
+            defaults={
+                "tenant_id": str(uuid.uuid4()),
+                "is_active": True,
+            }
+        )
+        # ensure tenant id exists
+        # tenant has id field only
 
         user = User(
             email=email,
             username=re.sub(r"[^a-z0-9]+", "-", email.split("@")[0])[:140] or None,
             role="viewer",
             tenant=tenant,
+            onboarding_complete=False,
+            is_verified=False,
         )
         user.set_password(password)
-        user.user_id = str(uuid.uuid4())
-        user.is_verified = False
         user.verification_token = secrets.token_urlsafe(32)
         user.save()
 
@@ -129,7 +136,7 @@ class RegisterView(APIView):
         )
 
         return Response(
-            {"id": str(user.pk), "email": user.email, "user_id": user.user_id, "tenant_id": tenant.tenant_id, "role": user.role, "requires_email_verification": True, "message": "User registered"},
+            {"id": str(user.pk), "email": user.email, "user_id": str(user.pk), "tenant_id": str(tenant.id), "role": user.role, "requires_email_verification": True, "message": "User registered"},
             status=status.HTTP_201_CREATED,
         )
 

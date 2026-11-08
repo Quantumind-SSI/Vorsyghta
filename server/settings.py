@@ -49,8 +49,9 @@ INSTALLED_APPS = [
     "vorsyghta.django_apps.operations",
     "vorsyghta.django_apps.exercises",
     "vorsyghta.django_apps.billing",
-    "vorsyghta.django_apps.attack_tracking",
-    "vorsyghta.django_apps.templates_app",
+
+
+
 ]
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -165,11 +166,10 @@ SIMPLE_JWT = {
     "USER_ID_CLAIM": "sub",
 }
 
+
 PASSWORD_HASHERS = [
-    "vorsyghta.django_apps.accounts.hashers.BcryptPasswordHasher",
     "django.contrib.auth.hashers.PBKDF2PasswordHasher",
 ]
-
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": __import__("datetime").timedelta(minutes=int(os.environ.get("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))),
     "REFRESH_TOKEN_LIFETIME": __import__("datetime").timedelta(days=7),

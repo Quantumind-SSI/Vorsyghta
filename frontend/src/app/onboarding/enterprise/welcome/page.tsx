@@ -1,12 +1,7 @@
 import Link from 'next/link';
 import { EnterpriseOnboardingLayout } from '@/components/onboarding/EnterpriseOnboardingLayout';
-import { redirect } from 'next/navigation';
-import { fetchCurrentUser } from '@/lib/api/client';
 
 export default function OnboardingWelcome() {
-  // Check if user is already a Viewer - skip enterprise onboarding
-  // (Viewer users already skip to /app from the main onboarding entry)
-  
   const steps = [
     ['Role selection','Choose your persona and access level'],
     ['Account verification','Email & legal acceptance'],
@@ -19,16 +14,7 @@ export default function OnboardingWelcome() {
     ['Workspace','Project scaffolding'],
     ['First value','Guided exercise']
   ];
-  
-  // Try to fetch current user to check role
-  let userRole = null;
-  try {
-    const token = typeof window !== 'undefined' ? undefined : undefined;
-    // We'll check role determination based on onboarding progress instead
-  } catch {
-    // Continue regardless
-  }
-  
+
   return (
     <EnterpriseOnboardingLayout step={0} total={9} title="Welcome to Vorsyghta" description="Enterprise onboarding is 9 steps, ~12 minutes. Your answers configure compliance mapping, identity, environments and the first guided exercise.">
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: '1rem' }}>

@@ -19,6 +19,8 @@ class Tenant(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255, unique=True)
+    tenant_id = models.CharField(max_length=255, unique=True, null=True, blank=True)
+    is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -71,8 +73,10 @@ class User(AbstractUser):
     )
     role = models.CharField(max_length=20, choices=ROLES, default="viewer")
     is_verified = models.BooleanField(default=False)
+    verification_token = models.CharField(max_length=128, null=True, blank=True)
     reset_token = models.CharField(max_length=128, null=True, blank=True)
     is_active = models.BooleanField(default=True)
+    onboarding_complete = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     # Username is not the identity primitive here; email is.

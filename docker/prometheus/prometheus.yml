@@ -31,7 +31,7 @@ scrape_configs:
   - job_name: 'vorsyghta-api'
     metrics_path: '/metrics'
     static_configs:
-      - targets: ['vorsyghta-api:8000']
+      - targets: ['django:8000']
         labels:
           service: 'vorsyghta-api'
           component: 'application'

@@ -1,7 +1,6 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
 
 import {
   onboardingEnvironmentsSchema,
@@ -12,19 +11,6 @@ import {
 import { saveOnboardingStep, updateUserRole } from "@/lib/api/client";
 import type { ActionState } from "@/lib/action-state";
 import { requireSession } from "@/lib/session";
-
-const STEP_ROUTES = [
-  "/onboarding/profile",
-  "/onboarding/use-cases",
-  "/onboarding/environments",
-  "/onboarding/review",
-] as const;
-
-function nextStepRoute(current: string): string {
-  const index = STEP_ROUTES.indexOf(current as typeof STEP_ROUTES[number]);
-  const next = STEP_ROUTES[Math.min(index + 1, STEP_ROUTES.length - 1)];
-  return next ?? "/app";
-}
 
 async function persistStep(
   token: string,
@@ -39,40 +25,6 @@ async function persistStep(
     return { status: "error", message };
   }
   return { status: "idle", message: "Saved." };
-}
-
-// New: persist role to UserRecord and redirect based on role
-async function persistRoleAndRedirect(
-  token: string,
-  role: string,
-  tenantId: string
-): Promise<ActionState> {
-  const result = await saveOnboardingStep(token, {
-    title: "Onboarding — role persistence",
-    content: JSON.stringify({ role, tenant_id: tenantId }),
-    category: "training",
-    tags: ["onboarding", "role", role],
-  });
-  if (!result.ok) {
-    const message =
-      result.kind === "unavailable"
-        ? "The knowledge service is unavailable. Role was not persisted — try again."
-        : "Role could not be persisted. No fake success is shown — try again.";
-    return { status: "error", message };
-  }
-  // Redirect based on role
-  let redirectPath = "/app";
-  if (role === "viewer") {
-    redirectPath = "/app"; // Viewer goes directly to app (read-only)
-  } else if (role === "analyst") {
-    redirectPath = "/app"; // Analyst goes to app after onboarding
-  } else if (role === "pilot_sponsor") {
-    redirectPath = "/app"; // Pilot sponsor goes to app
-  } else if (role === "admin") {
-    redirectPath = "/app"; // Admin goes to app
-  }
-  redirect(redirectPath);
-  return { status: "idle", message: "Role persisted." };
 }
 
 export async function saveOnboardingProfileAction(

@@ -23,7 +23,7 @@ export const tokenResponseSchema = z.object({
   token_type: z.literal("bearer"),
   user_id: boundedText,
   role: z.enum(["admin", "analyst", "viewer", "pilot_sponsor"]),
-  tenant_id: boundedText,
+  tenant_id: z.string().min(0).max(512),
   requires_email_verification: z.boolean().optional(),
 });
 
@@ -91,19 +91,21 @@ export const billingStatusSchema = z
     entitlement_ends_at: nullableDate,
     cancel_at_period_end: z.boolean(),
   })
-  .superRefine((value, context) => {
-    if (!value.entitled) return;
-    const entitlementEnd = value.entitlement_ends_at;
-    const validStatus = entitledStatuses.has(value.status);
-    const futureBoundary = entitlementEnd !== null && Date.parse(entitlementEnd) > Date.now();
-    if (!validStatus || !futureBoundary) {
-      context.addIssue({
-        code: "custom",
-        path: ["entitled"],
-        message: "Entitled billing state requires an active status and future boundary",
-      });
-    }
-  })
+.superRefine((value, context) => {
+  if (!value.entitled) return;
+  // Self-hosted / dev: entitled true is allowed without a Stripe status/ends date
+  if (!value.billing_required && value.status === "unknown") return;
+  const entitlementEnd = value.entitlement_ends_at;
+  const validStatus = entitledStatuses.has(value.status);
+  const futureBoundary = entitlementEnd !== null && Date.parse(entitlementEnd) > Date.now();
+  if (!validStatus || !futureBoundary) {
+    context.addIssue({
+      code: "custom",
+      path: ["entitled"],
+      message: "Entitled billing state requires an active status and future boundary",
+    });
+  }
+})
   .transform((value) => ({
     status: value.status,
     entitled: value.entitled,
@@ -325,7 +327,6 @@ export const findingListSchema = z.array(findingRecordSchema).max(200);
 const COMPLIANCE_FRAMEWORKS = ["pci_dss", "ndpr", "gdpr", "soc_2", "iso_27001", "cbn", "hipaa"] as const;
 const ADAPTER_CATEGORIES = ["containers", "cloud", "files", "web_apps_apis", "external_infrastructure", "directories_crm", "media"] as const;
 const CAPABILITIES = ["colour_teams", "intelligence_stack", "zero_day_research", "quantum_pqc", "saas_product", "simulation_paradigms", "rl_rlhf"] as const;
-const PERSONAS = ["viewer", "analyst", "pilot_sponsor", "admin"] as const;
 const MATURITIES = ["none", "ad_hoc", "defined", "managed"] as const;
 
 export const onboardingProfileSchema = z.object({

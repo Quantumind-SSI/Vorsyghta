@@ -117,9 +117,9 @@ services:
   # ================================
   # Django API Server
   # ================================
-  django:
+  vorsyghta-api:
     <<: *vorsyghta-api-image
-    container_name: vorsyghta-django
+    container_name: vorsyghta-api
     restart: unless-stopped
     user: "0:0"
     depends_on:
@@ -136,9 +136,10 @@ services:
       - DEBUG=false
       - VORSYGHTA_SECRET_KEY=${VORSYGHTA_SECRET_KEY}
       - SECURE_SSL_REDIRECT=false
-      - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,django,host.docker.internal
+      - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,vorsyghta-api,host.docker.internal
       - EMAIL_HOST=mailpit
       - EMAIL_PORT=1025
+      - VORSYGHTA_BILLING_REQUIRED=false
     working_dir: /app
     command: ["bash", "-c", "python manage.py runserver 0.0.0.0:8000"]
     ports:
@@ -184,10 +185,10 @@ services:
     container_name: vorsyghta-web
     restart: unless-stopped
     depends_on:
-      django:
+      vorsyghta-api:
         condition: service_started
     environment:
-      - VORSYGHTA_API_URL=http://django:8000
+      - VORSYGHTA_API_URL=http://vorsyghta-api:8000
       - VORSYGHTA_ALLOW_INSECURE_INTERNAL_API=true
     ports:
       - "${WEB_PORT:-3002}:3000"
@@ -224,7 +225,7 @@ services:
     networks:
       - vorsyghta-network
     depends_on:
-      - django
+      - vorsyghta-api
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
       interval: 30s
@@ -275,7 +276,7 @@ services:
     restart: unless-stopped
     depends_on:
       - postgres
-      - django
+      - vorsyghta-api
     environment:
       PGADMIN_CONFIG_SERVER_MODE: 'False'
       PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'

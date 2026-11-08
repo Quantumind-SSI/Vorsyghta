@@ -4,7 +4,6 @@ import { useState } from "react";
 export function AnalystActions() {
   const [status, setStatus] = useState<string | null>(null);
   const [traces, setTraces] = useState<string[]>([]);
-  const [hasTarget, setHasTarget] = useState(false);
 
   // Placeholder target check – replace with real API call to list environments/targets
   const checkTarget = () => {

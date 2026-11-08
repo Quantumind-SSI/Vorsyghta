@@ -26,11 +26,6 @@ const CAPABILITIES: ReadonlyArray<{ value: string; label: string; hint: string }
   { value: "simulation_paradigms", label: "Advanced simulation", hint: "Six paradigm engines" },
   { value: "rl_rlhf", label: "Agent training (RL/RLHF)", hint: "Learned reward models" },
 ];
-const PERSONAS: ReadonlyArray<{ value: string; label: string }> = [];
-const TENANTS: ReadonlyArray<{ value: string; label: string }> = [
-  { value: "default", label: "Select your organization" },
-  // Tenants will be populated after onboarding or fetched from session
-];
 
 export default async function OnboardingUseCasesPage() {
   const session = await requireSession("/onboarding/use-cases");

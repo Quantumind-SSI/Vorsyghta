@@ -1,7 +1,6 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
 import { z } from "zod";
 
 import { authenticate, fetchCurrentUser, registerAccount } from "@/lib/api/client";
