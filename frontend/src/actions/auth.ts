@@ -99,10 +99,18 @@ export async function registerAction(
 
   const result = await registerAccount(registration.data);
   if (!result.ok) {
-    const message =
-      result.kind === "conflict"
-        ? "Registration could not be completed with these details. Sign in or use another email address."
-        : "Registration is temporarily unavailable. Please try again shortly.";
+    let message;
+    if (result.kind === "conflict") {
+      message = "Registration could not be completed with these details. Sign in or use another email address.";
+    } else if (result.kind === "request-failed") {
+      message = "Network error. Please check your connection and try again.";
+    } else if (result.kind === "invalid-response") {
+      message = "Service configuration error. Please contact support.";
+    } else if (result.kind === "unavailable") {
+      message = "Registration is temporarily unavailable. Please try again shortly.";
+    } else {
+      message = "Registration could not be completed. Please try again.";
+    }
     return { status: "error", message };
   }
 
