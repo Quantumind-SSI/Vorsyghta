@@ -204,8 +204,10 @@ def test_request_reset_missing_email(client):
 
 def test_reset_password_valid_token(client, verified_user):
     token = secrets.token_urlsafe(32)
+    from django.utils import timezone
     verified_user.reset_token = token
-    verified_user.save(update_fields=["reset_token"])
+    verified_user.reset_requested_at = timezone.now()
+    verified_user.save(update_fields=["reset_token", "reset_requested_at"])
     resp = client.post(
         "/auth/reset-password/",
         {"token": token, "new_password": "NewStrongPass!456"},
@@ -222,12 +224,13 @@ def test_reset_password_valid_token(client, verified_user):
 def test_reset_password_invalid_token(client):
     resp = client.post("/auth/reset-password/", {"token": "badtoken", "new_password": "NewStrongPass!456"}, format="json")
     assert resp.status_code == 400
-
-
 def test_reset_password_reuse_token(client, verified_user):
+    from django.utils import timezone
     token = secrets.token_urlsafe(32)
     verified_user.reset_token = token
-    verified_user.save(update_fields=["reset_token"])
+    verified_user.reset_requested_at = timezone.now()
+    verified_user.save(update_fields=["reset_token", "reset_requested_at"])
+
     r1 = client.post("/auth/reset-password/", {"token": token, "new_password": "NewStrongPass!456"}, format="json")
     assert r1.status_code == 200
     r2 = client.post("/auth/reset-password/", {"token": token, "new_password": "AnotherPass!789"}, format="json")
@@ -264,13 +267,14 @@ def test_verify_email_success(client, tenant):
 
 
 def test_reset_password_weak_new_password(client, verified_user):
+    from django.utils import timezone
     token = secrets.token_urlsafe(32)
     verified_user.reset_token = token
-    verified_user.save(update_fields=["reset_token"])
-    # Django password validators will reject weak password via serializer? View doesn't validate.
-    # Edge: ensure password is set even if weak – test shows current behaviour.
+    verified_user.reset_requested_at = timezone.now()
+    verified_user.save(update_fields=["reset_token", "reset_requested_at"])
+    # Weak password should be rejected by validate_password
     resp = client.post("/auth/reset-password/", {"token": token, "new_password": "short"}, format="json")
-    assert resp.status_code == 200  # current implementation allows; could be tightened
+    assert resp.status_code == 400
 
 
 def test_token_contains_onboarding_flag(client, verified_user):

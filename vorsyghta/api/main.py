@@ -49,6 +49,7 @@ from vorsyghta.api.routers import (
     sso_router,
     integrations_router,
     billing_router,
+    onboarding_router,
 )
 
 # Import security dependencies
@@ -236,8 +237,8 @@ app.add_middleware(AuditMiddleware)
 # Include API routers
 _ENTITLED = [Depends(require_entitled_user)]
 app.include_router(auth_router, prefix="/api")
+app.include_router(onboarding_router, prefix="/api")
 app.include_router(templates_router, prefix="/api", dependencies=_ENTITLED)
-app.include_router(threat_intel_router, prefix="/api", dependencies=_ENTITLED)
 app.include_router(attack_tracking_router, prefix="/api", dependencies=_ENTITLED)
 # billing_router removed: billing now handled by Django; see vorsyghta/django_apps/billing
 # app.include_router(billing_router, prefix="/api")

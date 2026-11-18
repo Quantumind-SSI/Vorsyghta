@@ -1,6 +1,0 @@
-.next
-coverage
-node_modules
-.env*
-*.log
-*.tsbuildinfo

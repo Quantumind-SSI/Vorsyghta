@@ -4,6 +4,7 @@ from .manuals import router as manuals_router
 from .knowledge import router as knowledge_router
 from .feedback import router as feedback_router
 from .auth import router as auth_router
+from .onboarding import router as onboarding_router
 from .threat_hunting import router as threat_hunting_router
 from .exercise import router as exercise_router
 from .templates import router as templates_router
@@ -21,6 +22,7 @@ __all__ = [
     "knowledge_router",
     "feedback_router",
     "auth_router",
+    "onboarding_router",
     "threat_hunting_router",
     "exercise_router",
     "templates_router",

@@ -75,6 +75,7 @@ class User(AbstractUser):
     is_verified = models.BooleanField(default=False)
     verification_token = models.CharField(max_length=128, null=True, blank=True)
     reset_token = models.CharField(max_length=128, null=True, blank=True)
+    reset_requested_at = models.DateTimeField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
     onboarding_complete = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

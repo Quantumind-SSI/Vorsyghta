@@ -5,7 +5,7 @@ from django.urls import include, path
 from django.conf import settings
 from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
 
-from vorsyghta.django_apps.accounts.views import RegisterView, VerifyEmailView, CompleteOnboardingView, RequestResetView, ResetPasswordView, CustomTokenObtainPairView, MeView
+from vorsyghta.django_apps.accounts.views import RegisterView, VerifyEmailView, CompleteOnboardingView, RequestResetView, ResetPasswordView, CustomTokenObtainPairView, MeView, UpdateRoleView
 from vorsyghta.django_apps.api_health.views import HealthView, ReadinessView
 
 
@@ -20,12 +20,14 @@ urlpatterns = [
     path("auth/register/", RegisterView.as_view(), name="auth_register"),
     path("auth/verify-email/", VerifyEmailView.as_view(), name="auth_verify_email"),
     path("auth/complete-onboarding/", CompleteOnboardingView.as_view(), name="auth_complete_onboarding"),
+    path("auth/update-role/", UpdateRoleView.as_view(), name="auth_update_role"),
     path("auth/request-reset/", RequestResetView.as_view(), name="auth_request_reset"),
     path("auth/reset-password/", ResetPasswordView.as_view(), name="auth_reset_password"),
 
 
 
     path("api/billing/", include("vorsyghta.django_apps.billing.urls")),
+    path("api/knowledge/", include("vorsyghta.django_apps.knowledge.urls")),
     path("teams/", include("vorsyghta.django_apps.teams.urls")),
     path("audit/", include("vorsyghta.django_apps.audit.urls")),
 ]

@@ -179,9 +179,11 @@ class RequestResetView(APIView):
         except User.DoesNotExist:
             # Don't leak existence
             return Response({"message": "If an account exists, a reset link has been sent."}, status=status.HTTP_200_OK)
+        from django.utils import timezone
         token = secrets.token_urlsafe(32)
         user.reset_token = token
-        user.save(update_fields=["reset_token"])
+        user.reset_requested_at = timezone.now()
+        user.save(update_fields=["reset_token", "reset_requested_at"])
         reset_url = f"{settings.FRONTEND_URL or 'http://localhost:3000'}/reset-password?token={token}"
         send_mail(
             subject="Reset your Vorsyghta password",
@@ -200,11 +202,39 @@ class ResetPasswordView(APIView):
         password = request.data.get("new_password") or request.data.get("password")
         if not token or not password:
             return Response({"detail": "token and password required"}, status=status.HTTP_400_BAD_REQUEST)
+        from django.utils import timezone
+        from django.contrib.auth.password_validation import validate_password
+        from django.core.exceptions import ValidationError
         try:
             user = User.objects.get(reset_token=token)
         except User.DoesNotExist:
             return Response({"detail": "Invalid or expired token"}, status=status.HTTP_400_BAD_REQUEST)
+        # expiry 1 hour
+        if not user.reset_requested_at or timezone.now() - user.reset_requested_at > timezone.timedelta(hours=1):
+            user.reset_token = None
+            user.reset_requested_at = None
+            user.save(update_fields=["reset_token", "reset_requested_at"])
+            return Response({"detail": "Invalid or expired token"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            validate_password(password, user=user)
+        except ValidationError as e:
+            return Response({"detail": e.messages}, status=status.HTTP_400_BAD_REQUEST)
         user.set_password(password)
         user.reset_token = None
-        user.save(update_fields=["password", "reset_token"])
+        user.reset_requested_at = None
+        user.save(update_fields=["password", "reset_token", "reset_requested_at"])
         return Response({"message": "Password reset successfully."}, status=status.HTTP_200_OK)
+
+class UpdateRoleView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+
+    def post(self, request):
+        role = request.data.get('role')
+        valid_roles = ['viewer', 'analyst', 'pilot_sponsor', 'admin']
+        if role not in valid_roles:
+            return Response({'detail': f'Invalid role. Must be one of: {", ".join(valid_roles)}'}, status=status.HTTP_400_BAD_REQUEST)
+        user = request.user
+        user.role = role
+        user.save(update_fields=['role'])
+        return Response({'message': 'Role updated'}, status=status.HTTP_200_OK)
